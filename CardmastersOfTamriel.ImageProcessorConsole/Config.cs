@@ -1,4 +1,6 @@
-namespace CardAssetManager.Config;
+using SixLabors.ImageSharp;
+
+namespace CardmastersOfTamriel.ImageProcessorConsole;
 
 public static class Config
 {

@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/CardmastersOfTamriel/bin/Debug/net8.0/CardmastersOfTamriel.dll",
+            "program": "${workspaceFolder}/CardmastersOfTamriel.ImageProcessorConsole/bin/Debug/net8.0/CardmastersOfTamriel.ImageProcessorConsole.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/CardmastersOfTamriel",
+            "cwd": "${workspaceFolder}/CardmastersOfTamriel.ImageProcessorConsole",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false
