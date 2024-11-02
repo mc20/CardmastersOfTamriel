@@ -3,6 +3,7 @@ namespace CardmastersOfTamriel.Models;
 public class CardSet
 {
     public string? Id { get; set; }
+    public string? SeriesId { get; set; }
     public string? DisplayName { get; set; }
     public CardTier Tier { get; set; }
     public string? Theme { get; set; }

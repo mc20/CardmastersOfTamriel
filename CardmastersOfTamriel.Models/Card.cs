@@ -7,7 +7,6 @@ public class Card
     public string? SetDisplayName { get; init; }
     public string? SeriesId { get; init; }
     public string? ImageFileName { get; init; }
-    public string? ImageFilePath { get; init; }
     public CardShape Shape { get; init; }
     public string? DisplayName { get; init; }
     public int Index { get; init; }
@@ -17,4 +16,6 @@ public class Card
     public uint Value { get; init; }
     public float Weight { get; init; }
     public string[]? Keywords { get; init; }
+    public string? SourceFilePath { get; set; }
+    public string? DestinationFilePath { get; set; }
 }
