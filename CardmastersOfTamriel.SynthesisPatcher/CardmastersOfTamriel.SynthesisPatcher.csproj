@@ -20,5 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CardmastersOfTamriel.Models\CardmastersOfTamriel.Models.csproj" />
+    <ProjectReference Include="..\CardmastersOfTamriel.Utilities\CardmastersOfTamriel.Utilities.csproj" />
   </ItemGroup>
 </Project>

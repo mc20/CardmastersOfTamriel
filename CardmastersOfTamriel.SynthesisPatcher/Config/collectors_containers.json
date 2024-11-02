@@ -1,5 +1,5 @@
 {
-    "CollectorTier1": [
+    "Tier1": [
         "CWQuartermasterChestImperial",
         "CWQuartermasterChestSons",
         "DLC01SC_Chest",
@@ -24,7 +24,7 @@
         "dunAlftandJzharsPack",
         "dunAlftandSullasPack"
     ],
-    "CollectorTier2": [
+    "Tier2": [
         "DA07JorgenChest",
         "DBPenitusOutpostChest",
         "DLC01TreasSnowElfChest",
@@ -57,7 +57,7 @@
         "ccBGSSSE054_YakhtuTreasBanditChest",
         "ccBGS_RootHollowedStump"
     ],
-    "CollectorTier3": [
+    "Tier3": [
         "DLC1TreasChestDarkFall01",
         "DLC1TreasSoulCairnChest",
         "DLC1TreasSoulCairnChest02",
@@ -112,7 +112,7 @@
         "dunKatariahCaptainsChest",
         "dunMiddenVelehkRewardChest"
     ],
-    "CollectorTier4": [
+    "Tier4": [
         "DLC2MerchantDremoraChest",
         "DLC2MerchantTelMithrynNelothChest",
         "DLC2MerchantTelMithrynTalvasChest",
@@ -140,7 +140,7 @@
         "ccbgssse067_ContainerFleshyPod02",
         "dunTreasMapTreasChest"
     ],
-    "CollectorTier5": [
+    "Tier5": [
         "DLC01SC_ChestBoss",
         "DLC01TreasSnowElfChestBoss",
         "DLC2RR02BossChest",
@@ -163,7 +163,7 @@
         "ccBGS_ARChest02LootSpecial",
         "dunTreasMapTreasChestSpecial"
     ],
-    "CollectorTier6": [
+    "Tier6": [
         "DLC2TreasApocryphaChestBoss",
         "DLC2TreasBanditChestBoss",
         "DLC2TreasDraugrChestBoss",
@@ -191,7 +191,7 @@
         "TreasWarlockChestBoss",
         "TreasWerewolfChestBoss"
     ],
-    "CollectorMasterTier": [
+    "MasterTier": [
         "TGREndSafe",
         "dunKatariahEmperorsChest"
     ]

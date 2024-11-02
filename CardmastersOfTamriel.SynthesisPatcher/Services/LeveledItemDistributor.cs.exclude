@@ -1,0 +1,257 @@
+using CardmastersOfTamriel.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Data;
+using CardmastersOfTamriel.SynthesisPatcher.Models;
+using Mutagen.Bethesda;
+using Mutagen.Bethesda.Skyrim;
+using Mutagen.Bethesda.Synthesis;
+using Noggog;
+
+namespace CardmastersOfTamriel.SynthesisPatcher.Services;
+
+public class LeveledItemDistributionService
+{
+    // private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
+    // private readonly ISkyrimMod _customMod;
+
+    // public LeveledItemDistributionService(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
+    // {
+    //     _state = state;
+    //     _customMod = customMod;
+    // }
+
+    // public void DistributeLeveledItems(CollectorType collectorType, CardCollections collections)
+    // {
+    //     var editorIdForLeveledItem = $"Collector_{collectorType}_ForLeveledItem".AddModNamePrefix();
+    //     var leveledItemLeveledItem = CreateLeveledItemHavingEditorId(editorIdForLeveledItem);
+    //     var editorIdForContainer = $"Collector_{collectorType}_ForContainer".AddModNamePrefix();
+    //     var containerLeveledItem = CreateLeveledItemHavingEditorId(editorIdForContainer);
+
+    //     DebugTools.LogAction($"Before => leveledItemLeveledItem: {leveledItemLeveledItem.EditorID} ChanceNone is {leveledItemLeveledItem.ChanceNone.Value}", LogMessageType.VERBOSE);
+
+    //     switch (collectorType)
+    //     {
+    //         case CollectorType.Tier1:
+    //             DistributeToTier1(collections, leveledItemLeveledItem);
+    //             DistributeToTier1(collections, containerLeveledItem);
+    //             break;
+
+    //         case CollectorType.Tier2:
+    //             DistributeToTier2(collections, leveledItemLeveledItem);
+    //             DistributeToTier2(collections, containerLeveledItem);
+    //             break;
+
+    //         case CollectorType.Tier3:
+    //             DistributeToTier3(collections, leveledItemLeveledItem);
+    //             DistributeToTier3(collections, containerLeveledItem);
+    //             break;
+
+    //         case CollectorType.Tier4:
+    //             DistributeToTier4(collections, leveledItemLeveledItem);
+    //             DistributeToTier4(collections, containerLeveledItem);
+    //             break;
+
+    //         case CollectorType.Tier5:
+    //             DistributeToTier5(collections, leveledItemLeveledItem);
+    //             DistributeToTier5(collections, containerLeveledItem);
+    //             break;
+
+    //         case CollectorType.Tier6:
+    //             DistributeToTier6(collections, leveledItemLeveledItem);
+    //             DistributeToTier6(collections, containerLeveledItem);
+    //             break;
+
+    //         case CollectorType.MasterTier:
+    //             DistributeToMasterTier(collections, leveledItemLeveledItem);
+    //             DistributeToMasterTier(collections, containerLeveledItem);
+    //             break;
+
+    //         default:
+    //             break;
+    //     }
+
+    //     DebugTools.LogAction($"After => leveledItemLeveledItem: {leveledItemLeveledItem.EditorID} ChanceNone is {leveledItemLeveledItem.ChanceNone.Value}", LogMessageType.VERBOSE);
+    //     DebugTools.LogAction($"containerLeveledItem: {containerLeveledItem.EditorID} ChanceNone is {containerLeveledItem.ChanceNone.Value}");
+
+    //     CardCollectorCategorizer.LoadCollectorsFromDisk();
+
+    //     DistributeLeveledItemToTargetLeveledItems(leveledItemLeveledItem, CardCollectorCategorizer.GetLeveledListsForCollector(collectorType));
+    //     DistributeLeveledItemToTargetContainers(containerLeveledItem, CardCollectorCategorizer.GetContainersForCollector(collectorType));
+
+    // }
+
+    // private LeveledItem CreateLeveledItemHavingEditorId(string editorId)
+    // {
+    //     var leveledList = _customMod.LeveledItems.AddNew();
+    //     leveledList.EditorID = editorId;
+    //     return leveledList;
+    // }
+
+    // private void DistributeLeveledItemToTargetLeveledItems(LeveledItem leveledItem, HashSet<string> collectorEditorIds)
+    // {
+    //     DebugTools.LogAction($"Distributing LeveledItem: {leveledItem.EditorID} as these Target Containers: {string.Join(", ", collectorEditorIds)}", LogMessageType.VERBOSE);
+
+    //     foreach (var editorId in collectorEditorIds)
+    //     {
+    //         var existingLeveledItem = _state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides().FirstOrDefault(ll => ll.EditorID == editorId);
+    //         if (existingLeveledItem is not null)
+    //         {
+    //             AddLeveledItemToLeveledItemEntries(leveledItem, existingLeveledItem);
+    //         }
+    //         else
+    //         {
+    //             DebugTools.LogAction($"Attempting to add LeveledItem: {leveledItem.EditorID} to Parent LeveledItem: {editorId} but the parent does not exist", LogMessageType.ERROR);
+    //         }
+    //     }
+    // }
+
+    // private void DistributeToTier1(CardCollections collections, LeveledItem parentLeveledItem)
+    // {
+    //     // There is a very high chance (85%) that nothing will spawn. However, if something does spawn, it's just one common book with a 20% chance.
+    //     AddLeveledItemToParentLeveledItem(collections.Tier1LeveledItem, parentLeveledItem, 1, new Percent(0.2));
+    //     parentLeveledItem.ChanceNone = new Percent(0.85);
+    // }
+
+    // private void DistributeToTier2(CardCollections collections, LeveledItem parentLeveledItem)
+    // {
+    //     /*
+    //     The chance of getting nothing is lower than for Novice (70%), and there’s a possibility of receiving either two common books 
+    //     or one valuable book. The mix of items is now more varied, with a greater focus on common books but also a chance for something valuable.
+    //     */
+    //     AddLeveledItemToParentLeveledItem(collections.Tier1LeveledItem, parentLeveledItem, 2, new Percent(0.20));
+    //     AddLeveledItemToParentLeveledItem(collections.Tier2LeveledItem, parentLeveledItem, 1, new Percent(0.30));
+    //     parentLeveledItem.ChanceNone = new Percent(0.70);
+    // }
+
+    // private void DistributeToTier3(CardCollections collections, LeveledItem parentLeveledItem)
+    // {
+    //     // The chance of getting nothing is reduced to 50%, so players are more likely to receive books. The probability of getting valuable books is increased, and more books can potentially spawn.
+    //     AddLeveledItemToParentLeveledItem(collections.Tier1LeveledItem, parentLeveledItem, 2, new Percent(0.20));
+    //     AddLeveledItemToParentLeveledItem(collections.Tier2LeveledItem, parentLeveledItem, 2, new Percent(0.40));
+    //     parentLeveledItem.ChanceNone = new Percent(0.50);
+    // }
+
+    // private void DistributeToTier4(CardCollections collections, LeveledItem parentLeveledItem)
+    // {
+    //     // A lower chance (30%) of getting nothing, with a stronger emphasis on valuable and rare books. Common books still spawn but with a lower chance (10%).
+    //     AddLeveledItemToParentLeveledItem(collections.Tier1LeveledItem, parentLeveledItem, 3, new Percent(0.10));
+    //     AddLeveledItemToParentLeveledItem(collections.Tier2LeveledItem, parentLeveledItem, 2, new Percent(0.30));
+    //     AddLeveledItemToParentLeveledItem(collections.Tier3LeveledItem, parentLeveledItem, 1, new Percent(0.40));
+    //     parentLeveledItem.ChanceNone = new Percent(0.30);
+    // }
+
+    // private void DistributeToTier5(CardCollections collections, LeveledItem parentLeveledItem)
+    // {
+    //     // A very low chance of getting nothing (20%). There’s a high probability of getting multiple valuable, rare, and even legendary books, making the loot more desirable.
+    //     AddLeveledItemToParentLeveledItem(collections.Tier1LeveledItem, parentLeveledItem, 4, new Percent(0.10));
+    //     AddLeveledItemToParentLeveledItem(collections.Tier2LeveledItem, parentLeveledItem, 3, new Percent(0.30));
+    //     AddLeveledItemToParentLeveledItem(collections.Tier3LeveledItem, parentLeveledItem, 1, new Percent(0.40));
+    //     AddLeveledItemToParentLeveledItem(collections.Tier4LeveledItem, parentLeveledItem, 1, new Percent(0.95));
+    //     parentLeveledItem.ChanceNone = new Percent(0.20);
+    // }
+
+    // private void DistributeToTier6(CardCollections collections, LeveledItem parentLeveledItem)
+    // {
+    //     // A very low chance of getting nothing (10%) with an emphasis on rare books (80% chance), though common and valuable books are still present.
+    //     AddLeveledItemToParentLeveledItem(collections.Tier1LeveledItem, parentLeveledItem, 3, new Percent(0.10));
+    //     AddLeveledItemToParentLeveledItem(collections.Tier2LeveledItem, parentLeveledItem, 2, new Percent(0.20));
+    //     AddLeveledItemToParentLeveledItem(collections.Tier3LeveledItem, parentLeveledItem, 1, new Percent(0.80));
+    //     parentLeveledItem.ChanceNone = new Percent(0.10);
+    // }
+
+    // private void DistributeToMasterTier(CardCollections collections, LeveledItem parentLeveledItem)
+    // {
+    //     // No chance of getting nothing. This distribution is focused on spawning valuable, rare, and legendary books every time, ensuring maximum rewards.
+    //     AddLeveledItemToParentLeveledItem(collections.Tier2LeveledItem, parentLeveledItem, 5, Percent.Zero);
+    //     AddLeveledItemToParentLeveledItem(collections.Tier3LeveledItem, parentLeveledItem, 3, Percent.Zero);
+    //     AddLeveledItemToParentLeveledItem(collections.Tier4LeveledItem, parentLeveledItem, 1, Percent.Zero);
+    //     parentLeveledItem.ChanceNone = Percent.Zero;
+    // }
+
+    // private void DistributeLeveledItemToTargetContainers(LeveledItem leveledItem, HashSet<string> containerEditorIds)
+    // {
+    //     DebugTools.LogAction($"Distributing LeveledItem: {leveledItem.EditorID} as these Target Containers: {string.Join(", ", containerEditorIds)}", LogMessageType.VERBOSE);
+
+    //     foreach (var editorId in containerEditorIds)
+    //     {
+    //         var existingContainer = _state.LoadOrder.PriorityOrder.Container().WinningOverrides().FirstOrDefault(c => c.EditorID == editorId);
+    //         if (existingContainer is not null)
+    //         {
+    //             AddLeveledItemToContainerItems(leveledItem, existingContainer);
+    //         }
+    //         else
+    //         {
+    //             DebugTools.LogAction($"Attempting to add LeveledItem: {leveledItem.EditorID} to Collector LeveledItem: {editorId} but the collector does not exist", LogMessageType.ERROR);
+    //         }
+    //     }
+    // }
+
+    // private void AddLeveledItemToParentLeveledItem(LeveledItem leveledItem, LeveledItem parentLeveledItem, int times, Percent chanceNone)
+    // {
+    //     if (leveledItem is null || parentLeveledItem is null) return;
+    //     if (times <= 0) times = 1;
+
+    //     var modifiedParentLeveledItem = _customMod.LeveledItems.GetOrAddAsOverride(parentLeveledItem);
+
+    //     // Initialize the Entries list if it's null
+    //     modifiedParentLeveledItem.Entries ??= [];
+    //     for (var i = 0; i < times; i++)
+    //     {
+    //         var entry = new LeveledItemEntry
+    //         {
+    //             Data = new LeveledItemEntryData
+    //             {
+    //                 Reference = leveledItem.ToLink(),
+    //                 Count = 1,
+    //                 Level = 1
+    //             }
+    //         };
+
+    //         modifiedParentLeveledItem.Entries.Add(entry);
+    //     }
+
+    //     modifiedParentLeveledItem.ChanceNone = chanceNone;
+    // }
+    // private void AddLeveledItemToContainerItems(LeveledItem leveledItem, IContainerGetter containerGetter)
+    // {
+    //     var modifiedContainer = _customMod.Containers.GetOrAddAsOverride(containerGetter);
+    //     modifiedContainer.Items ??= [];
+
+    //     var containerItem = new ContainerEntry
+    //     {
+    //         Item = new ContainerItem
+    //         {
+    //             Count = 1,
+    //             Item = leveledItem.ToLink()
+    //         }
+    //     };
+
+    //     modifiedContainer.Items.Add(containerItem);
+
+    //     DebugTools.LogAction($"Added LeveledItem: {leveledItem.EditorID} as Item to Container: {modifiedContainer.EditorID}", LogMessageType.VERBOSE);
+    // }
+
+    // private void AddLeveledItemToLeveledItemEntries(LeveledItem? leveledItem, ILeveledItemGetter leveledItemGetter)
+    // {
+    //     if (leveledItem is null) return;
+
+    //     var modifiedLeveledItem = _customMod.LeveledItems.GetOrAddAsOverride(leveledItemGetter);
+
+    //     modifiedLeveledItem.Entries ??= [];
+
+    //     var entry = new LeveledItemEntry
+    //     {
+    //         Data = new LeveledItemEntryData
+    //         {
+    //             Reference = leveledItem.ToLink(),
+    //             Count = 1,
+    //             Level = 1,
+    //         }
+    //     };
+
+    //     modifiedLeveledItem.Entries.Add(entry);
+    //     modifiedLeveledItem.ChanceNone = Percent.Zero;
+
+    //     DebugTools.LogAction($"Added LeveledItem: {leveledItem.EditorID} as Entry to LeveledItem: {modifiedLeveledItem.EditorID}", LogMessageType.VERBOSE);
+    // }
+
+}

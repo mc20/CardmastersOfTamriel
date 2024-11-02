@@ -1,7 +1,7 @@
 using CardmastersOfTamriel.SynthesisPatcher.Config;
 using CardmastersOfTamriel.SynthesisPatcher.Models;
+using CardmastersOfTamriel.Utilities;
 using Noggog;
-using System.Text.Json;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Services
 {
@@ -11,13 +11,13 @@ namespace CardmastersOfTamriel.SynthesisPatcher.Services
 
         public CollectorService(string configFilePath)
         {
-            var configJson = File.ReadAllText(configFilePath);
-            var configRoot = JsonSerializer.Deserialize<CollectorConfigRoot>(configJson);
-            _collectorConfigs = [];
+            var configRoot = JsonFileReader.ReadFromJson<CollectorConfigRoot>(configFilePath);
+            _collectorConfigs = new Dictionary<CollectorType, CollectorConfig>();
 
             if (configRoot == null)
             {
-                throw new InvalidOperationException("Configuration root is null");
+                DebugTools.LogAction("Config file path is invalid.");
+                return;
             }
 
             foreach (var collector in configRoot.Collectors)

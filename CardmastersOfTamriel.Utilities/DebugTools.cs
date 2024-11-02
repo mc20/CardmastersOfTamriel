@@ -1,6 +1,4 @@
-using CardmastersOfTamriel.SynthesisPatcher.Config;
-
-namespace CardmastersOfTamriel.SynthesisPatcher;
+namespace CardmastersOfTamriel.Utilities;
 
 public enum LogMessageType
 {

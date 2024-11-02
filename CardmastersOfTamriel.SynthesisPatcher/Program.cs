@@ -44,8 +44,8 @@ public class Program
 
         var distributors = new HashSet<ILootDistributorService>
         {
-            new ContainerDistributorService(state, customMod, appConfig),
-            new LeveledItemDistributor(state, customMod, appConfig)
+            new ContainerDistributorService(state, customMod, appConfig.ContainerConfigPath),
+            new LeveledItemDistributor(state, customMod, appConfig.LeveledItemConfigPath)
         };
 
         var miscService = new MiscItemService(state, customMod);
