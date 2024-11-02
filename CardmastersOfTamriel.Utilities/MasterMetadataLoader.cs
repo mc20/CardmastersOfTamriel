@@ -1,9 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.Utilities;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Services;
+namespace CardmastersOfTamriel.Utilities;
 
 public class MasterMetadataLoader : IMasterMetadataLoader
 {
@@ -14,7 +13,7 @@ public class MasterMetadataLoader : IMasterMetadataLoader
         _metadataJsonFilePath = metadataJsonFilePath;
     }
 
-    public async Task<MasterMetadata> GetMasterMetadataAsync()
+    public MasterMetadata GetMasterMetadata()
     {
         if (!File.Exists(_metadataJsonFilePath))
         {
@@ -23,7 +22,7 @@ public class MasterMetadataLoader : IMasterMetadataLoader
 
         try
         {
-            var jsonString = await File.ReadAllTextAsync(_metadataJsonFilePath);
+            var jsonString =  File.ReadAllText(_metadataJsonFilePath);
             var options = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
@@ -35,17 +34,17 @@ public class MasterMetadataLoader : IMasterMetadataLoader
         }
         catch (JsonException jsonEx)
         {
-            DebugTools.LogException(jsonEx, $"Failed to deserialize JSON from {_metadataJsonFilePath}");
+            Logger.LogException(jsonEx, $"Failed to deserialize JSON from {_metadataJsonFilePath}");
             return new MasterMetadata();
         }
         catch (IOException ioEx)
         {
-            DebugTools.LogException(ioEx, $"Failed to read file {_metadataJsonFilePath}");
+            Logger.LogException(ioEx, $"Failed to read file {_metadataJsonFilePath}");
             return new MasterMetadata();
         }
         catch (Exception ex)
         {
-            DebugTools.LogException(ex, $"Unexpected error occurred while loading data from {_metadataJsonFilePath}");
+            Logger.LogException(ex, $"Unexpected error occurred while loading data from {_metadataJsonFilePath}");
             return new MasterMetadata();
         }
     }

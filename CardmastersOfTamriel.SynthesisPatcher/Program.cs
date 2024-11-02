@@ -4,6 +4,7 @@ using Mutagen.Bethesda.Skyrim;
 using Microsoft.Extensions.Configuration;
 using CardmastersOfTamriel.SynthesisPatcher.Services;
 using CardmastersOfTamriel.SynthesisPatcher.Models;
+using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Environments;
 using Mutagen.Bethesda.Plugins.Binary.Parameters;
@@ -49,7 +50,7 @@ public class Program
         };
 
         var miscService = new MiscItemService(state, customMod);
-        var metadata = await loader.GetMasterMetadataAsync();
+        var metadata = loader.GetMasterMetadata();
         var lootService = new LootDistributionService(customMod, distributors, miscService, metadata);
 
         var collectorService = new CollectorService(appConfig.CollectorConfigPath);

@@ -47,6 +47,6 @@ public static class Extensions
         leveledItem.Entries ??= [];
         leveledItem.Entries?.Add(entry);
 
-        DebugTools.LogAction($"Adding MiscItem: {miscItem.EditorID} to LeveledItem: {leveledItem.EditorID}", LogMessageType.VERBOSE);
+        Logger.LogAction($"Adding MiscItem: {miscItem.EditorID} to LeveledItem: {leveledItem.EditorID}", LogMessageType.Verbose);
     }
 }

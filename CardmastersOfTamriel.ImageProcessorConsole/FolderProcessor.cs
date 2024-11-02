@@ -84,12 +84,3 @@ public class FolderProcessor
         Console.WriteLine(message);
     }
 }
-
-public static class Helpers
-{
-    public static string NormalizeName(string name)
-    {
-        // Implement the normalization logic
-        return name.ToLower().Replace(" ", "_");
-    }
-}

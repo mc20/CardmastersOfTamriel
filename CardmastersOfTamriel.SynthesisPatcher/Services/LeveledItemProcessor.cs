@@ -43,8 +43,8 @@ public class LeveledItemProcessor
 
     private void LogTierSeriesInfo(CardTier tier, IEnumerable<CardSeries> tierSeries)
     {
-        DebugTools.LogAction($"There are {tierSeries.Count()} series at {tier}", LogMessageType.VERBOSE);
-        DebugTools.LogAction($"Tier {tier} Series has {tierSeries.SelectMany(series => series.Sets ?? Enumerable.Empty<CardSet>()).Count()} Sets", LogMessageType.VERBOSE);
+        Logger.LogAction($"There are {tierSeries.Count()} series at {tier}", LogMessageType.Verbose);
+        Logger.LogAction($"Tier {tier} Series has {tierSeries.SelectMany(series => series.Sets ?? Enumerable.Empty<CardSet>()).Count()} Sets", LogMessageType.Verbose);
     }
 
     private static List<Card> GetTierCards(IEnumerable<CardSeries> tierSeries)
@@ -57,17 +57,17 @@ public class LeveledItemProcessor
 
     private void AddMiscItemsToLeveledItem(List<MiscItem> miscItems, LeveledItem leveledItem)
     {
-        DebugTools.LogAction($"Adding MiscItems to LeveledItem: {leveledItem.EditorID}");
+        Logger.LogAction($"Adding MiscItems to LeveledItem: {leveledItem.EditorID}");
 
         var miscItemSublists = CreateSublists(miscItems, 100);
 
-        DebugTools.LogAction($"{miscItemSublists.Count} sublists were created from {miscItems.Count} cards");
+        Logger.LogAction($"{miscItemSublists.Count} sublists were created from {miscItems.Count} cards");
 
         for (int j = 0; j < miscItemSublists.Count; j++)
         {
             var sublistLeveledItem = CreateLeveledItemHavingEditorId($"{leveledItem.EditorID}_Sublist_{j}");
 
-            DebugTools.LogAction($"Adding LeveledItem sublists to {sublistLeveledItem.EditorID}");
+            Logger.LogAction($"Adding LeveledItem sublists to {sublistLeveledItem.EditorID}");
 
             AddMiscItemsToSublist(miscItemSublists[j], sublistLeveledItem);
 

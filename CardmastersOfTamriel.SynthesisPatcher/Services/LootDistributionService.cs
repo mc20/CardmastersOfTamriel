@@ -29,7 +29,7 @@ public class LootDistributionService : ILootDistributionService
 
         var collectorLeveledItem = CreateLeveledItemForCollectorType(collector.Type);
 
-        DebugTools.LogAction($"Creating LeveledItem: {collectorLeveledItem.EditorID} for Collector: {collector.Type}.", LogMessageType.VERBOSE);
+        Logger.LogAction($"Creating LeveledItem: {collectorLeveledItem.EditorID} for Collector: {collector.Type}.", LogMessageType.Verbose);
 
         foreach (var probability in collector.CardTierProbabilities)
         {
