@@ -2,17 +2,18 @@ namespace CardmastersOfTamriel.Models;
 
 public class CardSet
 {
-    public string? Id { get; init; }
-    public string? SetId { get; init; }
-    public string? DisplayName { get; init; }
-    public CardTier Tier { get; init; }
-    public string? Theme { get; init; }
-    public string? Description { get; init; }
-    public DateTime ReleaseDate { get; init; }
-    public string? Artist { get; init; }
-    public bool IsLimitedEdition { get; init; }
-    public ICollection<Card>? Cards { get; init; }
-    public string? CollectorsNote { get; init; }
-    public string? Region { get; init; }
-    public Dictionary<string, object>? ExtraAttributes { get; init; }
+    public string? Id { get; set; }
+    public string? DisplayName { get; set; }
+    public CardTier Tier { get; set; }
+    public string? Theme { get; set; }
+    public string? Description { get; set; }
+    public DateTime ReleaseDate { get; set; }
+    public string? Artist { get; set; }
+    public bool IsLimitedEdition { get; set; }
+    public ICollection<Card>? Cards { get; set; }
+    public string? CollectorsNote { get; set; }
+    public string? Region { get; set; }
+    public Dictionary<string, object>? ExtraAttributes { get; set; }
+    public required string SourceFolderPath { get; set; }
+    public required string DestinationFolderPath { get; set; }
 }

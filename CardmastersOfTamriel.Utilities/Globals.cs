@@ -1,4 +1,4 @@
-namespace CardmastersOfTamriel.SynthesisPatcher.Config;
+namespace CardmastersOfTamriel.Utilities;
 
 public static class Globals
 {

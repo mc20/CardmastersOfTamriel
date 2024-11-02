@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using CardmastersOfTamriel.Models;
+using CardmastersOfTamriel.Utilities;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Services;
 

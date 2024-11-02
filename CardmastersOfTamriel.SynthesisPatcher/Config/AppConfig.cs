@@ -1,4 +1,5 @@
-using System.Text.Json;
+using CardmastersOfTamriel.SynthesisPatcher.Models;
+using CardmastersOfTamriel.Utilities;
 
 namespace CardmastersOfTamriel.SynthesisPatcher;
 
@@ -7,22 +8,13 @@ public class AppConfig
     public required string SourceFolder { get; set; }
     public required string OutputFolder { get; set; }
     public required string MasterMetadataPath { get; set; }
-    public required Dictionary<string, string> TargetEditorIds { get; set; }
+    public Dictionary<CollectorType, string> TargetEditorIds { get; set; } = new();
     public required string CollectorConfigPath { get; set; }
-
-    public HashSet<string> GetEditorIds(string targetType)
-    {
-        return TargetEditorIds.TryGetValue(targetType, out var ids)
-            ? ids.Split(",", StringSplitOptions.RemoveEmptyEntries)
-                 .Select(id => id.Trim())
-                 .ToHashSet()
-            : [];
-    }
+    public required string ContainerConfigPath { get; set; }
+    public required string LeveledItemConfigPath { get; set; }
 
     public static AppConfig Load(string configFilePath)
     {
-        var configJson = File.ReadAllText(configFilePath);
-        var config = JsonSerializer.Deserialize<AppConfig>(configJson) ?? throw new InvalidOperationException("Failed to deserialize the configuration file.");
-        return config;
+        return JsonFileReader.ReadFromJson<AppConfig>(configFilePath);
     }
 }

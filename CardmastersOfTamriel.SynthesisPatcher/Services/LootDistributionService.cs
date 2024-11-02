@@ -3,6 +3,8 @@ using Mutagen.Bethesda.Skyrim;
 using CardmastersOfTamriel.SynthesisPatcher.Services;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Models;
+using CardmastersOfTamriel.Utilities;
+using Noggog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher;
 
@@ -25,43 +27,50 @@ public class LootDistributionService : ILootDistributionService
     {
         var processor = new LeveledItemProcessor(_customMod, _miscItemService);
 
-        var editorIdForLeveledItem = $"Collector_{collector.Type}_ForLeveledItem".AddModNamePrefix();
-        var collectorLeveledItem = CreateLeveledItemHavingEditorId(editorIdForLeveledItem);
+        var collectorLeveledItem = CreateLeveledItemForCollectorType(collector.Type);
+
+        DebugTools.LogAction($"Creating LeveledItem: {collectorLeveledItem.EditorID} for Collector: {collector.Type}.", LogMessageType.VERBOSE);
 
         foreach (var probability in collector.CardTierProbabilities)
         {
-            var cardTierLeveledItem = processor.ProcessTier(_metadata, probability.Tier);
+            var cardTierLeveledItem = processor.CreateLeveledItemFromMetadata(_metadata, probability.Tier);
             cardTierLeveledItem.ChanceNone = probability.ChanceNone;
 
-            collectorLeveledItem.Entries ??= [];
-            for (var i = 0; i < probability.NumberOfTimes; i++)
-            {
-                var entry = new LeveledItemEntry
-                {
-                    Data = new LeveledItemEntryData
-                    {
-                        Reference = cardTierLeveledItem.ToLink(),
-                        Count = 1,
-                        Level = 1,
-                    }
-                };
-
-                collectorLeveledItem.Entries.Add(entry);
-            }
-
-            collectorLeveledItem.ChanceNone = collector.ChanceNone;
+            collectorLeveledItem.Entries ??= new ExtendedList<LeveledItemEntry>();
+            AddEntriesToLeveledItem(collectorLeveledItem, cardTierLeveledItem, probability.NumberOfTimes);
         }
+
+        collectorLeveledItem.ChanceNone = collector.ChanceNone;
 
         foreach (var distributor in _distributors)
         {
-            distributor.DistributeLeveledItem(collectorLeveledItem);
+            distributor.DistributeLeveledItem(collector, collectorLeveledItem);
         }
     }
 
-    private LeveledItem CreateLeveledItemHavingEditorId(string editorId)
+    private static void AddEntriesToLeveledItem(LeveledItem collectorLeveledItem, LeveledItem cardTierLeveledItem, int numberOfTimes)
     {
-        var leveledList = _customMod.LeveledItems.AddNew();
-        leveledList.EditorID = editorId;
-        return leveledList;
+        for (var i = 0; i < numberOfTimes; i++)
+        {
+            var entry = new LeveledItemEntry
+            {
+                Data = new LeveledItemEntryData
+                {
+                    Reference = cardTierLeveledItem.ToLink(),
+                    Count = 1,
+                    Level = 1,
+                }
+            };
+
+            collectorLeveledItem.Entries ??= new ExtendedList<LeveledItemEntry>();
+            collectorLeveledItem.Entries.Add(entry);
+        }
+    }
+
+    private LeveledItem CreateLeveledItemForCollectorType(CollectorType collectorType)
+    {
+        var leveledItem = _customMod.LeveledItems.AddNew();
+        leveledItem.EditorID = $"CollectorType_{collectorType}_ForLeveledItem".AddModNamePrefix();
+        return leveledItem;
     }
 }

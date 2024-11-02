@@ -1,3 +1,6 @@
+using CardmastersOfTamriel.SynthesisPatcher.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Utilities;
+using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
@@ -8,36 +11,48 @@ public class LeveledItemDistributor : ILootDistributorService
 {
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _skyrimMod;
-    private readonly HashSet<string> _editorIds;
+    private readonly string _configFilePath;
 
-    public LeveledItemDistributor(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod, AppConfig appConfig)
+    public LeveledItemDistributor(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod, string filePathToLeveledItemConfig)
     {
         _skyrimMod = customMod;
         _state = state;
-        _editorIds = appConfig.GetEditorIds("leveledItem");
+        _configFilePath = filePathToLeveledItemConfig;
     }
 
-    public void DistributeLeveledItem(LeveledItem leveledItem)
+    public void DistributeLeveledItem(ICollector collector, LeveledItem collectorLeveledItem)
     {
-        foreach (var editorId in _editorIds)
+        LeveledItemDistributorHelper.DistributeItems(
+            _skyrimMod,
+            _configFilePath,
+            collector,
+            collectorLeveledItem,
+            AddLeveledItemToLeveledItem);
+    }
+
+    private bool AddLeveledItemToLeveledItem(ISkyrimMod customMod, LeveledItem leveledItem, string editorId)
+    {
+        DebugTools.LogAction($"Adding LeveledItem: {leveledItem.EditorID} to LeveledItem: {editorId}.", LogMessageType.VERBOSE);
+
+        var existing = _state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides().FirstOrDefault(ll => ll.EditorID == editorId);
+        if (existing is not null)
         {
-            var container = _state.LoadOrder.PriorityOrder.Container().WinningOverrides().FirstOrDefault(ll => ll.EditorID == editorId);
-            if (container is not null)
+            var modifiedLeveledItem = customMod.LeveledItems.GetOrAddAsOverride(existing);
+            modifiedLeveledItem.Entries ??= [];
+
+            var entry = new LeveledItemEntry
             {
-                var modifiedContainer = _skyrimMod.Containers.GetOrAddAsOverride(container);
-                modifiedContainer.Items ??= [];
-
-                var entry = new ContainerEntry
+                Data = new LeveledItemEntryData
                 {
-                    Item = new ContainerItem
-                    {
-                        Item = leveledItem.ToLink(),
-                        Count = 1,
-                    }
-                };
+                    Reference = existing.ToLink(),
+                    Count = 1,
+                    Level = 1,
+                }
+            };
 
-                modifiedContainer.Items.Add(entry);
-            }
+            modifiedLeveledItem.Entries.Add(entry);
+            return true;
         }
+        return false;
     }
 }

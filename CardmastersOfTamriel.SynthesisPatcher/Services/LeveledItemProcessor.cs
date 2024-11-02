@@ -2,6 +2,7 @@ using CardmastersOfTamriel.Models;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Noggog;
+using CardmastersOfTamriel.Utilities;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Services;
 
@@ -16,23 +17,23 @@ public class LeveledItemProcessor
         _service = service ?? throw new ArgumentNullException(nameof(service));
     }
 
-    public LeveledItem ProcessTier(MasterMetadata masterMetadata, CardTier tier)
+    public LeveledItem CreateLeveledItemFromMetadata(MasterMetadata masterMetadata, CardTier tier)
     {
         if (masterMetadata == null) throw new ArgumentNullException(nameof(masterMetadata));
 
-        DebugTools.LogAction($"Processing Cards at Tier {tier}");
+        var tierSeriesCount = GetTierSeries(masterMetadata, tier).Count();
+        var tierSetsCount = GetTierSeries(masterMetadata, tier).SelectMany(series => series.Sets ?? Enumerable.Empty<CardSet>()).Count();
+        var cardSeries = GetTierSeries(masterMetadata, tier);
+        LogTierSeriesInfo(tier, cardSeries);
 
-        var tierSeries = GetTierSeries(masterMetadata, tier);
-        LogTierSeriesInfo(tier, tierSeries);
-
-        var tierCards = GetTierCards(tierSeries);
+        var tierCards = GetTierCards(cardSeries);
         var tierMiscItems = tierCards.Select(_service.InsertAsMiscItem).ToList();
 
-        var tierLeveledItem = CreateLeveledItemHavingEditorId($"LeveledItem_{tier}".AddModNamePrefix());
+        var leveledItem = CreateLeveledItemHavingEditorId($"LeveledItem_{tier}".AddModNamePrefix());
 
-        AddMiscItemsToLeveledItem(tierMiscItems, tierLeveledItem);
+        AddMiscItemsToLeveledItem(tierMiscItems, leveledItem);
 
-        return tierLeveledItem;
+        return leveledItem;
     }
 
     private IEnumerable<CardSeries> GetTierSeries(MasterMetadata masterMetadata, CardTier tier)

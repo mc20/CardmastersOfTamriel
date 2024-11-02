@@ -1,5 +1,5 @@
 {
-    "CollectorTier1": [
+    "Tier1": [
         "CWCourierDocumentsImperial",
         "CWCourierDocumentsSons",
         "CWSoldierImperialGear",
@@ -32,7 +32,7 @@
         "TGRPickpocketList",
         "ccBGSSSE010_LootDwarvenClutter100"
     ],
-    "CollectorTier2": [
+    "Tier2": [
         "BYOHAdoptionUrchinsSofieFlowersCommon",
         "DLC1FalmerShamanWeapon",
         "DLC1RadiantReward",
@@ -61,7 +61,7 @@
         "ccBGSSSE025_LItemAllBooks",
         "ccVSVSSE003_LITEM_DeathItemNecromancer"
     ],
-    "CollectorTier3": [
+    "Tier3": [
         "BYOHAdoptionUrchinsSofieFlowersRare",
         "DLC01DeathItemKeeperBow",
         "DLC01DeathItemKeeperShield",
@@ -74,7 +74,7 @@
         "LootDwarvenJewelryBoxBase",
         "LootFalmerChestBossBase"
     ],
-    "CollectorTier4": [
+    "Tier4": [
         "DLC1DeathItemBoneman",
         "DLC1DeathItemMistman",
         "DLC1DeathItemWrathman",
@@ -93,7 +93,7 @@
         "LootWerewolfChestBossBase",
         "MGR20BookLvlItem"
     ],
-    "CollectorTier5": [
+    "Tier5": [
         "DLC2DeathItemLurker",
         "DLC2LootDraugrChestBossBase",
         "DLC2LootDwarvenChestBossBase",
@@ -104,7 +104,7 @@
         "LootDwarvenChestBossBase",
         "TGRewardRandomAllLists"
     ],
-    "CollectorTier6": [
+    "Tier6": [
         "DLCDwarvenPuzzleDungeonDeathItemDwarvenCenturion",
         "DLCDwarvenPuzzleDungeonDeathItemDwarvenSpiderBoss",
         "DeathItemDragon01",
@@ -115,7 +115,7 @@
         "MGRitualIllusionBooks",
         "MGRitualRestorationBooks"
     ],
-    "CollectorMasterTier": [
+    "MasterTier": [
         "DLC1DeathItemHarkon",
         "DLC1LD_DeathItemForgemaster",
         "DLC2DeathItemEbonyWarrior",

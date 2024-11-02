@@ -6,6 +6,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardmastersOfTamriel.Models
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardmastersOfTamriel.SynthesisPatcher", "CardmastersOfTamriel.SynthesisPatcher\CardmastersOfTamriel.SynthesisPatcher.csproj", "{8C604666-0C27-405E-AC15-1E4DEDFE342D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardmastersOfTamriel.ImageProcessorConsole", "CardmastersOfTamriel.ImageProcessorConsole\CardmastersOfTamriel.ImageProcessorConsole.csproj", "{C3477FFE-2457-4CFC-A5AA-093D7480C239}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardmastersOfTamriel.Utilities", "CardmastersOfTamriel.Utilities\CardmastersOfTamriel.Utilities.csproj", "{4782C092-4A16-419E-A0D8-BC55004F4488}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,5 +44,29 @@ Global
 		{8C604666-0C27-405E-AC15-1E4DEDFE342D}.Release|x64.Build.0 = Release|Any CPU
 		{8C604666-0C27-405E-AC15-1E4DEDFE342D}.Release|x86.ActiveCfg = Release|Any CPU
 		{8C604666-0C27-405E-AC15-1E4DEDFE342D}.Release|x86.Build.0 = Release|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Debug|x64.Build.0 = Debug|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Debug|x86.Build.0 = Debug|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Release|x64.ActiveCfg = Release|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Release|x64.Build.0 = Release|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Release|x86.ActiveCfg = Release|Any CPU
+		{C3477FFE-2457-4CFC-A5AA-093D7480C239}.Release|x86.Build.0 = Release|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Debug|x64.Build.0 = Debug|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Debug|x86.Build.0 = Debug|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Release|x64.ActiveCfg = Release|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Release|x64.Build.0 = Release|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Release|x86.ActiveCfg = Release|Any CPU
+		{4782C092-4A16-419E-A0D8-BC55004F4488}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
