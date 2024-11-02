@@ -64,11 +64,11 @@ public class MiscItemService : IMiscItemService
             {
                 // Add the keyword to the MiscItem's Keywords list
                 miscItem.Keywords.Add(keyword.ToLink());
-                DebugTools.LogAction($"Added keyword {keywordEditorID} to {miscItem.EditorID}", LogMessageType.VERBOSE);
+                Logger.LogAction($"Added keyword {keywordEditorID} to {miscItem.EditorID}", LogMessageType.Verbose);
             }
             else
             {
-                DebugTools.LogAction($"Keyword {keywordEditorID} not found in the load order.", LogMessageType.WARNING);
+                Logger.LogAction($"Keyword {keywordEditorID} not found in the load order.", LogMessageType.Warning);
             }
         }
     }

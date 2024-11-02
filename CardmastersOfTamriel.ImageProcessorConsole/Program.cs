@@ -1,14 +1,12 @@
-﻿using CardmastersOfTamriel.SynthesisPatcher.Services;
-using CardmastersOfTamriel.Utilities;
+﻿using CardmastersOfTamriel.Utilities;
 using Microsoft.Extensions.Configuration;
 
 namespace CardmastersOfTamriel.ImageProcessorConsole;
 
 public class Program
 {
-    static async Task Main(string[] args)
+    static void Main(string[] args)
     {
-        // Load configuration from appsettings.json and other sources
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -20,15 +18,15 @@ public class Program
 
         if (appConfig is null)
         {
-            DebugTools.LogAction("Failed to load configuration.", LogMessageType.ERROR);
+            Logger.LogAction("Failed to load configuration.", LogMessageType.Error);
             return;
         }
 
         var loader = new MasterMetadataLoader(appConfig.OutputFolderPath);
-        var masterMetadata = await loader.GetMasterMetadataAsync();
+        var masterMetadata = loader.GetMasterMetadata();
 
-        var procesor = new MyProcessor(appConfig, masterMetadata);
-        procesor.Start();
+        var processor = new ImageProcessor(appConfig, masterMetadata);
+        processor.Start();
 
     }
 }

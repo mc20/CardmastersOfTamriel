@@ -14,12 +14,6 @@ namespace CardmastersOfTamriel.SynthesisPatcher.Services
             var configRoot = JsonFileReader.ReadFromJson<CollectorConfigRoot>(configFilePath);
             _collectorConfigs = new Dictionary<CollectorType, CollectorConfig>();
 
-            if (configRoot == null)
-            {
-                DebugTools.LogAction("Config file path is invalid.");
-                return;
-            }
-
             foreach (var collector in configRoot.Collectors)
             {
                 _collectorConfigs[collector.Type] = collector;

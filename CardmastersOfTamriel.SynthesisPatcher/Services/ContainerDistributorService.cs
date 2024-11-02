@@ -32,7 +32,7 @@ public class ContainerDistributorService : ILootDistributorService
 
     private bool AddLeveledItemToContainer(ISkyrimMod customMod, LeveledItem leveledItem, string editorId)
     {
-        DebugTools.LogAction($"Adding LeveledItem: {leveledItem.EditorID} to Container: {editorId}.", LogMessageType.VERBOSE);
+        Logger.LogAction($"Adding LeveledItem: {leveledItem.EditorID} to Container: {editorId}.", LogMessageType.Verbose);
 
         var existing = _state.LoadOrder.PriorityOrder.Container().WinningOverrides().FirstOrDefault(ll => ll.EditorID == editorId);
         if (existing is not null)

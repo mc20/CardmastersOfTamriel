@@ -1,8 +1,6 @@
-using CardmastersOfTamriel.Models;
-
-namespace CardmastersOfTamriel.SynthesisPatcher.Services;
+namespace CardmastersOfTamriel.Models;
 
 public interface IMasterMetadataLoader
 {
-    Task<MasterMetadata> GetMasterMetadataAsync();
+    MasterMetadata GetMasterMetadata();
 }

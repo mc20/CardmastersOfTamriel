@@ -32,7 +32,7 @@ public class LeveledItemDistributor : ILootDistributorService
 
     private bool AddLeveledItemToLeveledItem(ISkyrimMod customMod, LeveledItem leveledItem, string editorId)
     {
-        DebugTools.LogAction($"Adding LeveledItem: {leveledItem.EditorID} to LeveledItem: {editorId}.", LogMessageType.VERBOSE);
+        Logger.LogAction($"Adding LeveledItem: {leveledItem.EditorID} to LeveledItem: {editorId}.", LogMessageType.Verbose);
 
         var existing = _state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides().FirstOrDefault(ll => ll.EditorID == editorId);
         if (existing is not null)

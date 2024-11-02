@@ -21,7 +21,7 @@ public static class LeveledItemDistributorHelper
             {
                 if (!addItemToTarget(customMod, collectorItem, editorId))
                 {
-                    DebugTools.LogAction($"Failed to add item to {editorId}", LogMessageType.WARNING);
+                    Logger.LogAction($"Failed to add item to {editorId}", LogMessageType.Warning);
                 }
             }
         }
