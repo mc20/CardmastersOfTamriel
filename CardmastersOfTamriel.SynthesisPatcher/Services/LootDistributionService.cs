@@ -12,10 +12,10 @@ public class LootDistributionService : ILootDistributionService
 {
     private readonly ISkyrimMod _customMod;
     private readonly IMiscItemService _miscItemService;
-    private readonly MasterMetadata _metadata;
+    private readonly MasterMetadataHandler _metadata;
     private readonly ICollection<ILootDistributorService> _distributors;
 
-    public LootDistributionService(ISkyrimMod customMod, ICollection<ILootDistributorService> distributors, IMiscItemService miscItemService, MasterMetadata metadata)
+    public LootDistributionService(ISkyrimMod customMod, ICollection<ILootDistributorService> distributors, IMiscItemService miscItemService, MasterMetadataHandler metadata)
     {
         _customMod = customMod;
         _miscItemService = miscItemService;
