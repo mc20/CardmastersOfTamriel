@@ -1,4 +1,4 @@
-namespace CardmastersOfTamriel.CardAssetManager;
+namespace CardmastersOfTamriel.Models;
 
 public enum ImageShape
 {

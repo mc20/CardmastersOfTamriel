@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using CardmastersOfTamriel.Models;
 
 namespace CardmastersOfTamriel.Utilities;
 
@@ -22,7 +21,7 @@ public class MasterMetadataLoader : IMasterMetadataLoader
 
         try
         {
-            var jsonString =  File.ReadAllText(_metadataJsonFilePath);
+            var jsonString = File.ReadAllText(_metadataJsonFilePath);
             var options = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,

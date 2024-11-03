@@ -17,7 +17,7 @@ public class LeveledItemProcessor
         _service = service ?? throw new ArgumentNullException(nameof(service));
     }
 
-    public LeveledItem CreateLeveledItemFromMetadata(MasterMetadata masterMetadata, CardTier tier)
+    public LeveledItem CreateLeveledItemFromMetadata(MasterMetadataHandler masterMetadata, CardTier tier)
     {
         if (masterMetadata == null) throw new ArgumentNullException(nameof(masterMetadata));
 
@@ -36,7 +36,7 @@ public class LeveledItemProcessor
         return leveledItem;
     }
 
-    private IEnumerable<CardSeries> GetTierSeries(MasterMetadata masterMetadata, CardTier tier)
+    private IEnumerable<CardSeries> GetTierSeries(MasterMetadataHandler masterMetadata, CardTier tier)
     {
         return masterMetadata.Series?.Where(series => series.Tier == tier) ?? Enumerable.Empty<CardSeries>();
     }
