@@ -4,21 +4,21 @@ namespace CardmastersOfTamriel.ImageProcessorConsole;
 
 public static class CardSeriesFactory
 {
-    public static CardSeries CreateNewSeries(string seriesId, CardTier tier)
+    public static CardSeries CreateNewSeries(string seriesId, CardTier tier, CardSeries series)
     {
         return new CardSeries
         {
             Id = seriesId,
             Tier = tier,
-            DisplayName = NameHelper.FormatDisplayNameFromId(seriesId),
-            Theme = "",
-            ReleaseDate = DateTime.UtcNow,
-            Artist = "",
-            IsLimitedEdition = false,
-            Description = "",
+            DisplayName = string.IsNullOrEmpty(series.DisplayName) ? NameHelper.FormatDisplayNameFromId(seriesId) : series.DisplayName,
+            Theme = series.Theme ?? "",
+            ReleaseDate = series.ReleaseDate ?? DateTime.UtcNow,
+            Artist = series.Artist ?? "",
+            IsLimitedEdition = series.IsLimitedEdition,
+            Description = series.Description ?? "",
             Sets = [],
-            SourceFolderPath = "",
-            DestinationFolderPath = ""
+            SourceFolderPath = series.SourceFolderPath,
+            DestinationFolderPath = series.DestinationFolderPath,
         };
     }
 }

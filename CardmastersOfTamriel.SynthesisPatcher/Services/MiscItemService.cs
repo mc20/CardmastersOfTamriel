@@ -1,8 +1,9 @@
 using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.Utilities;
+using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
+using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Services;
 
@@ -27,19 +28,22 @@ public class MiscItemService : IMiscItemService
 
         var textureSetForWorldModel = _customMod.TextureSets.AddNew();
         textureSetForWorldModel.EditorID = $"TextureSet_Set_{card.SetId}_Card_{card.Id}".AddModNamePrefix();
-        textureSetForWorldModel.Diffuse = @$"CardmastersOfTamriel\{card.ImageFilePath}";
+        textureSetForWorldModel.Diffuse = @$"CardmastersOfTamriel\{card.DestinationFilePath}";
         textureSetForWorldModel.NormalOrGloss = card.GetNormalOrGloss();
         //ITMNoteUp [SNDR:000C7A54]
 
         newMiscItem.Model = new Model()
         {
             File = card.GetModelForCard(),
-            AlternateTextures = [new AlternateTexture()
-            {
-                Name = "Card",
-                Index = 0,
-                NewTexture = textureSetForWorldModel.ToLink()
-            }]
+            AlternateTextures =
+            [
+                new AlternateTexture()
+                {
+                    Name = "Card",
+                    Index = 0,
+                    NewTexture = textureSetForWorldModel.ToLink()
+                }
+            ]
         };
 
         if (card.Keywords is not null && card.Keywords.Length > 0)
@@ -55,20 +59,21 @@ public class MiscItemService : IMiscItemService
         // Initialize the Keywords list if it's null
         miscItem.Keywords ??= [];
 
-        foreach (string keywordEditorID in keywordEditorIDs)
+        foreach (var keywordEditorId in keywordEditorIDs)
         {
             // Find the keyword by EditorID in the load order
-            var keyword = _state.LoadOrder.PriorityOrder.Keyword().WinningOverrides().FirstOrDefault(kw => kw.EditorID == keywordEditorID);
+            var keyword = _state.LoadOrder.PriorityOrder.Keyword().WinningOverrides()
+                .FirstOrDefault(kw => kw.EditorID == keywordEditorId);
 
             if (keyword != null)
             {
                 // Add the keyword to the MiscItem's Keywords list
                 miscItem.Keywords.Add(keyword.ToLink());
-                Logger.LogAction($"Added keyword {keywordEditorID} to {miscItem.EditorID}", LogMessageType.Verbose);
+                Log.Verbose($"Added keyword {keywordEditorId} to {miscItem.EditorID}");
             }
             else
             {
-                Logger.LogAction($"Keyword {keywordEditorID} not found in the load order.", LogMessageType.Warning);
+                Log.Warning($"Keyword {keywordEditorId} not found in the load order.");
             }
         }
     }

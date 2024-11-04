@@ -16,10 +16,33 @@
     <PackageReference Include="Mutagen.Bethesda.Skyrim" Version="0.47.2" />
     <PackageReference Include="Mutagen.Bethesda.Synthesis" Version="0.30.6" />
     <PackageReference Include="Nifly" Version="0.1.0" />
+    <PackageReference Include="Serilog" Version="4.1.1-dev-02318" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.1-dev-10398" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\CardmastersOfTamriel.Models\CardmastersOfTamriel.Models.csproj" />
     <ProjectReference Include="..\CardmastersOfTamriel.Utilities\CardmastersOfTamriel.Utilities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="localsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Config\collector_config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Config\collectors_containers.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Config\collectors_leveleditems.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

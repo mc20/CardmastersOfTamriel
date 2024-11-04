@@ -1,9 +1,9 @@
 using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
+using Serilog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher;
+namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;
 
 public static class Extensions
 {
@@ -47,6 +47,6 @@ public static class Extensions
         leveledItem.Entries ??= [];
         leveledItem.Entries?.Add(entry);
 
-        Logger.LogAction($"Adding MiscItem: {miscItem.EditorID} to LeveledItem: {leveledItem.EditorID}", LogMessageType.Verbose);
+        Log.Verbose($"Adding MiscItem: {miscItem.EditorID} to LeveledItem: {leveledItem.EditorID}");
     }
 }

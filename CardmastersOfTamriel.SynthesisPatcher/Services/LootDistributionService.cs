@@ -1,42 +1,40 @@
+using CardmastersOfTamriel.SynthesisPatcher.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Utilities;
+using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
-using CardmastersOfTamriel.SynthesisPatcher.Services;
-using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.SynthesisPatcher.Models;
-using CardmastersOfTamriel.Utilities;
-using Noggog;
+using Serilog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher;
+namespace CardmastersOfTamriel.SynthesisPatcher.Services;
 
 public class LootDistributionService : ILootDistributionService
 {
     private readonly ISkyrimMod _customMod;
     private readonly IMiscItemService _miscItemService;
-    private readonly MasterMetadataHandler _metadata;
     private readonly ICollection<ILootDistributorService> _distributors;
 
-    public LootDistributionService(ISkyrimMod customMod, ICollection<ILootDistributorService> distributors, IMiscItemService miscItemService, MasterMetadataHandler metadata)
+    public LootDistributionService(ISkyrimMod customMod,
+        ICollection<ILootDistributorService> distributors, IMiscItemService miscItemService)
     {
         _customMod = customMod;
         _miscItemService = miscItemService;
-        _metadata = metadata;
         _distributors = distributors;
     }
 
-    public void DistributeToCollector(ICollector collector)
+    public void DistributeToCollector(ICollector collector, MasterMetadataHandler handler)
     {
         var processor = new LeveledItemProcessor(_customMod, _miscItemService);
 
         var collectorLeveledItem = CreateLeveledItemForCollectorType(collector.Type);
 
-        Logger.LogAction($"Creating LeveledItem: {collectorLeveledItem.EditorID} for Collector: {collector.Type}.", LogMessageType.Verbose);
+        Log.Verbose($"Creating LeveledItem: {collectorLeveledItem.EditorID} for Collector: {collector.Type}.");
 
         foreach (var probability in collector.CardTierProbabilities)
         {
-            var cardTierLeveledItem = processor.CreateLeveledItemFromMetadata(_metadata, probability.Tier);
+            var cardTierLeveledItem = processor.CreateLeveledItemFromMetadata(handler, probability.Tier);
             cardTierLeveledItem.ChanceNone = probability.ChanceNone;
 
-            collectorLeveledItem.Entries ??= new ExtendedList<LeveledItemEntry>();
+            collectorLeveledItem.Entries ??= [];
             AddEntriesToLeveledItem(collectorLeveledItem, cardTierLeveledItem, probability.NumberOfTimes);
         }
 
@@ -62,7 +60,7 @@ public class LootDistributionService : ILootDistributionService
                 }
             };
 
-            collectorLeveledItem.Entries ??= new ExtendedList<LeveledItemEntry>();
+            collectorLeveledItem.Entries ??= [];
             collectorLeveledItem.Entries.Add(entry);
         }
     }

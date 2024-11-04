@@ -1,32 +1,36 @@
 using CardmastersOfTamriel.Utilities;
+using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessorConsole;
 
 public class ImageProcessor
 {
     private readonly AppConfig _appConfig;
-    private readonly ImageHelper _imageHelper;
-    private readonly CardTierProcessor _tierProcessor;
+    private readonly MasterMetadataHandler _metadataHandler;
 
-    public ImageProcessor(AppConfig appConfig)
+    public ImageProcessor(AppConfig appConfig, MasterMetadataHandler metadataHandler)
     {
         _appConfig = appConfig;
-        _imageHelper = new ImageHelper(appConfig);
-        _tierProcessor = new CardTierProcessor(_appConfig, _imageHelper);
+        _metadataHandler = metadataHandler;
     }
 
     public void Start()
     {
-        FileOperations.EnsureDirectoryExists(_appConfig.OutputFolderPath);
+        _metadataHandler.InitializeEmptyMetadata();
+        FileOperations.EnsureDirectoryExists(_appConfig.OutputFolderPath ?? string.Empty);
 
-        foreach (var tierSourceFolderPath in Directory.EnumerateDirectories(_appConfig.SourceFolderPath))
+        var processor = new CardTierProcessor(_appConfig, _metadataHandler);
+        
+        foreach (var tierSourceFolderPath in
+                 Directory.EnumerateDirectories(_appConfig.SourceFolderPath ?? string.Empty))
         {
-            Logger.LogAction($"Tier Source Folder Path: '{tierSourceFolderPath}'");
+            Log.Information($"Tier Source Folder Path: '{tierSourceFolderPath}'");
 
-            var tierDestinationFolderPath = Path.Combine(_appConfig.OutputFolderPath, Path.GetFileName(tierSourceFolderPath));
+            var tierDestinationFolderPath = Path.Combine(_appConfig.OutputFolderPath ?? string.Empty,
+                Path.GetFileName(tierSourceFolderPath));
             FileOperations.EnsureDirectoryExists(tierDestinationFolderPath);
 
-            _tierProcessor.ProcessTierFolder(tierSourceFolderPath, tierDestinationFolderPath);
+            processor.ProcessTierFolder(tierSourceFolderPath, tierDestinationFolderPath);
         }
     }
 }

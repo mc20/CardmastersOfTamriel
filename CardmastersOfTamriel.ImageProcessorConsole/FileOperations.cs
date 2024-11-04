@@ -1,13 +1,15 @@
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
+using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessorConsole;
 
 public static class FileOperations
 {
-    public static void ConvertToDDS(string inputPath, string outputPath)
+    public static void ConvertToDds(string inputPath, string outputPath)
     {
         var process = new Process
         {
@@ -21,21 +23,27 @@ public static class FileOperations
             }
         };
 
+        Log.Verbose($"Converting '{Path.GetFileName(inputPath)}' to dds file: '{Path.GetFileName(outputPath)}'");
+
         process.Start();
         process.WaitForExit();
     }
 
     public static void AppendCardToFile(Card card, string filePath)
     {
-        var serializedJson = JsonSerializer.Serialize(card, JsonSettings.Options);
+        var serializedJson = JsonSerializer.Serialize(card, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+        });
         File.AppendAllText(filePath, serializedJson + Environment.NewLine);
-        Logger.LogAction($"Serialized JSON written to file: '{filePath}'", LogMessageType.Verbose);
+        Log.Verbose($"Serialized JSON written to file: '{filePath}'");
     }
 
     public static void EnsureDirectoryExists(string path)
     {
         if (Directory.Exists(path)) return;
         Directory.CreateDirectory(path);
-        Logger.LogAction($"Created directory: '{path}'");
+        Log.Information($"Created directory: '{path}'");
     }
 }

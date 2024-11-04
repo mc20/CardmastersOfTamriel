@@ -1,4 +1,3 @@
-using CardmastersOfTamriel.SynthesisPatcher.Config;
 using CardmastersOfTamriel.SynthesisPatcher.Models;
 using CardmastersOfTamriel.Utilities;
 using Noggog;

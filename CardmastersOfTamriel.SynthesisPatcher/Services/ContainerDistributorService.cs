@@ -1,11 +1,11 @@
 using CardmastersOfTamriel.SynthesisPatcher.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
-using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
+using Serilog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher;
+namespace CardmastersOfTamriel.SynthesisPatcher.Services;
 
 public class ContainerDistributorService : ILootDistributorService
 {
@@ -13,7 +13,8 @@ public class ContainerDistributorService : ILootDistributorService
     private readonly ISkyrimMod _skyrimMod;
     private readonly string _configFilePath;
 
-    public ContainerDistributorService(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod, string filePathToContainerConfig)
+    public ContainerDistributorService(IPatcherState<ISkyrimMod, ISkyrimModGetter> state,
+        ISkyrimMod customMod, string filePathToContainerConfig)
     {
         _skyrimMod = customMod;
         _state = state;
@@ -22,8 +23,7 @@ public class ContainerDistributorService : ILootDistributorService
 
     public void DistributeLeveledItem(ICollector collector, LeveledItem collectorLeveledItem)
     {
-        LeveledItemDistributorHelper.DistributeItems(
-            _skyrimMod,
+        LeveledItemDistributorHelper.DistributeItems(_skyrimMod,
             _configFilePath,
             collector,
             collectorLeveledItem,
@@ -32,9 +32,10 @@ public class ContainerDistributorService : ILootDistributorService
 
     private bool AddLeveledItemToContainer(ISkyrimMod customMod, LeveledItem leveledItem, string editorId)
     {
-        Logger.LogAction($"Adding LeveledItem: {leveledItem.EditorID} to Container: {editorId}.", LogMessageType.Verbose);
+        Log.Verbose($"Adding LeveledItem: {leveledItem.EditorID} to Container: {editorId}.");
 
-        var existing = _state.LoadOrder.PriorityOrder.Container().WinningOverrides().FirstOrDefault(ll => ll.EditorID == editorId);
+        var existing = _state.LoadOrder.PriorityOrder.Container().WinningOverrides()
+            .FirstOrDefault(ll => ll.EditorID == editorId);
         if (existing is not null)
         {
             var modifiedContainer = customMod.Containers.GetOrAddAsOverride(existing);
@@ -52,6 +53,7 @@ public class ContainerDistributorService : ILootDistributorService
             modifiedContainer.Items.Add(entry);
             return true;
         }
+
         return false;
     }
 }

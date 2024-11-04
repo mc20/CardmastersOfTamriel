@@ -1,31 +1,32 @@
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
+using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessorConsole;
 
 public class CardTierProcessor
 {
     private readonly AppConfig _appConfig;
-    private readonly ImageHelper _imageHelper;
-    private readonly CardSeriesProcessor _seriesProcessor;
+    private readonly MasterMetadataHandler _metadataHandler;
 
-    public CardTierProcessor(AppConfig appConfig, ImageHelper imageHelper)
+    public CardTierProcessor(AppConfig appConfig, MasterMetadataHandler metadataHandler)
     {
         _appConfig = appConfig;
-        _imageHelper = imageHelper;
-        _seriesProcessor = new CardSeriesProcessor(_appConfig, _imageHelper);
+        _metadataHandler = metadataHandler;
     }
-
-    public void ProcessTierFolder(string tierSourceFolderPath, string tierDestinationFolderPath)
+    
+    public void ProcessTierFolder(
+        string tierSourceFolderPath, string tierDestinationFolderPath)
     {
-        Logger.LogAction($"Processing Source Tier folder: '{tierSourceFolderPath}'");
+        Log.Information($"Processing Source Tier folder: '{tierSourceFolderPath}'");
 
         FileOperations.EnsureDirectoryExists(tierDestinationFolderPath);
-
+        
+        var processor = new CardSeriesProcessor(_appConfig, _metadataHandler);
         var cardTier = Enum.Parse<CardTier>(Path.GetFileName(tierSourceFolderPath));
         foreach (var seriesSourceFolderPath in Directory.EnumerateDirectories(tierSourceFolderPath))
         {
-            _seriesProcessor.ProcessSeriesFolder(cardTier, seriesSourceFolderPath, tierDestinationFolderPath);
+            processor.ProcessSeriesFolder(cardTier, seriesSourceFolderPath, tierDestinationFolderPath);
         }
     }
 }

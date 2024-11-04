@@ -1,5 +1,6 @@
 namespace CardmastersOfTamriel.Utilities
 {
+    [Obsolete("Use Serilog instead", true)]
     public enum LogMessageType
     {
         Info,
@@ -9,6 +10,7 @@ namespace CardmastersOfTamriel.Utilities
         Exception
     }
 
+    [Obsolete("Use Serilog instead", true)]
     public static class Logger
     {
         // Configurable minimum log level

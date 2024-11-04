@@ -1,47 +1,29 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using CardmastersOfTamriel.Models;
+using Serilog;
 
 namespace CardmastersOfTamriel.Utilities;
 
 public class MasterMetadataHandler
 {
-    private static MasterMetadataHandler? instance = null;
-    private static readonly object lockObject = new object();
+    private readonly string _metadataFilePath;
     public MasterMetadata Metadata { get; private set; }
-    private string _masterMetadataPath { get; set; }
 
+    public MasterMetadataHandler(string metadataFilePath)
+    {
+        _metadataFilePath = metadataFilePath;
+        Metadata = new MasterMetadata();
+    }
 
-    private MasterMetadataHandler(string masterMetadataPath)
+    public void InitializeEmptyMetadata()
     {
         Metadata = new MasterMetadata();
-        _masterMetadataPath = masterMetadataPath;
     }
 
-    public static MasterMetadataHandler CreateInstance(string masterMetadataPath)
+    public void LoadFromFile()
     {
-        lock (lockObject)
-        {
-            instance ??= new MasterMetadataHandler(masterMetadataPath);
-            return instance;
-        }
-    }
-
-    // Property to get the Singleton instance
-    public static MasterMetadataHandler Instance
-    {
-        get
-        {
-            if (instance == null)
-            {
-                throw new InvalidOperationException("MasterMetadataManager has not been initialized. Call CreateInstance() first.");
-            }
-            return instance;
-        }
-    }
-
-    public void LoadFromFile(string filePath)
-    {
-        if (!File.Exists(filePath))
+        if (!File.Exists(_metadataFilePath))
         {
             Metadata.Series = [];
             return;
@@ -49,32 +31,24 @@ public class MasterMetadataHandler
 
         try
         {
-            var jsonString = File.ReadAllText(filePath);
-            var metadata = JsonSerializer.Deserialize<MasterMetadataHandler>(jsonString, JsonSettings.Options);
-            Metadata.Series = [];
-        }
-        catch (JsonException jsonEx)
-        {
-            Logger.LogException(jsonEx, $"Failed to deserialize JSON from {filePath}");
-            Metadata.Series = [];
-        }
-        catch (IOException ioEx)
-        {
-            Logger.LogException(ioEx, $"Failed to read file {filePath}");
-            Metadata.Series = [];
+            var jsonString = File.ReadAllText(_metadataFilePath);
+            Metadata = JsonSerializer.Deserialize<MasterMetadata>(jsonString, JsonSettings.Options) ??
+                       new MasterMetadata();
         }
         catch (Exception ex)
         {
-            Logger.LogException(ex, $"Unexpected error occurred while loading data from {filePath}");
+            Log.Error(ex, $"Failed to load metadata from {_metadataFilePath}");
             Metadata.Series = [];
         }
     }
 
-    public void WriteMetadataToFile()
+    public void WriteMetadataToFile([CallerMemberName] string callerName = "",
+        [CallerFilePath] string callerFilePath = "",
+        [CallerLineNumber] int callerLineNumber = 0)
+
     {
         var serializedJson = JsonSerializer.Serialize(Metadata, JsonSettings.Options);
-        var jsonFilePath = Path.Combine(_masterMetadataPath, "master_metadata.json");
-        File.WriteAllText(jsonFilePath, serializedJson);
-        Logger.LogAction($"Serialized JSON written to file: '{jsonFilePath}'", LogMessageType.Verbose);
+        File.WriteAllText(_metadataFilePath, serializedJson);
+        Log.Information($"SAVING METADATA: {Path.GetFileName(callerFilePath)} Caller '{callerName}' (line:{callerLineNumber}) to '{_metadataFilePath}'");
     }
 }

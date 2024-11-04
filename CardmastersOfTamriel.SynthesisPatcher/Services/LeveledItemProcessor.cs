@@ -1,8 +1,10 @@
 using CardmastersOfTamriel.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Noggog;
 using CardmastersOfTamriel.Utilities;
+using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Services;
 
@@ -17,13 +19,11 @@ public class LeveledItemProcessor
         _service = service ?? throw new ArgumentNullException(nameof(service));
     }
 
-    public LeveledItem CreateLeveledItemFromMetadata(MasterMetadataHandler masterMetadata, CardTier tier)
+    public LeveledItem CreateLeveledItemFromMetadata(MasterMetadataHandler handler, CardTier tier)
     {
-        if (masterMetadata == null) throw new ArgumentNullException(nameof(masterMetadata));
-
-        var tierSeriesCount = GetTierSeries(masterMetadata, tier).Count();
-        var tierSetsCount = GetTierSeries(masterMetadata, tier).SelectMany(series => series.Sets ?? Enumerable.Empty<CardSet>()).Count();
-        var cardSeries = GetTierSeries(masterMetadata, tier);
+        // var tierSeriesCount = GetTierSeries(tier).Count();
+        // var tierSetsCount = GetTierSeries(tier).SelectMany(series => series.Sets ?? Enumerable.Empty<CardSet>()).Count();
+        var cardSeries = handler.Metadata.Series?.Where(series => series.Tier == tier).ToList() ?? [];
         LogTierSeriesInfo(tier, cardSeries);
 
         var tierCards = GetTierCards(cardSeries);
@@ -36,15 +36,11 @@ public class LeveledItemProcessor
         return leveledItem;
     }
 
-    private IEnumerable<CardSeries> GetTierSeries(MasterMetadataHandler masterMetadata, CardTier tier)
+    private void LogTierSeriesInfo(CardTier tier, List<CardSeries> tierSeries)
     {
-        return masterMetadata.Series?.Where(series => series.Tier == tier) ?? Enumerable.Empty<CardSeries>();
-    }
-
-    private void LogTierSeriesInfo(CardTier tier, IEnumerable<CardSeries> tierSeries)
-    {
-        Logger.LogAction($"There are {tierSeries.Count()} series at {tier}", LogMessageType.Verbose);
-        Logger.LogAction($"Tier {tier} Series has {tierSeries.SelectMany(series => series.Sets ?? Enumerable.Empty<CardSet>()).Count()} Sets", LogMessageType.Verbose);
+        Log.Verbose($"There are {tierSeries.Count} series at {tier}");
+        Log.Verbose(
+            $"Tier {tier} Series has {tierSeries.SelectMany(series => series.Sets ?? Enumerable.Empty<CardSet>()).Count()} Sets");
     }
 
     private static List<Card> GetTierCards(IEnumerable<CardSeries> tierSeries)
@@ -52,22 +48,23 @@ public class LeveledItemProcessor
         return tierSeries
             .SelectMany(series => series.Sets ?? Enumerable.Empty<CardSet>())
             .SelectMany(set => set.Cards ?? Enumerable.Empty<Card>())
+            .Where(card => !string.IsNullOrWhiteSpace(card.DestinationFilePath))
             .ToList();
     }
 
     private void AddMiscItemsToLeveledItem(List<MiscItem> miscItems, LeveledItem leveledItem)
     {
-        Logger.LogAction($"Adding MiscItems to LeveledItem: {leveledItem.EditorID}");
+        Log.Information($"Adding MiscItems to LeveledItem: {leveledItem.EditorID}");
 
         var miscItemSublists = CreateSublists(miscItems, 100);
 
-        Logger.LogAction($"{miscItemSublists.Count} sublists were created from {miscItems.Count} cards");
+        Log.Information($"{miscItemSublists.Count} sublists were created from {miscItems.Count} cards");
 
         for (int j = 0; j < miscItemSublists.Count; j++)
         {
             var sublistLeveledItem = CreateLeveledItemHavingEditorId($"{leveledItem.EditorID}_Sublist_{j}");
 
-            Logger.LogAction($"Adding LeveledItem sublists to {sublistLeveledItem.EditorID}");
+            Log.Information($"Adding LeveledItem sublists to {sublistLeveledItem.EditorID}");
 
             AddMiscItemsToSublist(miscItemSublists[j], sublistLeveledItem);
 
@@ -75,7 +72,7 @@ public class LeveledItemProcessor
         }
     }
 
-    private List<List<MiscItem>> CreateSublists(List<MiscItem> miscItems, int sublistSize)
+    private static List<List<MiscItem>> CreateSublists(List<MiscItem> miscItems, int sublistSize)
     {
         return miscItems
             .Select((item, index) => new { item, index })
@@ -99,9 +96,9 @@ public class LeveledItemProcessor
         return leveledList;
     }
 
-    private void AddLeveledItemToParentLeveledItem(LeveledItem leveledItem, LeveledItem parentLeveledItem, int times, Percent chanceNone)
+    private void AddLeveledItemToParentLeveledItem(LeveledItem leveledItem, LeveledItem parentLeveledItem, int times,
+        Percent chanceNone)
     {
-        if (leveledItem is null || parentLeveledItem is null) return;
         if (times <= 0) times = 1;
 
         var modifiedParentLeveledItem = _customMod.LeveledItems.GetOrAddAsOverride(parentLeveledItem);

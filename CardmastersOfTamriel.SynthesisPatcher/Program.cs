@@ -8,6 +8,7 @@ using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Environments;
 using Mutagen.Bethesda.Plugins.Binary.Parameters;
+using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher;
 
@@ -15,6 +16,12 @@ public class Program
 {
     public static async Task<int> Main(string[] args)
     {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.Console()
+            .WriteTo.Debug()
+            .CreateLogger();
+        
         // Load configuration from appsettings.json and other sources
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
@@ -23,16 +30,15 @@ public class Program
             .AddEnvironmentVariables()
             .Build();
 
-        var filePathsConfig = configuration.Get<AppConfig>();
-
-        if (filePathsConfig is null)
+        var appConfig = configuration.Get<AppConfig>();
+        if (appConfig == null)
         {
-            Console.Error.WriteLine("Failed to load configuration.");
+            Log.Error("App config is missing");
             return 1;
         }
 
         return await SynthesisPipeline.Instance
-            .AddPatch<ISkyrimMod, ISkyrimModGetter>(state => RunPatch(state, filePathsConfig))
+            .AddPatch<ISkyrimMod, ISkyrimModGetter>(state => RunPatch(state, appConfig))
             .SetTypicalOpen(GameRelease.SkyrimSE, "CardmastersOfTamriel.esp")
             .Run(args);
     }
@@ -41,30 +47,31 @@ public class Program
     {
         var customMod = new SkyrimMod(new ModKey("CardmastersOfTamriel", ModType.Plugin), SkyrimRelease.SkyrimSE);
 
-        var loader = new MasterMetadataLoader(appConfig.MasterMetadataPath);
-
         var distributors = new HashSet<ILootDistributorService>
         {
             new ContainerDistributorService(state, customMod, appConfig.ContainerConfigPath),
             new LeveledItemDistributor(state, customMod, appConfig.LeveledItemConfigPath)
         };
+        
+        var metadataHandler = new MasterMetadataHandler(appConfig.MasterMetadataPath);
+        metadataHandler.LoadFromFile();
 
         var miscService = new MiscItemService(state, customMod);
-        var metadata = loader.GetMasterMetadata();
-        var lootService = new LootDistributionService(customMod, distributors, miscService, metadata);
-
+        
+        var lootService = new LootDistributionService(customMod, distributors, miscService);
+        
         var collectorService = new CollectorService(appConfig.CollectorConfigPath);
 
         // Create collectors for each CollectorType
         var collectors = Enum.GetValues(typeof(CollectorType))
-                             .Cast<CollectorType>()
-                             .Select(type => collectorService.CreateCollector(type))
-                             .ToList();
+            .Cast<CollectorType>()
+            .Select(type => collectorService.CreateCollector(type))
+            .ToList();
 
         // Distribute loot to each collector
         foreach (var collector in collectors)
         {
-            lootService.DistributeToCollector(collector);
+            lootService.DistributeToCollector(collector, metadataHandler);
         }
 
         using var env = GameEnvironment.Typical.Skyrim(SkyrimRelease.SkyrimSE);
@@ -74,6 +81,8 @@ public class Program
             desiredFilePath,
             new BinaryWriteParameters() { MastersListOrdering = new MastersListOrderingByLoadOrder(state.LoadOrder) });
 
-        Console.WriteLine("Mod successfully created and written to disk.");
+        Log.Information("Mod successfully created and written to disk.");
+        
+        Log.CloseAndFlush();
     }
 }
