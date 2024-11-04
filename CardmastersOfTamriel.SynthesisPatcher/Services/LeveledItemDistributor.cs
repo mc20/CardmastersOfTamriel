@@ -1,11 +1,11 @@
 using CardmastersOfTamriel.SynthesisPatcher.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
-using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
+using Serilog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher;
+namespace CardmastersOfTamriel.SynthesisPatcher.Services;
 
 public class LeveledItemDistributor : ILootDistributorService
 {
@@ -13,7 +13,8 @@ public class LeveledItemDistributor : ILootDistributorService
     private readonly ISkyrimMod _skyrimMod;
     private readonly string _configFilePath;
 
-    public LeveledItemDistributor(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod, string filePathToLeveledItemConfig)
+    public LeveledItemDistributor(IPatcherState<ISkyrimMod, ISkyrimModGetter> state,
+        ISkyrimMod customMod, string filePathToLeveledItemConfig)
     {
         _skyrimMod = customMod;
         _state = state;
@@ -22,8 +23,7 @@ public class LeveledItemDistributor : ILootDistributorService
 
     public void DistributeLeveledItem(ICollector collector, LeveledItem collectorLeveledItem)
     {
-        LeveledItemDistributorHelper.DistributeItems(
-            _skyrimMod,
+        LeveledItemDistributorHelper.DistributeItems(_skyrimMod,
             _configFilePath,
             collector,
             collectorLeveledItem,
@@ -32,7 +32,7 @@ public class LeveledItemDistributor : ILootDistributorService
 
     private bool AddLeveledItemToLeveledItem(ISkyrimMod customMod, LeveledItem leveledItem, string editorId)
     {
-        Logger.LogAction($"Adding LeveledItem: {leveledItem.EditorID} to LeveledItem: {editorId}.", LogMessageType.Verbose);
+        Log.Verbose($"Adding LeveledItem: {leveledItem.EditorID} to LeveledItem: {editorId}.");
 
         var existing = _state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides().FirstOrDefault(ll => ll.EditorID == editorId);
         if (existing is not null)

@@ -12,9 +12,16 @@ public class CardSet
     public string? Artist { get; set; }
     public bool IsLimitedEdition { get; set; }
     public ICollection<Card>? Cards { get; set; }
+    public bool AutoGenerateCardNames { get; set; } = true;
     public string? CollectorsNote { get; set; }
     public string? Region { get; set; }
     public Dictionary<string, object>? ExtraAttributes { get; set; }
-    public required string SourceFolderPath { get; set; }
-    public required string DestinationFolderPath { get; set; }
+    public string SourceFolderPath { get; set; }
+    public string DestinationFolderPath { get; set; }
+
+    public CardSet()
+    {
+        SourceFolderPath = string.Empty;
+        DestinationFolderPath = string.Empty;
+    }
 }

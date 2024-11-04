@@ -1,5 +1,5 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using Serilog;
 
 namespace CardmastersOfTamriel.Utilities;
 
@@ -12,17 +12,20 @@ public static class JsonFileReader
 
         if (!File.Exists(filePath))
         {
-            throw new FileNotFoundException($"The file {filePath} does not exist.");
+            var e = new FileNotFoundException($"The file {filePath} does not exist."); 
+            Log.Error(e, $"Could not find file at '{relativeFilePath}'.");
+            throw e;
         }
 
         var jsonString = File.ReadAllText(filePath);
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-        };
-        var data = JsonSerializer.Deserialize<T>(jsonString, options);
+        var data = JsonSerializer.Deserialize<T>(jsonString, JsonSettings.Options);
 
-        return data ?? throw new InvalidOperationException($"Failed to deserialize JSON from {filePath}");
+        if (data is not null) return data;
+        {
+            var e = new InvalidOperationException($"Failed to deserialize JSON from {filePath}");
+            Log.Error(e, $"Failed to deserialize JSON from {filePath}.");
+            throw e;
+        }
+
     }
 }

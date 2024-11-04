@@ -4,13 +4,13 @@ namespace CardmastersOfTamriel.ImageProcessorConsole;
 
 public static class CardSetFactory
 {
-    public static CardSet CreateNewSet(string setId)
+    public static CardSet CreateNewSet(string setId, CardSeries series)
     {
         return new CardSet
         {
             Id = setId,
-            SeriesId = "",
-            DisplayName = NameHelper.FormatDisplayNameFromId(setId),
+            SeriesId = series.Id,
+            DisplayName = series.DisplayName,
             Theme = "",
             ReleaseDate = DateTime.UtcNow,
             Artist = "",

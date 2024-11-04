@@ -1,15 +1,39 @@
+using System.Text.Json;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
+using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessorConsole;
 
 public class CardSetMirrorer
 {
+    private readonly MasterMetadataHandler _handler;
     private readonly CardSeries _series;
 
-    public CardSetMirrorer(CardSeries series)
+    public CardSetMirrorer(MasterMetadataHandler handler, string seriesId)
     {
-        _series = series;
+        // TODO: weird
+        _handler = handler;
+        _series = handler.Metadata.Series?.FirstOrDefault(series => series.Id == seriesId) ??
+                  throw new KeyNotFoundException($"No series found with id: {seriesId}");
+    }
+
+    public void CreateSetsAtDestination(Dictionary<string, List<string>> groupedFolders)
+    {
+        foreach (var (setFolderName, sourceSetPaths) in groupedFolders)
+        {
+            if (sourceSetPaths.Count > 1)
+            {
+                Log.Verbose($"Creating multiple set folders for {setFolderName}");
+                CreateMultipleFolders(setFolderName, sourceSetPaths);
+            }
+            else
+            {
+                Log.Verbose($"Creating single set folder for {setFolderName}");
+                var destinationSetFolderPath = Path.Combine(_series.DestinationFolderPath, setFolderName);
+                SaveNewSetAndCreateAtDestination(setFolderName, destinationSetFolderPath, sourceSetPaths[0]);
+            }
+        }
     }
 
     private void CreateMultipleFolders(string uniqueSetFolderName, List<string> sourceSetFolderPaths)
@@ -20,41 +44,55 @@ public class CardSetMirrorer
             var destinationSetFolderName = $"{uniqueSetFolderName}_{index + 1:D2}";
             var destinationSetFolderPath = Path.Combine(_series.DestinationFolderPath, destinationSetFolderName);
 
-            SaveNewSetAndCreateAtDestination(destinationSetFolderName, destinationSetFolderPath);
+            SaveNewSetAndCreateAtDestination(destinationSetFolderName, destinationSetFolderPath,
+                sourceSetFolderPaths[index]);
         }
     }
 
-    public void CreateSetsAtDestination(Dictionary<string, List<string>> groupedFolders)
+    private void SaveNewSetAndCreateAtDestination(string setFolderName, string destinationSetFolderPath,
+        string sourceSetPath)
     {
-        foreach (var (setFolderName, sourceSetPaths) in groupedFolders)
+        Directory.CreateDirectory(destinationSetFolderPath);
+
+        _series.Sets?.RemoveAll(set => set.Id == _series.Id);
+
+        CardSet? newCardSetMetadata = null;
+            
+        var destinationSetMetadataFilePath = Path.Combine(destinationSetFolderPath, "set_metadata.json");
+        if (File.Exists(destinationSetMetadataFilePath))
         {
-            if (sourceSetPaths.Count > 1)
+            try
             {
-                CreateMultipleFolders(setFolderName, sourceSetPaths);
+                 newCardSetMetadata = JsonFileReader.ReadFromJson<CardSet>(destinationSetMetadataFilePath);
+                Log.Verbose(
+                    $"Found existing Series Metadata file at Destination Path: '{destinationSetMetadataFilePath}'");
             }
-            else
+            catch (Exception e)
             {
-                var destinationSetFolderPath = Path.Combine(_series.DestinationFolderPath, setFolderName);
-                SaveNewSetAndCreateAtDestination(setFolderName, destinationSetFolderPath);
+                Log.Error(e,
+                    $"Could not convert the the Destination Metadata file at '{destinationSetMetadataFilePath}' to a CardSet");
             }
         }
-    }
 
-    private void SaveNewSetAndCreateAtDestination(string newFolderName, string newFolderPath)
-    {
-        Directory.CreateDirectory(newFolderPath);
+        if (newCardSetMetadata is null)
+        {
+            newCardSetMetadata = CardSetFactory.CreateNewSet(setFolderName, _series);
+            newCardSetMetadata.SeriesId = _series.Id;
+            newCardSetMetadata.Tier = _series.Tier;
+        }
 
-        var newSet = CardSetFactory.CreateNewSet(newFolderName);
-        newSet.SeriesId = _series.Id;
-        newSet.Tier = _series.Tier;
-        newSet.SourceFolderPath = _series.SourceFolderPath;
-        newSet.DestinationFolderPath = _series.DestinationFolderPath;
+        newCardSetMetadata.SourceFolderPath = sourceSetPath;
+        newCardSetMetadata.DestinationFolderPath = destinationSetFolderPath;
 
         _series.Sets ??= [];
-        _series.Sets.Add(newSet);
+        _series.Sets.Add(newCardSetMetadata);
 
-        Logger.LogAction($"New Set: '{newSet.Id}' => Destination Folder Path: '{newSet.DestinationFolderPath}'");
-
-        MasterMetadataHandler.Instance.WriteMetadataToFile();
+        var serializedJson = JsonSerializer.Serialize(newCardSetMetadata, JsonSettings.Options);
+        File.WriteAllText(destinationSetMetadataFilePath, serializedJson);
+        Log.Information($"New serialized Card Set metadata written to {destinationSetMetadataFilePath}");
+        
+        Log.Information($"New Set: '{newCardSetMetadata.Id}' saved to path: '{newCardSetMetadata.DestinationFolderPath}'");
+        
+        _handler.WriteMetadataToFile();
     }
 }

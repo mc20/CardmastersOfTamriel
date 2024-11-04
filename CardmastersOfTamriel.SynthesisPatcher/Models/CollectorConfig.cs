@@ -1,8 +1,7 @@
 using System.Text.Json.Serialization;
 using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.SynthesisPatcher.Models;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Config;
+namespace CardmastersOfTamriel.SynthesisPatcher.Models;
 
 public class CollectorConfigRoot
 {

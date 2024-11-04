@@ -1,8 +1,9 @@
-﻿using CardmastersOfTamriel.Utilities;
+﻿using System.Reflection;
+using CardmastersOfTamriel.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
+using Serilog;
+using Serilog.Events;
 
 namespace CardmastersOfTamriel.ImageProcessorConsole;
 
@@ -18,28 +19,27 @@ public class Program
             .Build();
 
         var appConfig = configuration.Get<AppConfig>();
-
-        if (appConfig is null)
+        if (appConfig == null || string.IsNullOrEmpty(appConfig.OutputFolderPath) || string.IsNullOrEmpty(appConfig.MasterMetadataPath))
         {
-            Logger.LogAction("Failed to load configuration.", LogMessageType.Error);
+            Log.Error("App config is missing");
             return;
         }
 
-        var serviceProvider = new ServiceCollection().AddLogging(config =>
-        {
-            config.AddConsole(); // Logs to the console
-            config.AddDebug();   // Logs to the debug output
-        })
-        .AddSingleton(appConfig)           // Register AppConfig
-        .AddTransient<ImageProcessor>()    // Register ImageProcessor
-        .BuildServiceProvider();
+        // reset the log
+        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        var logFilePath = Path.Combine(appConfig.OutputFolderPath, $"CardMastersOfTamriel_{timestamp}.txt");
+        File.Delete(logFilePath);
 
-        var logger = serviceProvider.GetService<ILogger<Program>>();
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.File(logFilePath)
+            .WriteTo.Console()
+            .WriteTo.Debug()
+            .CreateLogger();
 
-        MasterMetadataHandler.CreateInstance(appConfig.MasterMetadataPath);
+        var imageProcessor = new ImageProcessor(appConfig, new MasterMetadataHandler(appConfig.MasterMetadataPath));
+        imageProcessor.Start();
 
-        var processor = new ImageProcessor(appConfig);
-        processor.Start();
-
+        Log.CloseAndFlush();
     }
 }

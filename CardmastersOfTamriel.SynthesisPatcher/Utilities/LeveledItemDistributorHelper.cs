@@ -1,14 +1,13 @@
 using CardmastersOfTamriel.SynthesisPatcher.Models;
-using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using CardmastersOfTamriel.Utilities;
+using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;
 
 public static class LeveledItemDistributorHelper
 {
-    public static void DistributeItems<T>(
-        ISkyrimMod customMod,
+    public static void DistributeItems<T>(ISkyrimMod customMod,
         string filePathToConfig,
         ICollector collector,
         T collectorItem,
@@ -21,7 +20,7 @@ public static class LeveledItemDistributorHelper
             {
                 if (!addItemToTarget(customMod, collectorItem, editorId))
                 {
-                    Logger.LogAction($"Failed to add item to {editorId}", LogMessageType.Warning);
+                    Log.Warning($"Failed to add item to {editorId}");
                 }
             }
         }

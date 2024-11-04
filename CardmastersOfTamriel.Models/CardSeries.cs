@@ -10,7 +10,13 @@ public class CardSeries
     public string? Artist { get; set; }
     public bool IsLimitedEdition { get; set; }
     public string? Description { get; set; }
-    public ICollection<CardSet>? Sets { get; set; }
-    public required string SourceFolderPath { get; set; }
-    public required string DestinationFolderPath { get; set; }
+    public List<CardSet>? Sets { get; set; }
+    public string SourceFolderPath { get; set; }
+    public string DestinationFolderPath { get; set; }
+
+    public CardSeries()
+    {
+        SourceFolderPath = string.Empty;
+        DestinationFolderPath = string.Empty;
+    }
 }

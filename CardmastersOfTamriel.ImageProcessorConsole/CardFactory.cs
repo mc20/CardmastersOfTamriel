@@ -4,11 +4,12 @@ namespace CardmastersOfTamriel.ImageProcessorConsole;
 
 public static class CardFactory
 {
-    public static Card CreateCard(CardSet set, string sourceFilePath, string imageFileName, int imageIndex, int totalImageCount, string displayName, string destinationFilePath)
+    public static Card CreateCard(CardSet set, string sourceFilePath, string imageFileName, int imageIndex,
+        int totalImageCount, string displayName, string destinationFilePath)
     {
         return new Card
         {
-            Id = imageFileName,
+            Id = Path.GetFileNameWithoutExtension(imageFileName),
             SetId = set.Id,
             SetDisplayName = set.DisplayName,
             SeriesId = set.SeriesId,
@@ -26,5 +27,4 @@ public static class CardFactory
             DestinationFilePath = destinationFilePath
         };
     }
-
 }
