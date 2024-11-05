@@ -18,19 +18,56 @@ public class MiscItemService : IMiscItemService
         _customMod = customMod;
     }
 
-    public MiscItem InsertAsMiscItem(Card card)
+    public Dictionary<Card, MiscItem> InsertAndMapCardsToMiscItems(IEnumerable<Card> cards)
     {
+        var miscItems = new Dictionary<Card, MiscItem>();
+
+        foreach (var card in cards)
+        {
+            var miscItem = InsertAsMiscItem(card);
+            if (miscItem is not null)
+            {
+                miscItems.Add(card, miscItem);
+                Log.Information($"Inserted MiscItem: {miscItem.EditorID}");
+            }
+        }
+
+        return miscItems;
+    }
+
+    private MiscItem? InsertAsMiscItem(Card card)
+    {
+        var newMiscItemId = $"MiscItem_Set_{card.SetId}_Card_{card.Id}".AddModNamePrefix();
+        var newTextureSetId = $"TextureSet_Set_{card.SetId}_Card_{card.Id}".AddModNamePrefix();
+
+        // Create a HashSet of existing EditorIDs for quick lookup
+
+        if (_state.CheckIfExists<IMiscItemGetter>(newMiscItemId) || _customMod.CheckIfExists<MiscItem>(newMiscItemId)
+        || _state.CheckIfExists<ITextureSetGetter>(newTextureSetId) || _customMod.CheckIfExists<TextureSet>(newTextureSetId))
+        {
+            Log.Warning($"MiscItem {newMiscItemId} already exists in the load order.");
+            return default;
+        }
+
         var newMiscItem = _customMod.MiscItems.AddNew();
-        newMiscItem.EditorID = $"MiscItem_Set_{card.SetId}_Card_{card.Id}".AddModNamePrefix();
-        newMiscItem.Name = $"{card.SetDisplayName} - Card #{card.Index} of {card.TotalCount}";
+        newMiscItem.EditorID = newMiscItemId;
+        newMiscItem.Name = card.DisplayName;
         newMiscItem.Value = card.Value == 0 ? 10 : card.Value;
         newMiscItem.Weight = card.Weight;
 
+        Counters.IncrementMiscItemCount(newMiscItem.EditorID);
+
+        Log.Information($"_state.DataFolderPath: {_state.DataFolderPath}");
+
         var textureSetForWorldModel = _customMod.TextureSets.AddNew();
-        textureSetForWorldModel.EditorID = $"TextureSet_Set_{card.SetId}_Card_{card.Id}".AddModNamePrefix();
-        textureSetForWorldModel.Diffuse = @$"CardmastersOfTamriel\{card.DestinationFilePath}";
+        textureSetForWorldModel.EditorID = newTextureSetId;
+        textureSetForWorldModel.Diffuse = @$"CardmastersOfTamriel\{card.DestinationRelativeFilePath}";
         textureSetForWorldModel.NormalOrGloss = card.GetNormalOrGloss();
         //ITMNoteUp [SNDR:000C7A54]
+
+        Log.Information($"Added TextureSet {textureSetForWorldModel.EditorID} with Diffuse Path: '{textureSetForWorldModel.Diffuse}'");
+
+        Counters.IncrementTextureSetCount(textureSetForWorldModel.EditorID);
 
         newMiscItem.Model = new Model()
         {
@@ -45,6 +82,7 @@ public class MiscItemService : IMiscItemService
                 }
             ]
         };
+
 
         if (card.Keywords is not null && card.Keywords.Length > 0)
         {
@@ -69,7 +107,7 @@ public class MiscItemService : IMiscItemService
             {
                 // Add the keyword to the MiscItem's Keywords list
                 miscItem.Keywords.Add(keyword.ToLink());
-                Log.Verbose($"Added keyword {keywordEditorId} to {miscItem.EditorID}");
+                // Log.Verbose($"Added keyword {keywordEditorId} to {miscItem.EditorID}");
             }
             else
             {

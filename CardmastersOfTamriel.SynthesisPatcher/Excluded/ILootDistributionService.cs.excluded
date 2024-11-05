@@ -1,0 +1,11 @@
+using CardmastersOfTamriel.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Models;
+using CardmastersOfTamriel.Utilities;
+using Mutagen.Bethesda.Skyrim;
+
+namespace CardmastersOfTamriel.SynthesisPatcher;
+
+public interface ILootDistributionService
+{
+    void DistributeToCollector(ICollector collector, MasterMetadataHandler handler, IDictionary<Card, MiscItem> miscItems);
+}

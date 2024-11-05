@@ -1,11 +1,10 @@
-using CardmastersOfTamriel.Models;
-using Mutagen.Bethesda;
+using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Skyrim;
-using Serilog;
+using Mutagen.Bethesda.Synthesis;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;
 
-public static class Extensions
+public static class ExtensionMethods
 {
     public static string AddModNamePrefix(this string str)
     {
@@ -14,39 +13,49 @@ public static class Extensions
         return $"CardmastersOfTamriel_{str}";
     }
 
-    public static string GetModelForCard(this Card card) => card.Shape switch
+    public static string RetrieveInternalFilePath(this IPatcherState<ISkyrimMod, ISkyrimModGetter> state, string configPath)
     {
-        CardShape.Portrait => @"CardmastersOfTamriel\CardBasic_Portrait.nif",
-        CardShape.Landscape => @"CardmastersOfTamriel\CardBasic_Landscape.nif",
-        CardShape.Square => @"CardmastersOfTamriel\CardBasic_Square.nif",
-        _ => @"CardmastersOfTamriel\CardBasic_Portrait.nif"
-    };
+        return configPath is null ? throw new ArgumentNullException(nameof(configPath)) : state.RetrieveInternalFile(configPath);
+    }
 
-    public static string GetNormalOrGloss(this Card card) => card.Shape switch
+    public static bool CheckIfExists<T>(this IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
     {
-        CardShape.Portrait => @"CardmastersOfTamriel\CardPortrait_n.dds",
-        CardShape.Landscape => @"CardmastersOfTamriel\CardLandscape_n.dds",
-        CardShape.Square => @"CardmastersOfTamriel\CardSquare_n.dds",
-        _ => @"CardmastersOfTamriel\Card_n.dds"
-    };
-
-    // Helper function to add a MiscItem to a leveled list
-    public static void AddToLeveledItem(this LeveledItem leveledItem, MiscItem miscItem)
-    {
-        var entry = new LeveledItemEntry
+        var existing = typeof(T) switch
         {
-            Data = new LeveledItemEntryData
-            {
-                Reference = miscItem.ToLink(),
-                Count = 1,
-                Level = 1
-            },
+            Type t when t == typeof(IMiscItemGetter) => state.LoadOrder.PriorityOrder.MiscItem() as IEnumerable<T>,
+            Type t when t == typeof(ITextureSetGetter) => state.LoadOrder.PriorityOrder.TextureSet() as IEnumerable<T>,
+            Type t when t == typeof(ILeveledItemGetter) => state.LoadOrder.PriorityOrder.LeveledItem() as IEnumerable<T>,
+            _ => throw new InvalidOperationException($"Unsupported type: {typeof(T)}")
         };
 
-        // Initialize the Entries list if it's null
-        leveledItem.Entries ??= [];
-        leveledItem.Entries?.Add(entry);
+        return existing is not null;
+    }
 
-        Log.Verbose($"Adding MiscItem: {miscItem.EditorID} to LeveledItem: {leveledItem.EditorID}");
+    public static bool CheckIfExists<T>(this IPatcherState<ISkyrimMod, ISkyrimModGetter> state, string editorId) where T : class, IMajorRecordGetter
+    {
+        return typeof(T) switch
+        {
+            Type t when t == typeof(IMiscItemGetter) =>
+                state.LoadOrder.PriorityOrder.MiscItem().WinningOverrides().Any(item => item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
+            Type t when t == typeof(ITextureSetGetter) =>
+                state.LoadOrder.PriorityOrder.TextureSet().WinningOverrides().Any(item => item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
+            Type t when t == typeof(ILeveledItemGetter) =>
+                state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides().Any(item => item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
+            _ => throw new InvalidOperationException($"Unsupported type: {typeof(T)}")
+        };
+    }
+
+    public static bool CheckIfExists<T>(this ISkyrimMod skyrimMod, string editorId)
+    {
+        return typeof(T) switch
+        {
+            Type t when t == typeof(MiscItem) =>
+                skyrimMod.MiscItems.Any(item => item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
+            Type t when t == typeof(TextureSet) =>
+                skyrimMod.TextureSets.Any(item => item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
+            Type t when t == typeof(LeveledItem) =>
+                skyrimMod.LeveledItems.Any(item => item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
+            _ => throw new InvalidOperationException($"Unsupported type: {typeof(T)}")
+        };
     }
 }
