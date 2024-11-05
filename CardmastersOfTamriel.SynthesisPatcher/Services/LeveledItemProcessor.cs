@@ -4,70 +4,38 @@ using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Noggog;
 using CardmastersOfTamriel.Utilities;
-using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Services;
 
 public class LeveledItemProcessor
 {
     private readonly ISkyrimMod _customMod;
-    private readonly IMiscItemService _service;
+    private readonly MasterMetadataHandler _handler;
 
-    public LeveledItemProcessor(ISkyrimMod customMod, IMiscItemService service)
+    public LeveledItemProcessor(ISkyrimMod customMod, MasterMetadataHandler handler)
     {
         _customMod = customMod ?? throw new ArgumentNullException(nameof(customMod));
-        _service = service ?? throw new ArgumentNullException(nameof(service));
+        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
     }
 
-    public LeveledItem CreateLeveledItemFromMetadata(MasterMetadataHandler handler, CardTier tier)
+    public LeveledItem CreateLeveledItemFromMetadata(CardTier tier, List<MiscItem> miscItems)
     {
-        // var tierSeriesCount = GetTierSeries(tier).Count();
-        // var tierSetsCount = GetTierSeries(tier).SelectMany(series => series.Sets ?? Enumerable.Empty<CardSet>()).Count();
-        var cardSeries = handler.Metadata.Series?.Where(series => series.Tier == tier).ToList() ?? [];
-        LogTierSeriesInfo(tier, cardSeries);
-
-        var tierCards = GetTierCards(cardSeries);
-        var tierMiscItems = tierCards.Select(_service.InsertAsMiscItem).ToList();
-
         var leveledItem = CreateLeveledItemHavingEditorId($"LeveledItem_{tier}".AddModNamePrefix());
 
-        AddMiscItemsToLeveledItem(tierMiscItems, leveledItem);
+        AddMiscItemsToLeveledItem(leveledItem, miscItems);
 
         return leveledItem;
     }
 
-    private void LogTierSeriesInfo(CardTier tier, List<CardSeries> tierSeries)
+    private void AddMiscItemsToLeveledItem(LeveledItem leveledItem, List<MiscItem> miscItems)
     {
-        Log.Verbose($"There are {tierSeries.Count} series at {tier}");
-        Log.Verbose(
-            $"Tier {tier} Series has {tierSeries.SelectMany(series => series.Sets ?? Enumerable.Empty<CardSet>()).Count()} Sets");
-    }
-
-    private static List<Card> GetTierCards(IEnumerable<CardSeries> tierSeries)
-    {
-        return tierSeries
-            .SelectMany(series => series.Sets ?? Enumerable.Empty<CardSet>())
-            .SelectMany(set => set.Cards ?? Enumerable.Empty<Card>())
-            .Where(card => !string.IsNullOrWhiteSpace(card.DestinationFilePath))
-            .ToList();
-    }
-
-    private void AddMiscItemsToLeveledItem(List<MiscItem> miscItems, LeveledItem leveledItem)
-    {
-        Log.Information($"Adding MiscItems to LeveledItem: {leveledItem.EditorID}");
-
         var miscItemSublists = CreateSublists(miscItems, 100);
-
-        Log.Information($"{miscItemSublists.Count} sublists were created from {miscItems.Count} cards");
 
         for (int j = 0; j < miscItemSublists.Count; j++)
         {
             var sublistLeveledItem = CreateLeveledItemHavingEditorId($"{leveledItem.EditorID}_Sublist_{j}");
 
-            Log.Information($"Adding LeveledItem sublists to {sublistLeveledItem.EditorID}");
-
-            AddMiscItemsToSublist(miscItemSublists[j], sublistLeveledItem);
-
+            AddMiscItemsToSublist(sublistLeveledItem, miscItemSublists[j]);
             AddLeveledItemToParentLeveledItem(sublistLeveledItem, leveledItem, 1, Percent.Zero);
         }
     }
@@ -81,7 +49,7 @@ public class LeveledItemProcessor
             .ToList();
     }
 
-    private void AddMiscItemsToSublist(List<MiscItem> miscItems, LeveledItem sublistLeveledItem)
+    private static void AddMiscItemsToSublist(LeveledItem sublistLeveledItem, List<MiscItem> miscItems)
     {
         foreach (var miscItem in miscItems.Where(c => c?.EditorID is not null))
         {
@@ -93,17 +61,15 @@ public class LeveledItemProcessor
     {
         var leveledList = _customMod.LeveledItems.AddNew();
         leveledList.EditorID = editorId;
+        Counters.IncrementLeveledItemCount(leveledList.EditorID);
         return leveledList;
     }
 
-    private void AddLeveledItemToParentLeveledItem(LeveledItem leveledItem, LeveledItem parentLeveledItem, int times,
-        Percent chanceNone)
+    private void AddLeveledItemToParentLeveledItem(LeveledItem leveledItem, LeveledItem parentLeveledItem, int times, Percent chanceNone)
     {
         if (times <= 0) times = 1;
 
         var modifiedParentLeveledItem = _customMod.LeveledItems.GetOrAddAsOverride(parentLeveledItem);
-
-        // Initialize the Entries list if it's null
         modifiedParentLeveledItem.Entries ??= [];
         for (var i = 0; i < times; i++)
         {
@@ -117,6 +83,7 @@ public class LeveledItemProcessor
                 }
             };
 
+            Counters.IncrementLeveledItemEntryCount(modifiedParentLeveledItem.EditorID ?? "UNKNOWN");
             modifiedParentLeveledItem.Entries.Add(entry);
         }
 

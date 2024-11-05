@@ -5,5 +5,5 @@ namespace CardmastersOfTamriel.SynthesisPatcher;
 
 public interface IMiscItemService
 {
-    MiscItem InsertAsMiscItem(Card card);
+    Dictionary<Card, MiscItem> InsertAndMapCardsToMiscItems(IEnumerable<Card> cards);
 }

@@ -1,0 +1,136 @@
+{
+    "Collectors": [
+        {
+            "Type": "Tier1",
+            "ChanceNone": 0.70,
+            "CardTierProbabilities": [
+                {
+                    "Tier": "Tier1",
+                    "NumberOfTimes": 2,
+                    "ChanceNone": 0.15
+                }
+            ]
+        },
+        {
+            "Type": "Tier2",
+            "ChanceNone": 0.60,
+            "CardTierProbabilities": [
+                {
+                    "Tier": "Tier1",
+                    "NumberOfTimes": 2,
+                    "ChanceNone": 0.15
+                },
+                {
+                    "Tier": "Tier2",
+                    "NumberOfTimes": 1,
+                    "ChanceNone": 0.25
+                }
+            ]
+        },
+        {
+            "Type": "Tier3",
+            "ChanceNone": 0.40,
+            "CardTierProbabilities": [
+                {
+                    "Tier": "Tier1",
+                    "NumberOfTimes": 3,
+                    "ChanceNone": 0.15
+                },
+                {
+                    "Tier": "Tier2",
+                    "NumberOfTimes": 2,
+                    "ChanceNone": 0.35
+                }
+            ]
+        },
+        {
+            "Type": "Tier4",
+            "ChanceNone": 0.25,
+            "CardTierProbabilities": [
+                {
+                    "Tier": "Tier1",
+                    "NumberOfTimes": 4,
+                    "ChanceNone": 0.05
+                },
+                {
+                    "Tier": "Tier2",
+                    "NumberOfTimes": 2,
+                    "ChanceNone": 0.25
+                },
+                {
+                    "Tier": "Tier3",
+                    "NumberOfTimes": 1,
+                    "ChanceNone": 0.35
+                }
+            ]
+        },
+        {
+            "Type": "Tier5",
+            "ChanceNone": 0.15,
+            "CardTierProbabilities": [
+                {
+                    "Tier": "Tier1",
+                    "NumberOfTimes": 5,
+                    "ChanceNone": 0.05
+                },
+                {
+                    "Tier": "Tier2",
+                    "NumberOfTimes": 3,
+                    "ChanceNone": 0.25
+                },
+                {
+                    "Tier": "Tier3",
+                    "NumberOfTimes": 1,
+                    "ChanceNone": 0.35
+                },
+                {
+                    "Tier": "Tier4",
+                    "NumberOfTimes": 1,
+                    "ChanceNone": 0.90
+                }
+            ]
+        },
+        {
+            "Type": "Tier6",
+            "ChanceNone": 0.05,
+            "CardTierProbabilities": [
+                {
+                    "Tier": "Tier1",
+                    "NumberOfTimes": 3,
+                    "ChanceNone": 0.05
+                },
+                {
+                    "Tier": "Tier2",
+                    "NumberOfTimes": 2,
+                    "ChanceNone": 0.15
+                },
+                {
+                    "Tier": "Tier3",
+                    "NumberOfTimes": 1,
+                    "ChanceNone": 0.70
+                }
+            ]
+        },
+        {
+            "Type": "MasterTier",
+            "ChanceNone": 0.0,
+            "CardTierProbabilities": [
+                {
+                    "Tier": "Tier2",
+                    "NumberOfTimes": 5,
+                    "ChanceNone": 0.0
+                },
+                {
+                    "Tier": "Tier3",
+                    "NumberOfTimes": 3,
+                    "ChanceNone": 0.0
+                },
+                {
+                    "Tier": "Tier4",
+                    "NumberOfTimes": 1,
+                    "ChanceNone": 0.0
+                }
+            ]
+        }
+    ]
+}
