@@ -6,28 +6,28 @@ namespace CardmastersOfTamriel.ImageProcessorConsole.Processors;
 
 public class ImageProcessingCoordinator
 {
-    private readonly AppConfig _appConfig;
+    private readonly Config _config;
     private readonly MasterMetadataHandler _metadataHandler;
 
-    public ImageProcessingCoordinator(AppConfig appConfig, MasterMetadataHandler metadataHandler)
+    public ImageProcessingCoordinator(Config config, MasterMetadataHandler metadataHandler)
     {
-        _appConfig = appConfig;
+        _config = config;
         _metadataHandler = metadataHandler;
     }
 
     public void BeginProcessing()
     {
         _metadataHandler.InitializeEmptyMetadata();
-        FileOperations.EnsureDirectoryExists(_appConfig.OutputFolderPath ?? string.Empty);
+        FileOperations.EnsureDirectoryExists(_config.Paths.OutputFolderPath ?? string.Empty);
 
-        var processor = new CardTierProcessor(_appConfig, _metadataHandler);
+        var processor = new CardTierProcessor(_config, _metadataHandler);
 
         foreach (var tierSourceFolderPath in
-                 Directory.EnumerateDirectories(_appConfig.SourceImagesFolderPath ?? string.Empty))
+                 Directory.EnumerateDirectories(_config.Paths.SourceImagesFolderPath ?? string.Empty))
         {
             Log.Information($"Tier Source Folder Path: '{tierSourceFolderPath}'");
 
-            var tierDestinationFolderPath = Path.Combine(_appConfig.OutputFolderPath ?? string.Empty,
+            var tierDestinationFolderPath = Path.Combine(_config.Paths.OutputFolderPath ?? string.Empty,
                 Path.GetFileName(tierSourceFolderPath));
             FileOperations.EnsureDirectoryExists(tierDestinationFolderPath);
 

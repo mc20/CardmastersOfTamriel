@@ -7,12 +7,12 @@ namespace CardmastersOfTamriel.ImageProcessorConsole.Processors;
 
 public class CardTierProcessor
 {
-    private readonly AppConfig _appConfig;
+    private readonly Config _config;
     private readonly MasterMetadataHandler _metadataHandler;
 
-    public CardTierProcessor(AppConfig appConfig, MasterMetadataHandler metadataHandler)
+    public CardTierProcessor(Config config, MasterMetadataHandler metadataHandler)
     {
-        _appConfig = appConfig;
+        _config = config;
         _metadataHandler = metadataHandler;
     }
 
@@ -22,7 +22,7 @@ public class CardTierProcessor
 
         FileOperations.EnsureDirectoryExists(tierDestinationFolderPath);
 
-        var processor = new CardSeriesProcessor(_appConfig, _metadataHandler);
+        var processor = new CardSeriesProcessor(_config, _metadataHandler);
         var cardTier = Enum.Parse<CardTier>(Path.GetFileName(tierSourceFolderPath));
         foreach (var seriesSourceFolderPath in Directory.EnumerateDirectories(tierSourceFolderPath))
         {

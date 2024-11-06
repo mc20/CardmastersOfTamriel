@@ -9,13 +9,13 @@ namespace CardmastersOfTamriel.ImageProcessorConsole.Processors;
 
 public class CardSetProcessor
 {
-    private readonly AppConfig _appConfig;
+    private readonly Config _config;
     private readonly MasterMetadataHandler _handler;
     private const int MaxSampleSize = 20;
 
-    public CardSetProcessor(AppConfig appConfig, MasterMetadataHandler handler)
+    public CardSetProcessor(Config appConfig, MasterMetadataHandler handler)
     {
-        _appConfig = appConfig;
+        _config = appConfig;
         _handler = handler;
     }
 
@@ -146,7 +146,7 @@ public class CardSetProcessor
     {
         var imageDestinationFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, imageFileName);
 
-        var helper = new ImageConverter(_appConfig);
+        var helper = new ImageConverter(_config);
         var imageShape = helper.ConvertImageAndSaveToDestination(sourceImageFilePath, imageDestinationFilePath);
 
         return new ConversionResult()

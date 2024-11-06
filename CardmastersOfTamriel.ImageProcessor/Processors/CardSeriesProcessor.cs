@@ -8,12 +8,12 @@ namespace CardmastersOfTamriel.ImageProcessorConsole.Processors;
 
 public class CardSeriesProcessor
 {
-    private readonly AppConfig _appConfig;
+    private readonly Config _config;
     private readonly MasterMetadataHandler _handler;
 
-    public CardSeriesProcessor(AppConfig appConfig, MasterMetadataHandler handler)
+    public CardSeriesProcessor(Config config, MasterMetadataHandler handler)
     {
-        _appConfig = appConfig;
+        _config = config;
         _handler = handler;
     }
 
@@ -59,7 +59,7 @@ public class CardSeriesProcessor
     {
         if (_handler.Metadata?.Series is null) return;
 
-        var processor = new CardSetProcessor(_appConfig, _handler);
+        var processor = new CardSetProcessor(_config, _handler);
 
         foreach (var series in _handler.Metadata.Series.Where(series => series.Sets is not null))
         {
