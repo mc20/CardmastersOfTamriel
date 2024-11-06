@@ -1,9 +1,9 @@
 using Serilog;
 using System.Runtime.CompilerServices;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;
+namespace CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 
-public static class Counters
+public static class ModificationTracker
 {
     public static int MiscItemInsertCount { get; set; } = 0;
     public static List<string> MiscItemInsertLocations { get; set; } = new List<string>();

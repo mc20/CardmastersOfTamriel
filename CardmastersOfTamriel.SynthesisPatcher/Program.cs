@@ -3,7 +3,6 @@ using Mutagen.Bethesda;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Skyrim;
 using Microsoft.Extensions.Configuration;
-using CardmastersOfTamriel.SynthesisPatcher.Services;
 using CardmastersOfTamriel.SynthesisPatcher.Models;
 using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda.Plugins;
@@ -11,6 +10,9 @@ using Serilog;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda.Environments;
 using Mutagen.Bethesda.Plugins.Binary.Parameters;
+using CardmastersOfTamriel.SynthesisPatcher.MiscItems;
+using CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
+using CardmastersOfTamriel.SynthesisPatcher.Configuration;
 
 namespace CardmastersOfTamriel.SynthesisPatcher;
 
@@ -61,8 +63,8 @@ public class Program
         var metadataHandler = new MasterMetadataHandler(appConfig.RetrieveMetadataFilePath(state));
         metadataHandler.LoadFromFile();
 
-        var npcCollectorService = new CollectorFactory(appConfig.RetrieveCollectorNpcConfigFilePath(state));
-        var containerCollectorService = new CollectorFactory(appConfig.RetrieveCollectorContainerConfigPath(state));
+        var npcCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorNpcConfigFilePath(state));
+        var containerCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorContainerConfigPath(state));
 
         // Create collectors for each CollectorType
         var npcCollectors = Enum.GetValues(typeof(CollectorType))
@@ -81,16 +83,16 @@ public class Program
 
         if (cardList.Count == 0) return;
 
-        var miscService = new MiscItemService(state, customMod);
+        var miscService = new CardMiscItemCreator(state, customMod);
         var mappedMiscItems = miscService.InsertAndMapCardsToMiscItems(cardList);
 
-        var cardTierItemCreator = new CardTierLeveledItemCreator(state, customMod);
-        var cardTierMappings = cardTierItemCreator.CreateLeveledItemsForCardTiers(mappedMiscItems);
+        var cardTierItemCreator = new TieredCardLeveledItemAssembler(state, customMod);
+        var cardTierMappings = cardTierItemCreator.CreateCardTierLeveledItems(mappedMiscItems);
 
         Log.Information(string.Empty);
         Log.Information("\n\nAssigning MiscItems to Collector LeveledItems..\n");
 
-        var itemProcessor = new CollectorItemProcessor(appConfig, state, customMod);
+        var itemProcessor = new CollectorLeveledItemDistributor(appConfig, state, customMod);
         itemProcessor.SetupCollectorLeveledEntries(npcCollectors, cardTierMappings);
         itemProcessor.SetupCollectorLeveledEntries(containerCollectors, cardTierMappings);
 

@@ -1,3 +1,4 @@
+using CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 
@@ -22,7 +23,7 @@ public static class LeveledItemExtensionMethods
         leveledItem.Entries ??= [];
         leveledItem.Entries?.Add(entry);
 
-        Counters.IncrementLeveledItemEntryCount(leveledItem.EditorID ?? "UNKNOWN LL");
+        ModificationTracker.IncrementLeveledItemEntryCount(leveledItem.EditorID ?? "UNKNOWN LL");
         // Log.Verbose($"Added MiscItem: {miscItem.EditorID} as LeveledItemEntry to LeveledItem: {leveledItem.EditorID}");
     }
 }

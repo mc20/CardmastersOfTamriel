@@ -1,4 +1,5 @@
 using CardmastersOfTamriel.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 using CardmastersOfTamriel.SynthesisPatcher.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using CardmastersOfTamriel.Utilities;
@@ -7,15 +8,15 @@ using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
 using Serilog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher;
+namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 
-public class CollectorItemProcessor
+public class CollectorLeveledItemDistributor
 {
     private readonly AppConfig _appConfig;
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _skyrimMod;
 
-    public CollectorItemProcessor(AppConfig appConfig, IPatcherState<ISkyrimMod, ISkyrimModGetter> state,
+    public CollectorLeveledItemDistributor(AppConfig appConfig, IPatcherState<ISkyrimMod, ISkyrimModGetter> state,
         ISkyrimMod skyrimMod)
     {
         _appConfig = appConfig;
@@ -41,7 +42,7 @@ public class CollectorItemProcessor
             leveledItemForCollector.EditorID = leveledItemCollectorId;
             leveledItemForCollector.ChanceNone = collector.ChanceNone;
             leveledItemForCollector.Entries ??= [];
-            Counters.IncrementLeveledItemCount(
+            ModificationTracker.IncrementLeveledItemCount(
                 $"Collector{collector.Type}\t{leveledItemForCollector.EditorID}\tChanceNone: {leveledItemForCollector.ChanceNone}");
 
             foreach (var probability in collector.CardTierProbabilities)
@@ -84,7 +85,7 @@ public class CollectorItemProcessor
 
         newLeveledItemForCollectorProbability.Entries.Add(tierEntry);
 
-        Counters.IncrementLeveledItemCount(
+        ModificationTracker.IncrementLeveledItemCount(
             $"Collector{collector.Type}\tProbability Card{probability.Tier}\t{newLeveledItemForCollectorProbability.EditorID}\tChanceNone: {newLeveledItemForCollectorProbability.ChanceNone}");
 
         for (var i = 0; i < probability.NumberOfTimes; i++)
@@ -99,7 +100,7 @@ public class CollectorItemProcessor
                 }
             };
 
-            Counters.IncrementLeveledItemEntryCount(newLeveledItemForCollectorProbability.EditorID ?? "UNKNOWN");
+            ModificationTracker.IncrementLeveledItemEntryCount(newLeveledItemForCollectorProbability.EditorID ?? "UNKNOWN");
             cardCollectorLeveledItem.Entries ??= [];
             cardCollectorLeveledItem.Entries.Add(entry);
         }
@@ -121,7 +122,7 @@ public class CollectorItemProcessor
             {
                 var designatedLeveledItem = _state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides()
                     .FirstOrDefault(ll => ll.EditorID == designatedEditorId);
-                
+
                 if (designatedLeveledItem is null) continue;
                 var designatedLeveledItemToModify =
                     _skyrimMod.LeveledItems.GetOrAddAsOverride(designatedLeveledItem);
@@ -157,7 +158,7 @@ public class CollectorItemProcessor
         // Log.Information(JsonSerializer.Serialize(designatedContainerJsonData));
 
         if (!designatedContainerJsonData.TryGetValue(collector.Type, out var editorIdsFromContainerJsonData)) return;
-        
+
         Log.Information(
             $"Retrieved: {editorIdsFromContainerJsonData.Count} Containers for CollectorType: {collector.Type}");
         foreach (var designatedEditorId in editorIdsFromContainerJsonData.Where(
@@ -166,9 +167,9 @@ public class CollectorItemProcessor
             Log.Information($"Designated Container: {designatedEditorId}");
             var designatedContainer = _state.LoadOrder.PriorityOrder.Container().WinningOverrides()
                 .FirstOrDefault(c => c.EditorID == designatedEditorId);
-            
+
             if (designatedContainer is null) continue;
-            
+
             var designatedContainerToModify = _skyrimMod.Containers.GetOrAddAsOverride(designatedContainer);
             designatedContainerToModify.Items ??= [];
 

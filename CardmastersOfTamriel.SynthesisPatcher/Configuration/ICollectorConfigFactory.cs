@@ -1,9 +1,9 @@
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Models;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Services;
+namespace CardmastersOfTamriel.SynthesisPatcher.Configuration;
 
-public interface ICollectorFactory
+public interface ICollectorConfigFactory
 {
     ICollector CreateCollector(CollectorType type);
 }
