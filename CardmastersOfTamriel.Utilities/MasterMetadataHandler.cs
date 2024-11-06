@@ -49,6 +49,7 @@ public class MasterMetadataHandler : IMasterMetadataHandler
     {
         var serializedJson = JsonSerializer.Serialize(Metadata, JsonSettings.Options);
         File.WriteAllText(_metadataFilePath, serializedJson);
-        Log.Information($"SAVING METADATA: {Path.GetFileName(callerFilePath)} Caller '{callerName}' (line:{callerLineNumber}) to '{_metadataFilePath}'");
+        Log.Information(
+            $"SAVING METADATA: {Path.GetFileName(callerFilePath)} Caller '{callerName}' (line:{callerLineNumber}) to '{_metadataFilePath}'");
     }
 }

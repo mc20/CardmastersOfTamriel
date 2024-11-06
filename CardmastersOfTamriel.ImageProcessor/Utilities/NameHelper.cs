@@ -2,11 +2,11 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using CardmastersOfTamriel.Models;
 
-namespace CardmastersOfTamriel.ImageProcessorConsole;
+namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
-public static class NameHelper
+public static partial class NameHelper
 {
-    private readonly static Regex _nameNormalizerRegex = new(@"[^a-z0-9_]", RegexOptions.Compiled);
+    private static readonly Regex NameNormalizerRegex = MyRegex();
 
     public static string FormatDisplayNameFromId(string setName)
     {
@@ -34,7 +34,7 @@ public static class NameHelper
         name = name.Replace(" ", "_");
 
         // Remove any non-alphanumeric characters except underscores
-        name = _nameNormalizerRegex.Replace(name, "");
+        name = NameNormalizerRegex.Replace(name, "");
 
         return name;
     }
@@ -43,4 +43,7 @@ public static class NameHelper
     {
         return $"{set.Id}_{imageIndex:D3}.dds";
     }
+
+    [GeneratedRegex(@"[^a-z0-9_]", RegexOptions.Compiled)]
+    private static partial Regex MyRegex();
 }

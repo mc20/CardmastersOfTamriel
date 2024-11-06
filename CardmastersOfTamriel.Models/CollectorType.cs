@@ -1,4 +1,4 @@
-namespace CardmastersOfTamriel.SynthesisPatcher.Models;
+namespace CardmastersOfTamriel.Models;
 
 // Categories of Collectors
 public enum CollectorType

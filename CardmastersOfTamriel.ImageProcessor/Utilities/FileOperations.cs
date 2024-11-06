@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using CardmastersOfTamriel.Models;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessorConsole.Utilities;
+namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public static class FileOperations
 {
@@ -15,7 +15,7 @@ public static class FileOperations
             StartInfo = new ProcessStartInfo
             {
                 FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "texconv.exe"),
-                Arguments = $"-o \"{Path.GetDirectoryName(outputPath)}\" -ft DDS \"{inputPath}\"",
+                Arguments = $"-o \"{Path.GetDirectoryName(outputPath)}\" -ft DDS -f DXT5 -srgb \"{inputPath}\"",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true

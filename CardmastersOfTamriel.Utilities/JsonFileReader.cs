@@ -12,7 +12,7 @@ public static class JsonFileReader
 
         if (!File.Exists(filePath))
         {
-            var e = new FileNotFoundException($"The file {filePath} does not exist."); 
+            var e = new FileNotFoundException($"The file {filePath} does not exist.");
             Log.Error(e, $"Could not find file at '{relativeFilePath}'.");
             throw e;
         }
@@ -26,6 +26,5 @@ public static class JsonFileReader
             Log.Error(e, $"Failed to deserialize JSON from {filePath}.");
             throw e;
         }
-
     }
 }

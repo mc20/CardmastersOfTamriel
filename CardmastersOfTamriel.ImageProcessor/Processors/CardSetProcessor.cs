@@ -1,17 +1,16 @@
 using System.Text.Json;
-using CardmastersOfTamriel.ImageProcessorConsole.Factories;
-using CardmastersOfTamriel.ImageProcessorConsole.Utilities;
+using CardmastersOfTamriel.ImageProcessor.Factories;
+using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessorConsole.Processors;
+namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
-public class CardSetProcessor
+public class CardSetProcessor : ICardSetProcessor
 {
     private readonly Config _config;
     private readonly MasterMetadataHandler _handler;
-    private const int MaxSampleSize = 20;
 
     public CardSetProcessor(Config appConfig, MasterMetadataHandler handler)
     {
@@ -38,7 +37,8 @@ public class CardSetProcessor
             var cardsFromMetadataFile = lines
                 .Where(line => !string.IsNullOrWhiteSpace(line))
                 .Select(line => JsonSerializer.Deserialize<Card>(line, JsonSettings.Options))
-                .Where(card => card != null && uniqueCards.Add(card.Id!)) // Add to the set and check if the Id is unique
+                .Where(card =>
+                    card != null && uniqueCards.Add(card.Id!)) // Add to the set and check if the Id is unique
                 .Select(card => card!) // Use the null-forgiving operator
                 .ToList();
 
@@ -51,7 +51,6 @@ public class CardSetProcessor
             return [];
         }
     }
-
 
     public void ProcessSetAndImages(CardSet set)
     {
@@ -67,38 +66,44 @@ public class CardSetProcessor
 
         var cardsFromMetadataFile = LoadCardsFromJsonFile(savedJsonFilePath, savedJsonBackupFilePath);
 
-        var imageFilePathsAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath).OrderBy(file => file).ToList();
+        var imageFilePathsAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath)
+            .OrderBy(file => file).ToList();
 
         var cardsFromSource = CardFactory.CreateCardsFromImagesAtFolderPath(set, [.. imageFilePathsAtSource], true);
 
         var updatedCards = cardsFromMetadataFile.ConsolidateCardsWith(cardsFromSource);
 
-        var imageFilePathsAtDestination = CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
+        var imageFilePathsAtDestination =
+            CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
 
-        var cardsAtDestination = CardFactory.CreateCardsFromImagesAtFolderPath(set, [.. imageFilePathsAtDestination], false);
+        var cardsAtDestination =
+            CardFactory.CreateCardsFromImagesAtFolderPath(set, [.. imageFilePathsAtDestination], false);
 
         var finalCards = updatedCards.ConsolidateCardsWith(cardsAtDestination).ToList();
 
-        var eligibleFilePathsForConversion = finalCards.Select(card => card?.SourceAbsoluteFilePath ?? string.Empty).Where(filePath => !string.IsNullOrWhiteSpace(filePath)).ToHashSet();
+        var eligibleFilePathsForConversion = finalCards.Select(card => card?.SourceAbsoluteFilePath ?? string.Empty)
+            .Where(filePath => !string.IsNullOrWhiteSpace(filePath)).ToHashSet();
         Log.Verbose($"Found {eligibleFilePathsForConversion.Count} eligible images for conversion");
 
-        var randomCards = CardSetImageHelper.SelectRandomImageFilePaths(MaxSampleSize - cardsAtDestination.Count, eligibleFilePathsForConversion);
+        var randomCards = CardSetImageHelper.SelectRandomImageFilePaths(_config.General.MaxSampleSize - cardsAtDestination.Count,
+            eligibleFilePathsForConversion);
         Log.Verbose($"Selected {randomCards.Count} random images for conversion");
-
-        var displayedTotalCount = finalCards.Where(card => !string.IsNullOrEmpty(card.DestinationAbsoluteFilePath)).Count() + randomCards.Count; // (uint)Math.Min(randomCards.Count, MaxSampleSize);
 
         foreach (var info in finalCards.OrderBy(card => card.Id).Select((card, index) => (card, index)))
         {
-            if (!string.IsNullOrWhiteSpace(info.card.SourceAbsoluteFilePath) && randomCards.Contains(info.card.SourceAbsoluteFilePath))
+            if (!string.IsNullOrWhiteSpace(info.card.SourceAbsoluteFilePath) &&
+                randomCards.Contains(info.card.SourceAbsoluteFilePath))
             {
                 Log.Verbose($"Processing Card {Path.GetFileName(info.card.SourceAbsoluteFilePath)} for conversion");
 
-                var result = ConvertAndSaveImage(set, info.card.SourceAbsoluteFilePath, NameHelper.CreateImageFileName(set, (uint)info.index + 1));
+                var result = ConvertAndSaveImage(set, info.card.SourceAbsoluteFilePath,
+                    NameHelper.CreateImageFileName(set, (uint)info.index + 1));
 
                 info.card.Shape = result.Shape;
                 info.card.DisplayName = null;
                 info.card.DestinationAbsoluteFilePath = result.DestinationAbsoluteFilePath;
-                info.card.DestinationRelativeFilePath = FilePathHelper.GetRelativePath(result.DestinationAbsoluteFilePath, set.Tier);
+                info.card.DestinationRelativeFilePath =
+                    FilePathHelper.GetRelativePath(result.DestinationAbsoluteFilePath, set.Tier);
                 info.card.DisplayedIndex = 0;
                 info.card.DisplayedTotalCount = 0;
                 info.card.TrueIndex = (uint)info.index + 1;
@@ -127,10 +132,13 @@ public class CardSetProcessor
             }
         }
 
-        var cardsEligibleForDisplay = finalCards.Where(card => !string.IsNullOrWhiteSpace(card.DestinationAbsoluteFilePath)).ToList();
-        foreach (var cardInfo in cardsEligibleForDisplay.OrderBy(card => card.Id).Select((card, index) => (card, index)))
+        var cardsEligibleForDisplay =
+            finalCards.Where(card => !string.IsNullOrWhiteSpace(card.DestinationAbsoluteFilePath)).ToList();
+        foreach (var cardInfo in cardsEligibleForDisplay.OrderBy(card => card.Id)
+                     .Select((card, index) => (card, index)))
         {
-            cardInfo.card.DisplayName = Card.CreateGenericDisplayName(set.DisplayName, (uint)cardInfo.index, (uint)cardsEligibleForDisplay.Count);
+            cardInfo.card.DisplayName = Card.CreateGenericDisplayName(set.DisplayName, (uint)cardInfo.index + 1,
+                (uint)cardsEligibleForDisplay.Count);
             cardInfo.card.DisplayedIndex = (uint)cardInfo.index + 1;
             cardInfo.card.DisplayedTotalCount = (uint)cardsEligibleForDisplay.Count;
         }
@@ -155,4 +163,5 @@ public class CardSetProcessor
             DestinationAbsoluteFilePath = imageDestinationFilePath
         };
     }
+
 }

@@ -1,18 +1,18 @@
 using CardmastersOfTamriel.Models;
 
-namespace CardmastersOfTamriel.ImageProcessorConsole.Utilities;
+namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public static class CardExtensionMethods
 {
     public static HashSet<Card> ConsolidateCardsWith(this IEnumerable<Card> list1, IEnumerable<Card> list2)
     {
         var cardMap = new Dictionary<string, Card>();
-        foreach (var card in list1.Where(card => card != null && card.Id != null))
+        foreach (var card in list1.Where(card => card.Id != null))
         {
             cardMap[card.Id!] = card;
         }
 
-        foreach (var card in list2.Where(card => card != null && card.Id != null))
+        foreach (var card in list2.Where(card => card.Id != null))
         {
             if (cardMap.ContainsKey(card.Id!))
             {

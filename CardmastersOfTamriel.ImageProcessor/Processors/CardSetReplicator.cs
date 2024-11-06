@@ -1,10 +1,10 @@
 using System.Text.Json;
-using CardmastersOfTamriel.ImageProcessorConsole.Factories;
+using CardmastersOfTamriel.ImageProcessor.Factories;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessorConsole;
+namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
 public class CardSetReplicator
 {
@@ -13,7 +13,6 @@ public class CardSetReplicator
 
     public CardSetReplicator(MasterMetadataHandler handler, string seriesId)
     {
-        // TODO: weird
         _handler = handler;
         _series = handler.Metadata.Series?.FirstOrDefault(series => series.Id == seriesId) ??
                   throw new KeyNotFoundException($"No series found with id: {seriesId}");
@@ -92,7 +91,8 @@ public class CardSetReplicator
         File.WriteAllText(destinationSetMetadataFilePath, serializedJson);
         Log.Information($"New serialized Card Set metadata written to {destinationSetMetadataFilePath}");
 
-        Log.Information($"New Set: '{newCardSetMetadata.Id}' saved to path: '{newCardSetMetadata.DestinationAbsoluteFolderPath}'");
+        Log.Information(
+            $"New Set: '{newCardSetMetadata.Id}' saved to path: '{newCardSetMetadata.DestinationAbsoluteFolderPath}'");
 
         _handler.WriteMetadataToFile();
     }

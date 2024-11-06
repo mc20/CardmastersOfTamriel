@@ -1,4 +1,4 @@
-namespace CardmastersOfTamriel.ImageProcessorConsole.Utilities;
+namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public static class CardSetImageHelper
 {

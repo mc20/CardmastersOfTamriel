@@ -65,7 +65,8 @@ public class LeveledItemProcessor
         return leveledList;
     }
 
-    private void AddLeveledItemToParentLeveledItem(LeveledItem leveledItem, LeveledItem parentLeveledItem, int times, Percent chanceNone)
+    private void AddLeveledItemToParentLeveledItem(LeveledItem leveledItem, LeveledItem parentLeveledItem, int times,
+        Percent chanceNone)
     {
         if (times <= 0) times = 1;
 

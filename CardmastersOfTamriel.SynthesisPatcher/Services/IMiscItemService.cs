@@ -1,7 +1,7 @@
-using Mutagen.Bethesda.Skyrim;
 using CardmastersOfTamriel.Models;
+using Mutagen.Bethesda.Skyrim;
 
-namespace CardmastersOfTamriel.SynthesisPatcher;
+namespace CardmastersOfTamriel.SynthesisPatcher.Services;
 
 public interface IMiscItemService
 {
