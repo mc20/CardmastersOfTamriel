@@ -1,18 +1,19 @@
 using CardmastersOfTamriel.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
 using Serilog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Services;
+namespace CardmastersOfTamriel.SynthesisPatcher.MiscItems;
 
-public class MiscItemService : IMiscItemService
+public class CardMiscItemCreator : ICardMiscItemCreator
 {
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _customMod;
 
-    public MiscItemService(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
+    public CardMiscItemCreator(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
     {
         _state = state;
         _customMod = customMod;
@@ -53,7 +54,7 @@ public class MiscItemService : IMiscItemService
         newMiscItem.Value = card.Value == 0 ? 10 : card.Value;
         newMiscItem.Weight = card.Weight;
 
-        Counters.IncrementMiscItemCount(newMiscItem.EditorID);
+        ModificationTracker.IncrementMiscItemCount(newMiscItem.EditorID);
 
         Log.Information($"_state.DataFolderPath: {_state.DataFolderPath}");
 
@@ -65,7 +66,7 @@ public class MiscItemService : IMiscItemService
 
         Log.Information($"Added TextureSet {textureSetForWorldModel.EditorID} with Diffuse Path: '{textureSetForWorldModel.Diffuse}'");
 
-        Counters.IncrementTextureSetCount(textureSetForWorldModel.EditorID);
+        ModificationTracker.IncrementTextureSetCount(textureSetForWorldModel.EditorID);
 
         newMiscItem.Model = new Model()
         {
