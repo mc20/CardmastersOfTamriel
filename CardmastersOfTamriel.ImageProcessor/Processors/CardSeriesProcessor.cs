@@ -1,10 +1,10 @@
 using System.Text.Json;
-using CardmastersOfTamriel.ImageProcessorConsole.Utilities;
+using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessorConsole.Processors;
+namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
 public class CardSeriesProcessor
 {
@@ -18,7 +18,7 @@ public class CardSeriesProcessor
     }
 
     public void ProcessSeriesFolder(CardTier tier, string seriesSourceFolderPath,
-        string tierDestinationFolderPath)
+        string tierDestinationFolderPath, ICardSetProcessor cardSetProcessor)
     {
         Log.Information($"Examining Source Series folder: '{seriesSourceFolderPath}'");
 
@@ -47,19 +47,17 @@ public class CardSeriesProcessor
         _handler.Metadata.Series?.Add(cardSeriesFromSource);
 
         // This also updates the handler, FYI
-        var mirrorer = new CardSetReplicator(_handler, seriesId);
-        mirrorer.HandleDestinationSetCreation(groupedFolders);
+        var replicator = new CardSetReplicator(_handler, seriesId);
+        replicator.HandleDestinationSetCreation(groupedFolders);
 
-        ProcessCardSets();
+        ProcessCardSets(cardSetProcessor);
 
         _handler.WriteMetadataToFile();
     }
 
-    private void ProcessCardSets()
+    private void ProcessCardSets(ICardSetProcessor cardSetProcessor)
     {
-        if (_handler.Metadata?.Series is null) return;
-
-        var processor = new CardSetProcessor(_config, _handler);
+        if (_handler.Metadata.Series is null) return;
 
         foreach (var series in _handler.Metadata.Series.Where(series => series.Sets is not null))
         {
@@ -73,7 +71,7 @@ public class CardSeriesProcessor
 
             foreach (var set in series.Sets)
             {
-                processor.ProcessSetAndImages(set);
+                cardSetProcessor.ProcessSetAndImages(set);
             }
         }
     }

@@ -1,3 +1,4 @@
+using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Models;
 using CardmastersOfTamriel.Utilities;
 using Noggog;
@@ -28,16 +29,11 @@ namespace CardmastersOfTamriel.SynthesisPatcher.Services
                 throw new ArgumentException("Invalid collector type", nameof(type));
             }
 
-            var cardTierProbabilities = new List<TierProbability>();
-            foreach (var probConfig in config.CardTierProbabilities)
+            var cardTierProbabilities = config.CardTierProbabilities.Select(probConfig => new TierProbability
             {
-                cardTierProbabilities.Add(new TierProbability
-                {
-                    Tier = probConfig.Tier,
-                    NumberOfTimes = probConfig.NumberOfTimes,
-                    ChanceNone = new Percent(probConfig.ChanceNone)
-                });
-            }
+                Tier = probConfig.Tier, NumberOfTimes = probConfig.NumberOfTimes,
+                ChanceNone = new Percent(probConfig.ChanceNone)
+            }).ToList();
 
             return new Collector(config.Type, new Percent(config.ChanceNone), cardTierProbabilities);
         }

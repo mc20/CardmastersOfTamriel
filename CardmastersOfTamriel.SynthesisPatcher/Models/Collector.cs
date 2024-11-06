@@ -1,3 +1,4 @@
+using CardmastersOfTamriel.Models;
 using Noggog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Models;

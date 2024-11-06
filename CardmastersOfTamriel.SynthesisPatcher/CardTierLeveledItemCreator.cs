@@ -6,15 +6,17 @@ using Mutagen.Bethesda.Synthesis;
 using Noggog;
 using Serilog;
 
+namespace CardmastersOfTamriel.SynthesisPatcher;
+
 public class CardTierLeveledItemCreator
 {
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
-    private readonly ISkyrimMod _customMod;
+    private readonly ISkyrimMod _skyrimMod;
 
-    public CardTierLeveledItemCreator(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
+    public CardTierLeveledItemCreator(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod skyrimMod)
     {
         _state = state;
-        _customMod = customMod;
+        _skyrimMod = skyrimMod;
     }
 
     public Dictionary<CardTier, LeveledItem> CreateLeveledItemsForCardTiers(Dictionary<Card, MiscItem> miscItems)
@@ -24,17 +26,19 @@ public class CardTierLeveledItemCreator
         {
             var newLeveledItemId = $"LeveledItem_CardTier{tier}".AddModNamePrefix();
 
-            if (_state.CheckIfExists<ILeveledItemGetter>(newLeveledItemId) || _customMod.CheckIfExists<LeveledItem>(newLeveledItemId))
+            if (_state.CheckIfExists<ILeveledItemGetter>(newLeveledItemId) ||
+                _skyrimMod.CheckIfExists<LeveledItem>(newLeveledItemId))
             {
                 Log.Warning($"LeveledItem {newLeveledItemId} already exists in the load order.");
                 continue;
             }
 
-            var newLeveledItemForCardTier = _customMod.LeveledItems.AddNew();
+            var newLeveledItemForCardTier = _skyrimMod.LeveledItems.AddNew();
             newLeveledItemForCardTier.EditorID = newLeveledItemId;
             newLeveledItemForCardTier.ChanceNone = Percent.Zero;
             newLeveledItemForCardTier.Entries ??= [];
-            Counters.IncrementLeveledItemCount($"Card{tier}\t{newLeveledItemForCardTier.EditorID}\tChanceNone: {100 - newLeveledItemForCardTier.ChanceNone}");
+            Counters.IncrementLeveledItemCount(
+                $"Card{tier}\t{newLeveledItemForCardTier.EditorID}\tChanceNone: {100 - newLeveledItemForCardTier.ChanceNone}");
 
             foreach (var miscItem in miscItems.Where(item => item.Key.Tier == tier).Select(item => item.Value))
             {

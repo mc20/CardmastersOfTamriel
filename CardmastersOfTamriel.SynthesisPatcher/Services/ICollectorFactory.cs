@@ -1,6 +1,7 @@
+using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Models;
 
-namespace CardmastersOfTamriel.SynthesisPatcher;
+namespace CardmastersOfTamriel.SynthesisPatcher.Services;
 
 public interface ICollectorFactory
 {

@@ -1,6 +1,6 @@
 using CardmastersOfTamriel.Models;
 
-namespace CardmastersOfTamriel.ImageProcessorConsole.Processors;
+namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
 public struct ConversionResult
 {
@@ -8,6 +8,6 @@ public struct ConversionResult
     {
     }
 
-    public CardShape? Shape { get; set; } = null;
-    public string DestinationAbsoluteFilePath { get; set; } = string.Empty;
+    public CardShape? Shape { get; init; } = null;
+    public string? DestinationAbsoluteFilePath { get; init; } = string.Empty;
 }

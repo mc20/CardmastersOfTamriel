@@ -1,6 +1,7 @@
+using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 
-namespace CardmastersOfTamriel.ImageProcessorConsole.Factories;
+namespace CardmastersOfTamriel.ImageProcessor.Factories;
 
 public static class CardSetFactory
 {
@@ -26,7 +27,7 @@ public static class CardSetFactory
             DestinationAbsoluteFolderPath = "",
             DefaultValue = 0,
             DefaultWeight = 0,
-            DefaultKeywords = ["VendorItemMisc"],
+            DefaultKeywords = ["VendorItemClutter"],
         };
     }
 }

@@ -1,12 +1,11 @@
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Formats.Png;
 using CardmastersOfTamriel.Models;
 using Serilog;
-using CardmastersOfTamriel.ImageProcessorConsole.Utilities;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
-namespace CardmastersOfTamriel.ImageProcessorConsole;
+namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public class ImageConverter
 {
@@ -15,14 +14,15 @@ public class ImageConverter
     public ImageConverter(Config config)
     {
         _config = config;
+        RegisterCleanupHandlers(); // Register the cleanup handlers
     }
 
-    private static List<string> _tempFiles = [];
+    private static readonly List<string> TempFiles = [];
 
     public CardShape ConvertImageAndSaveToDestination(string srcImagePath, string destImagePath)
     {
         Log.Verbose($"Converting image from '{srcImagePath}' to DDS format at '{destImagePath}'");
-        var imageShape = DetermineOptimalShape(srcImagePath);
+        var imageShape = ImageHelper.DetermineOptimalShape(_config, srcImagePath);
 
         using var image = Image.Load<Rgba32>(srcImagePath);
 
@@ -58,17 +58,17 @@ public class ImageConverter
                 break;
         }
 
-        if (templateImagePath == null) return imageShape;
-
         using var template = Image.Load<Rgba32>(templateImagePath);
         using var templateCopy = template.Clone();
 
         // Superimpose the image onto the template copy
         templateCopy.Mutate(x => x.DrawImage(image, _config.ImageProperties.Offset.ToImageSharpPoint(), 1f));
 
+        ImageHelper.ResizeImageToHeight(templateCopy, _config.ImageProperties.MaximumTextureHeight);
+
         // Save as a temporary PNG file
         var tempOutputPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".png");
-        _tempFiles.Add(tempOutputPath); // Track the temp file for cleanup
+        TempFiles.Add(tempOutputPath); // Track the temp file for cleanup
         templateCopy.Save(tempOutputPath, new PngEncoder());
 
         try
@@ -111,7 +111,7 @@ public class ImageConverter
 
     private static void CleanupTempFiles()
     {
-        foreach (var tempFile in _tempFiles.Where(File.Exists))
+        foreach (var tempFile in TempFiles.Where(File.Exists))
         {
             try
             {
@@ -124,42 +124,6 @@ public class ImageConverter
             }
         }
 
-        _tempFiles.Clear();
-    }
-
-    private CardShape DetermineOptimalShape(string imagePath)
-    {
-        using var image = Image.Load(imagePath);
-        var width = image.Width;
-        var height = image.Height;
-
-        // Calculate the retained areas for each shape
-        var shapeAreas = new Dictionary<CardShape, double>
-        {
-            { CardShape.Portrait, CalculateRetainedArea(width, height, _config.ImageProperties.TargetSizes.Portrait) },
-            { CardShape.Landscape, CalculateRetainedArea(width, height, _config.ImageProperties.TargetSizes.Landscape) },
-            { CardShape.Square, CalculateRetainedArea(width, height, _config.ImageProperties.TargetSizes.Square) }
-        };
-
-        // Return the shape with the maximum retained area
-        var maxArea = double.MinValue;
-        var optimalShape = CardShape.Square; // Default shape
-
-        foreach (var shapeArea in shapeAreas.Where(shapeArea => shapeArea.Value > maxArea))
-        {
-            maxArea = shapeArea.Value;
-            optimalShape = shapeArea.Key;
-        }
-
-        return optimalShape;
-    }
-
-    // Method to calculate the retained area when resizing the image
-    private static double CalculateRetainedArea(int originalWidth, int originalHeight, Size targetSize)
-    {
-        var scale = Math.Min((double)originalWidth / targetSize.Width, (double)originalHeight / targetSize.Height);
-        var retainedWidth = scale * targetSize.Width;
-        var retainedHeight = scale * targetSize.Height;
-        return retainedWidth * retainedHeight / (originalWidth * originalHeight);
+        TempFiles.Clear();
     }
 }

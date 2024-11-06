@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessorConsole.Utilities;
+namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public static partial class CardSetHelper
 {
@@ -29,5 +29,4 @@ public static partial class CardSetHelper
 
     [GeneratedRegex(@"^([a-zA-Z]+(?:[ _][a-zA-Z]+)*)", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex MyRegex();
-
 }

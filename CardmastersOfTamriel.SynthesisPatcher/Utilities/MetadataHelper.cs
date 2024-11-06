@@ -1,7 +1,7 @@
 using CardmastersOfTamriel.Models;
-using Mutagen.Bethesda;
+using CardmastersOfTamriel.Utilities;
 
-namespace CardmastersOfTamriel.Utilities;
+namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;
 
 
 public class MetadataHelper

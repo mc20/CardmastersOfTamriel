@@ -25,11 +25,9 @@ public class MiscItemService : IMiscItemService
         foreach (var card in cards)
         {
             var miscItem = InsertAsMiscItem(card);
-            if (miscItem is not null)
-            {
-                miscItems.Add(card, miscItem);
-                Log.Information($"Inserted MiscItem: {miscItem.EditorID}");
-            }
+            if (miscItem is null) continue;
+            miscItems.Add(card, miscItem);
+            Log.Information($"Inserted MiscItem: {miscItem.EditorID}");
         }
 
         return miscItems;

@@ -1,3 +1,4 @@
+using CardmastersOfTamriel.Models;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Skyrim;
@@ -8,7 +9,6 @@ using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda.Plugins;
 using Serilog;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
-using Noggog;
 using Mutagen.Bethesda.Environments;
 using Mutagen.Bethesda.Plugins.Binary.Parameters;
 
@@ -77,9 +77,9 @@ public class Program
             .ToList();
 
         var helper = new MetadataHelper(metadataHandler);
-        var cardList = helper.GetCards();
+        var cardList = helper.GetCards().ToList();
 
-        if (!cardList.Any()) return;
+        if (cardList.Count == 0) return;
 
         var miscService = new MiscItemService(state, customMod);
         var mappedMiscItems = miscService.InsertAndMapCardsToMiscItems(cardList);
@@ -103,6 +103,6 @@ public class Program
 
         Log.Information("Mod successfully created and written to disk.");
 
-        Log.CloseAndFlush();
+        await Log.CloseAndFlushAsync();
     }
 }

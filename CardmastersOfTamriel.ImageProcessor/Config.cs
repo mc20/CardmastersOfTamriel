@@ -1,10 +1,10 @@
-namespace CardmastersOfTamriel.ImageProcessorConsole;
+namespace CardmastersOfTamriel.ImageProcessor;
 
 public class Config
 {
-    public required GeneralSettings General { get; set; }
-    public required PathSettings Paths { get; set; }
-    public required ImageProperties ImageProperties { get; set; }
+    public required GeneralSettings General { get; init; }
+    public required PathSettings Paths { get; init; }
+    public required ImageProperties ImageProperties { get; init; }
 }
 
 public class GeneralSettings
@@ -29,6 +29,7 @@ public class TemplateFiles
 
 public class ImageProperties
 {
+    public required int MaximumTextureHeight { get; set; }
     public required TargetSizes TargetSizes { get; set; }
     public required Offset Offset { get; set; }
 }
@@ -38,8 +39,6 @@ public class TargetSizes
     public required Size Portrait { get; set; }
     public required Size Landscape { get; set; }
     public required Size Square { get; set; }
-
-
 }
 
 public class Size

@@ -1,8 +1,8 @@
-using CardmastersOfTamriel.ImageProcessorConsole.Utilities;
+using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessorConsole.Processors;
+namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
 public class ImageProcessingCoordinator
 {
@@ -15,15 +15,15 @@ public class ImageProcessingCoordinator
         _metadataHandler = metadataHandler;
     }
 
-    public void BeginProcessing()
+    public void BeginProcessing(ICardSetProcessor cardSetProcessor)
     {
         _metadataHandler.InitializeEmptyMetadata();
-        FileOperations.EnsureDirectoryExists(_config.Paths.OutputFolderPath ?? string.Empty);
+        FileOperations.EnsureDirectoryExists(_config.Paths.OutputFolderPath);
 
         var processor = new CardTierProcessor(_config, _metadataHandler);
 
         foreach (var tierSourceFolderPath in
-                 Directory.EnumerateDirectories(_config.Paths.SourceImagesFolderPath ?? string.Empty))
+                 Directory.EnumerateDirectories(_config.Paths.SourceImagesFolderPath))
         {
             Log.Information($"Tier Source Folder Path: '{tierSourceFolderPath}'");
 
@@ -31,7 +31,7 @@ public class ImageProcessingCoordinator
                 Path.GetFileName(tierSourceFolderPath));
             FileOperations.EnsureDirectoryExists(tierDestinationFolderPath);
 
-            processor.ProcessTierFolder(tierSourceFolderPath, tierDestinationFolderPath);
+            processor.ProcessTierFolder(tierSourceFolderPath, tierDestinationFolderPath, cardSetProcessor);
         }
     }
 }
