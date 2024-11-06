@@ -10,11 +10,11 @@ namespace CardmastersOfTamriel.ImageProcessorConsole;
 
 public class ImageConverter
 {
-    private readonly AppConfig _appConfig;
+    private readonly Config _config;
 
-    public ImageConverter(AppConfig appConfig)
+    public ImageConverter(Config config)
     {
-        _appConfig = appConfig;
+        _config = config;
     }
 
     private static List<string> _tempFiles = [];
@@ -34,27 +34,27 @@ public class ImageConverter
             case CardShape.Landscape:
                 image.Mutate(x => x.Resize(new ResizeOptions
                 {
-                    Size = Config.TargetSizeLandscape,
+                    Size = _config.ImageProperties.TargetSizes.Landscape.ToImageSharpSize(),
                     Mode = ResizeMode.Crop
                 }).Rotate(-90));
-                templateImagePath = _appConfig.TemplateFilePathLandscape;
+                templateImagePath = _config.Paths.TemplateFiles.Landscape;
                 break;
             case CardShape.Portrait:
                 image.Mutate(x => x.Resize(new ResizeOptions
                 {
-                    Size = Config.TargetSizePortrait,
+                    Size = _config.ImageProperties.TargetSizes.Portrait.ToImageSharpSize(),
                     Mode = ResizeMode.Crop
                 }));
-                templateImagePath = _appConfig.TemplateFilePathPortrait;
+                templateImagePath = _config.Paths.TemplateFiles.Portrait;
                 break;
             case CardShape.Square:
             default: // Square
                 image.Mutate(x => x.Resize(new ResizeOptions
                 {
-                    Size = Config.TargetSizeSquare,
+                    Size = _config.ImageProperties.TargetSizes.Square.ToImageSharpSize(),
                     Mode = ResizeMode.Crop
                 }));
-                templateImagePath = _appConfig.TemplateFilePathSquare;
+                templateImagePath = _config.Paths.TemplateFiles.Square;
                 break;
         }
 
@@ -64,7 +64,7 @@ public class ImageConverter
         using var templateCopy = template.Clone();
 
         // Superimpose the image onto the template copy
-        templateCopy.Mutate(x => x.DrawImage(image, Config.Offset, 1f));
+        templateCopy.Mutate(x => x.DrawImage(image, _config.ImageProperties.Offset.ToImageSharpPoint(), 1f));
 
         // Save as a temporary PNG file
         var tempOutputPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".png");
@@ -127,7 +127,7 @@ public class ImageConverter
         _tempFiles.Clear();
     }
 
-    private static CardShape DetermineOptimalShape(string imagePath)
+    private CardShape DetermineOptimalShape(string imagePath)
     {
         using var image = Image.Load(imagePath);
         var width = image.Width;
@@ -136,9 +136,9 @@ public class ImageConverter
         // Calculate the retained areas for each shape
         var shapeAreas = new Dictionary<CardShape, double>
         {
-            { CardShape.Portrait, CalculateRetainedArea(width, height, Config.TargetSizePortrait) },
-            { CardShape.Landscape, CalculateRetainedArea(width, height, Config.TargetSizeLandscape) },
-            { CardShape.Square, CalculateRetainedArea(width, height, Config.TargetSizeSquare) }
+            { CardShape.Portrait, CalculateRetainedArea(width, height, _config.ImageProperties.TargetSizes.Portrait) },
+            { CardShape.Landscape, CalculateRetainedArea(width, height, _config.ImageProperties.TargetSizes.Landscape) },
+            { CardShape.Square, CalculateRetainedArea(width, height, _config.ImageProperties.TargetSizes.Square) }
         };
 
         // Return the shape with the maximum retained area

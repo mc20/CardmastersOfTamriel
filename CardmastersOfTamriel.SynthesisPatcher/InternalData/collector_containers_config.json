@@ -7,23 +7,23 @@
                 {
                     "Tier": "Tier1",
                     "NumberOfTimes": 2,
-                    "ChanceNone": 0.15
+                    "ChanceNone": 0.1
                 }
             ]
         },
         {
             "Type": "Tier2",
-            "ChanceNone": 0.60,
+            "ChanceNone": 0.55,
             "CardTierProbabilities": [
                 {
                     "Tier": "Tier1",
                     "NumberOfTimes": 2,
-                    "ChanceNone": 0.15
+                    "ChanceNone": 0.1
                 },
                 {
                     "Tier": "Tier2",
                     "NumberOfTimes": 1,
-                    "ChanceNone": 0.25
+                    "ChanceNone": 0.2
                 }
             ]
         },
@@ -34,18 +34,18 @@
                 {
                     "Tier": "Tier1",
                     "NumberOfTimes": 3,
-                    "ChanceNone": 0.15
+                    "ChanceNone": 0.05
                 },
                 {
                     "Tier": "Tier2",
                     "NumberOfTimes": 2,
-                    "ChanceNone": 0.35
+                    "ChanceNone": 0.15
                 }
             ]
         },
         {
             "Type": "Tier4",
-            "ChanceNone": 0.25,
+            "ChanceNone": 0.20,
             "CardTierProbabilities": [
                 {
                     "Tier": "Tier1",
@@ -54,39 +54,39 @@
                 },
                 {
                     "Tier": "Tier2",
-                    "NumberOfTimes": 2,
-                    "ChanceNone": 0.25
+                    "NumberOfTimes": 3,
+                    "ChanceNone": 0.1
                 },
                 {
                     "Tier": "Tier3",
                     "NumberOfTimes": 1,
-                    "ChanceNone": 0.35
+                    "ChanceNone": 0.25
                 }
             ]
         },
         {
             "Type": "Tier5",
-            "ChanceNone": 0.15,
+            "ChanceNone": 0.10,
             "CardTierProbabilities": [
                 {
                     "Tier": "Tier1",
                     "NumberOfTimes": 5,
-                    "ChanceNone": 0.05
+                    "ChanceNone": 0.02
                 },
                 {
                     "Tier": "Tier2",
                     "NumberOfTimes": 3,
-                    "ChanceNone": 0.25
+                    "ChanceNone": 0.05
                 },
                 {
                     "Tier": "Tier3",
-                    "NumberOfTimes": 1,
-                    "ChanceNone": 0.35
+                    "NumberOfTimes": 2,
+                    "ChanceNone": 0.1
                 },
                 {
                     "Tier": "Tier4",
                     "NumberOfTimes": 1,
-                    "ChanceNone": 0.90
+                    "ChanceNone": 0.8
                 }
             ]
         },
@@ -96,18 +96,23 @@
             "CardTierProbabilities": [
                 {
                     "Tier": "Tier1",
-                    "NumberOfTimes": 3,
-                    "ChanceNone": 0.05
+                    "NumberOfTimes": 4,
+                    "ChanceNone": 0.01
                 },
                 {
                     "Tier": "Tier2",
                     "NumberOfTimes": 2,
-                    "ChanceNone": 0.15
+                    "ChanceNone": 0.05
                 },
                 {
                     "Tier": "Tier3",
                     "NumberOfTimes": 1,
-                    "ChanceNone": 0.70
+                    "ChanceNone": 0.4
+                },
+                {
+                    "Tier": "Tier4",
+                    "NumberOfTimes": 1,
+                    "ChanceNone": 0.85
                 }
             ]
         },
@@ -117,17 +122,17 @@
             "CardTierProbabilities": [
                 {
                     "Tier": "Tier2",
-                    "NumberOfTimes": 5,
+                    "NumberOfTimes": 6,
                     "ChanceNone": 0.0
                 },
                 {
                     "Tier": "Tier3",
-                    "NumberOfTimes": 3,
+                    "NumberOfTimes": 4,
                     "ChanceNone": 0.0
                 },
                 {
                     "Tier": "Tier4",
-                    "NumberOfTimes": 1,
+                    "NumberOfTimes": 2,
                     "ChanceNone": 0.0
                 }
             ]

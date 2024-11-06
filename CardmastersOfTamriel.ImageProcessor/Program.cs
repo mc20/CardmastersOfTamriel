@@ -16,25 +16,25 @@ public class Program
             .AddEnvironmentVariables()
             .Build();
 
-        var appConfig = configuration.Get<AppConfig>();
-        if (appConfig == null || string.IsNullOrEmpty(appConfig.OutputFolderPath) || string.IsNullOrEmpty(appConfig.MasterMetadataFilePath))
+        var config = configuration.Get<Config>();
+        if (config == null || string.IsNullOrEmpty(config.Paths.OutputFolderPath) || string.IsNullOrEmpty(config.Paths.MasterMetadataFilePath))
         {
             Log.Error("App config is missing");
             return;
         }
 
-        SetupLogging(appConfig);
+        SetupLogging(config);
 
-        var imageProcessor = new ImageProcessingCoordinator(appConfig, new MasterMetadataHandler(appConfig.MasterMetadataFilePath));
+        var imageProcessor = new ImageProcessingCoordinator(config, new MasterMetadataHandler(config.Paths.MasterMetadataFilePath));
         imageProcessor.BeginProcessing();
 
         Log.CloseAndFlush();
     }
 
-    private static void SetupLogging(AppConfig appConfig)
+    private static void SetupLogging(Config config)
     {
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        var logFilePath = Path.Combine(appConfig.OutputFolderPath ?? string.Empty, $"CardMastersOfTamriel_{timestamp}.log");
+        var logFilePath = Path.Combine(config.Paths.OutputFolderPath ?? string.Empty, $"CardMastersOfTamriel_{timestamp}.log");
         File.Delete(logFilePath);
 
         Log.Logger = new LoggerConfiguration()
