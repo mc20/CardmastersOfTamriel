@@ -1,42 +1,37 @@
 ﻿using CardmastersOfTamriel.ImageProcessor.Processors;
-using CardmastersOfTamriel.ImageProcessor.Utilities;
-using CardmastersOfTamriel.Utilities;
-using Microsoft.Extensions.Configuration;
+using CardmastersOfTamriel.ImageProcessor.Providers;
 using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor;
 
 public class Program
 {
-    private const string AnalyzeArg = "--analyze";
+    private const string UpdateArg = "--updatemetadata";
     private const string ConvertArg = "--convert";
+    private const string ReportArg = "--report";
+    private const string ReplicateArg = "--replicatefolders";
 
     private static void Main(string[] args)
     {
         Log.Verbose($"User entered arguments {args}");
-        
+
         if (args.Length == 0)
         {
-            Log.Warning("No arguments specified.");
+            Log.Warning(
+                "No arguments specified. Use:\n\t--analyze to record image sizes\n\t--convert to convert images\n\t--report to generate a report.");
             return;
         }
 
         var mode = args[0];
-        if (mode != AnalyzeArg && mode != ConvertArg)
+        if (mode != UpdateArg && mode != ConvertArg && mode != ReportArg && mode != ReplicateArg)
         {
             Log.Warning("Invalid mode specified.");
             return;
         }
 
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile("localsettings.json", optional: true, reloadOnChange: true)
-            .AddEnvironmentVariables()
-            .Build();
+        var config = ConfigurationProvider.Instance.Config;
 
-        var config = configuration.Get<Config>();
-        if (config == null || string.IsNullOrEmpty(config.Paths.OutputFolderPath) ||
+        if (string.IsNullOrEmpty(config.Paths.OutputFolderPath) ||
             string.IsNullOrEmpty(config.Paths.MasterMetadataFilePath))
         {
             Log.Error("App config is missing");
@@ -45,27 +40,17 @@ public class Program
 
         SetupLogging(config);
 
-        var handler = new MasterMetadataHandler(config.Paths.MasterMetadataFilePath);
-        ICardSetProcessor? processor = null;
-
-        switch (mode)
+        if (mode == ReplicateArg)
         {
-            case AnalyzeArg:
-                processor = new CardSetImageSizeProcessor(config);
-                Log.Information("Creating CardSetImageSizeProcessor");
-                break;
-            case ConvertArg:
-            {
-                processor = new CardSetProcessor(config, handler);
-                Log.Information("Creating CardSetProcessor");
-                break;
-            }
+            MapSourceFoldersToDestinationSets.BeginProcessing();
         }
-
-        if (processor is not null)
+        else
         {
-            var imageProcessor = new ImageProcessingCoordinator(config, handler);
-            imageProcessor.BeginProcessing(processor);
+            var processor = CreateProcessor(mode);
+            if (processor is not null)
+            {
+                ImageProcessingCoordinator.BeginProcessing(processor);
+            }
         }
 
         Log.CloseAndFlush();
@@ -74,9 +59,7 @@ public class Program
     private static void SetupLogging(Config config)
     {
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        var logFilePath = Path.Combine(config.Paths.OutputFolderPath,
-            $"CardMastersOfTamriel_{timestamp}.log");
-        File.Delete(logFilePath);
+        var logFilePath = Path.Combine(config.Paths.OutputFolderPath, "Logs", $"CardMastersOfTamriel_{timestamp}.log");
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
@@ -84,5 +67,24 @@ public class Program
             .WriteTo.Console()
             .WriteTo.Debug()
             .CreateLogger();
+    }
+
+    private static ICardSetProcessor? CreateProcessor(string mode)
+    {
+        switch (mode)
+        {
+            case UpdateArg:
+                Log.Information("Creating CardSetImageSizeProcessor");
+                return new CardSetImageSizeProcessor();
+            case ConvertArg:
+                Log.Information("Creating CardSetImageProcessor");
+                return new CardSetImageConversionProcessor();
+            case ReportArg:
+                Log.Information("Creating CardSetReportProcessor");
+                return new CardSetReportProcessor();
+            default:
+                Log.Warning("Invalid mode specified.");
+                return null;
+        }
     }
 }

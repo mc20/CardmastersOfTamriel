@@ -1,3 +1,4 @@
+using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 
@@ -7,27 +8,20 @@ public static class CardSetFactory
 {
     public static CardSet CreateNewSet(string setId, CardSeries series)
     {
-        return new CardSet
+        var config = ConfigurationProvider.Instance.Config;
+        
+        return new CardSet(setId, series.Id)
         {
-            Id = setId,
-            SeriesId = series.Id,
             DisplayName = NameHelper.FormatDisplayNameFromId(setId),
             Tier = series.Tier,
-            Theme = "",
             Description = "",
-            ReleaseDate = DateTime.UtcNow,
-            Artist = "",
-            IsLimitedEdition = false,
             Cards = [],
-            AutoRegenerateData = true,
-            CollectorsNote = "",
-            Region = "",
-            ExtraAttributes = new Dictionary<string, object>(),
             SourceAbsoluteFolderPath = "",
             DestinationAbsoluteFolderPath = "",
             DefaultValue = 0,
             DefaultWeight = 0,
-            DefaultKeywords = ["VendorItemClutter"],
+            DefaultKeywords = config.General.DefaultMiscItemKeywords,
+            DestinationRelativeFolderPath = string.Empty,
         };
     }
 }

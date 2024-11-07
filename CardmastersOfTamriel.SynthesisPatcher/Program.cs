@@ -26,29 +26,11 @@ public class Program
             .Run(args);
     }
 
-    private static void SetupLogging(AppConfig appConfig, IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
-    {
-        // var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        var logFilePath = appConfig.RetrieveLogFilePath(state);
-        File.Delete(logFilePath);
-
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
-            .WriteTo.File(logFilePath)
-            .WriteTo.Console()
-            .WriteTo.Debug()
-            .CreateLogger();
-    }
-
     private static async Task RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
     {
         var customMod = new SkyrimMod(new ModKey("CardmastersOfTamriel", ModType.Plugin), SkyrimRelease.SkyrimSE);
 
-        var configuration = new ConfigurationBuilder()
-            .AddJsonFile(state.RetrieveInternalFilePath("appsettings.json"), optional: false, reloadOnChange: true)
-            .AddJsonFile(state.RetrieveInternalFilePath("localsettings.json"), optional: true, reloadOnChange: true)
-            .AddEnvironmentVariables()
-            .Build();
+        var configuration = SetupConfiguration(state);
 
         var appConfig = configuration.Get<AppConfig>();
 
@@ -63,20 +45,7 @@ public class Program
         var metadataHandler = new MasterMetadataHandler(appConfig.RetrieveMetadataFilePath(state));
         metadataHandler.LoadFromFile();
 
-        var npcCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorNpcConfigFilePath(state));
-        var containerCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorContainerConfigPath(state));
-
-        // Create collectors for each CollectorType
-        var npcCollectors = Enum.GetValues(typeof(CollectorType))
-            .Cast<CollectorType>()
-            .Select(npcCollectorService.CreateCollector)
-            .ToList();
-
-        // Create collectors for each CollectorType
-        var containerCollectors = Enum.GetValues(typeof(CollectorType))
-            .Cast<CollectorType>()
-            .Select(containerCollectorService.CreateCollector)
-            .ToList();
+        var (npcCollectors, containerCollectors) = SetupCollectors(appConfig, state);
 
         var helper = new MetadataHelper(metadataHandler);
         var cardList = helper.GetCards().ToList();
@@ -106,5 +75,46 @@ public class Program
         Log.Information("Mod successfully created and written to disk.");
 
         await Log.CloseAndFlushAsync();
+    }
+    
+    private static void SetupLogging(AppConfig appConfig, IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
+    {
+        // var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        var logFilePath = appConfig.RetrieveLogFilePath(state);
+        File.Delete(logFilePath);
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.File(logFilePath)
+            .WriteTo.Console()
+            .WriteTo.Debug()
+            .CreateLogger();
+    }
+    
+    private static IConfigurationRoot SetupConfiguration(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
+    {
+        return new ConfigurationBuilder()
+            .AddJsonFile(state.RetrieveInternalFilePath("appsettings.json"), optional: false, reloadOnChange: true)
+            .AddJsonFile(state.RetrieveInternalFilePath("localsettings.json"), optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables()
+            .Build();
+    }
+    
+    private static (List<ICollector>, List<ICollector>) SetupCollectors(AppConfig appConfig, IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
+    {
+        var npcCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorNpcConfigFilePath(state));
+        var containerCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorContainerConfigPath(state));
+
+        var npcCollectors = Enum.GetValues(typeof(CollectorType))
+            .Cast<CollectorType>()
+            .Select(npcCollectorService.CreateCollector)
+            .ToList();
+
+        var containerCollectors = Enum.GetValues(typeof(CollectorType))
+            .Cast<CollectorType>()
+            .Select(containerCollectorService.CreateCollector)
+            .ToList();
+
+        return (npcCollectors, containerCollectors);
     }
 }

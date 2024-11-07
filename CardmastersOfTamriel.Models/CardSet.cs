@@ -1,32 +1,88 @@
 namespace CardmastersOfTamriel.Models;
 
-public class CardSet
+public class CardSet : IEquatable<CardSet>
 {
-    public string? Id { get; set; }
-    public string? SeriesId { get; set; }
+    public CardSet(string id, string seriesId)
+    {
+        Id = id;
+        SeriesId = seriesId;
+    }
+
+    // Immutable identity properties
+    public string Id { get; init; }
+    public string SeriesId { get; init; }
+    
+    // Mutable properties
     public string? DisplayName { get; set; }
     public CardTier Tier { get; set; }
-    public string? Theme { get; set; }
     public string? Description { get; set; }
-    public DateTime ReleaseDate { get; set; }
-    public string? Artist { get; set; }
-    public bool IsLimitedEdition { get; set; }
-    public ICollection<Card>? Cards { get; set; }
-    public bool AutoRegenerateData { get; set; } = true;
-    public string? CollectorsNote { get; set; }
-    public string? Region { get; set; }
-    public Dictionary<string, object>? ExtraAttributes { get; set; }
-    public string SourceAbsoluteFolderPath { get; set; }
-    public string DestinationAbsoluteFolderPath { get; set; }
-    public string DestinationRelativeFolderPath { get; set; }
-    public uint DefaultValue { get; set; } = 0;
-    public float DefaultWeight { get; set; } = 0;
-    public string[]? DefaultKeywords { get; set; }
+    public HashSet<Card>? Cards { get; set; }
+    public required string SourceAbsoluteFolderPath { get; set; }
+    public required string DestinationAbsoluteFolderPath { get; set; }
+    public required string DestinationRelativeFolderPath { get; set; }
+    public uint DefaultValue { get; set; }
+    public float DefaultWeight { get; set; }
+    public HashSet<string>? DefaultKeywords { get; set; }
 
-    public CardSet()
+    public override int GetHashCode()
     {
-        SourceAbsoluteFolderPath = string.Empty;
-        DestinationAbsoluteFolderPath = string.Empty;
-        DestinationRelativeFolderPath = string.Empty;
+        // Only use immutable identity properties
+        return HashCode.Combine(Id, SeriesId);
+    }
+
+    public bool Equals(CardSet? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+
+        // For set equality, we might only care about the identity
+        return Id == other.Id && SeriesId == other.SeriesId;
+    }
+
+    public static bool operator ==(CardSet? left, CardSet? right)
+    {
+        if (left is null) return right is null;
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(CardSet? left, CardSet? right)
+    {
+        return !(left == right);
+    }
+}
+
+public class CardEqualityComparer : IEqualityComparer<Card>
+{
+    public static CardEqualityComparer Instance { get; } = new CardEqualityComparer();
+
+    public bool Equals(Card? x, Card? y)
+    {
+        if (ReferenceEquals(x, y)) return true;
+        if (x is null || y is null) return false;
+        return x.Id == y.Id && x.SetId == y.SetId;
+    }
+
+    public int GetHashCode(Card obj)
+    {
+        if (obj is null) return 0;
+        return HashCode.Combine(obj.Id, obj.SetId);
+    }
+}
+
+public class CardSetEqualityComparer : IEqualityComparer<CardSet>
+{
+    public static CardSetEqualityComparer Instance { get; } = new CardSetEqualityComparer();
+
+    public bool Equals(CardSet? x, CardSet? y)
+    {
+        if (ReferenceEquals(x, y)) return true;
+        if (x is null || y is null) return false;
+        return x.Id == y.Id && x.SeriesId == y.SeriesId;
+    }
+
+    public int GetHashCode(CardSet obj)
+    {
+        if (obj is null) return 0;
+        return HashCode.Combine(obj.Id, obj.SeriesId);
     }
 }

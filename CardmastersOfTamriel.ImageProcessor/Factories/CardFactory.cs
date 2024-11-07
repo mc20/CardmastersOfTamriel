@@ -22,14 +22,12 @@ public static class CardFactory
                 ? fileNameWithoutExtension
                 : Path.GetFileNameWithoutExtension(NameHelper.CreateImageFileName(set, (uint)imageIndex));
 
-            var newCard = new Card
+            var newCard = new Card(idToUse, set.Id)
             {
-                Id = idToUse,
-                SetId = set.Id,
                 SetDisplayName = set.DisplayName,
                 SeriesId = set.SeriesId,
-                ImageFileName = recordFilePathAsSource ? null : Path.GetFileName(imageInfo.filePath),
                 Shape = null,
+                ConversionDate = DateTime.UtcNow,
                 DisplayName = null,
                 DisplayedIndex = 0,
                 DisplayedTotalCount = 0,

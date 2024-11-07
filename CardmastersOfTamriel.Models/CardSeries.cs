@@ -1,22 +1,46 @@
 namespace CardmastersOfTamriel.Models;
 
-public class CardSeries
+public class CardSeries : IEquatable<CardSeries>
 {
-    public string? Id { get; set; }
+    public CardSeries(string id)
+    {
+        Id = id;
+    }
+
+    // Immutable identity property
+    public string Id { get; init; }
+    
+    // Mutable properties
     public string? DisplayName { get; set; }
     public CardTier Tier { get; set; }
-    public string? Theme { get; set; }
-    public DateTime? ReleaseDate { get; set; }
-    public string? Artist { get; set; }
-    public bool IsLimitedEdition { get; set; }
     public string? Description { get; set; }
-    public List<CardSet>? Sets { get; set; }
-    public string SourceFolderPath { get; set; }
-    public string DestinationFolderPath { get; set; }
+    public HashSet<CardSet>? Sets { get; set; }
+    public required string SourceFolderPath { get; set; }
+    public required string DestinationFolderPath { get; set; }
 
-    public CardSeries()
+    public override int GetHashCode()
     {
-        SourceFolderPath = string.Empty;
-        DestinationFolderPath = string.Empty;
+        // Only use immutable identity property
+        return Id.GetHashCode();
+    }
+
+    public bool Equals(CardSeries? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+
+        // For series equality, we only care about the identity
+        return Id == other.Id;
+    }
+
+    public static bool operator ==(CardSeries? left, CardSeries? right)
+    {
+        if (left is null) return right is null;
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(CardSeries? left, CardSeries? right)
+    {
+        return !(left == right);
     }
 }

@@ -1,3 +1,4 @@
+using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.Models;
 using Serilog;
 using SixLabors.ImageSharp;
@@ -9,12 +10,11 @@ namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public class ImageConverter
 {
-    private readonly Config _config;
+    private readonly Config _config = ConfigurationProvider.Instance.Config;
 
-    public ImageConverter(Config config)
+    public ImageConverter()
     {
-        _config = config;
-        RegisterCleanupHandlers(); // Register the cleanup handlers
+        RegisterCleanupHandlers();
     }
 
     private static readonly List<string> TempFiles = [];
@@ -22,13 +22,35 @@ public class ImageConverter
     public CardShape ConvertImageAndSaveToDestination(string srcImagePath, string destImagePath)
     {
         Log.Verbose($"Converting image from '{srcImagePath}' to DDS format at '{destImagePath}'");
-        var imageShape = ImageHelper.DetermineOptimalShape(_config, srcImagePath);
+        var imageShape = ImageHelper.DetermineOptimalShape(srcImagePath);
 
         using var image = Image.Load<Rgba32>(srcImagePath);
+        TransformImage(image, imageShape);
 
-        string? templateImagePath;
+        using var template = LoadTemplate(imageShape);
+        using var templateCopy = template.Clone();
 
-        // Perform image transformations based on shape
+        SuperimposeImageOntoTemplate(image, templateCopy);
+
+        ImageHelper.ResizeImageToHeight(templateCopy, _config.ImageProperties.MaximumTextureHeight);
+
+        var tempOutputPath = SaveAsTemporaryPng(templateCopy);
+        TempFiles.Add(tempOutputPath);
+
+        try
+        {
+            ConvertPngToDds(tempOutputPath, destImagePath);
+        }
+        finally
+        {
+            CleanupTemporaryFile(tempOutputPath);
+        }
+
+        return imageShape;
+    }
+
+    private void TransformImage(Image<Rgba32> image, CardShape imageShape)
+    {
         switch (imageShape)
         {
             case CardShape.Landscape:
@@ -37,7 +59,6 @@ public class ImageConverter
                     Size = _config.ImageProperties.TargetSizes.Landscape.ToImageSharpSize(),
                     Mode = ResizeMode.Crop
                 }).Rotate(-90));
-                templateImagePath = _config.Paths.TemplateFiles.Landscape;
                 break;
             case CardShape.Portrait:
                 image.Mutate(x => x.Resize(new ResizeOptions
@@ -45,56 +66,59 @@ public class ImageConverter
                     Size = _config.ImageProperties.TargetSizes.Portrait.ToImageSharpSize(),
                     Mode = ResizeMode.Crop
                 }));
-                templateImagePath = _config.Paths.TemplateFiles.Portrait;
                 break;
             case CardShape.Square:
-            default: // Square
+            default:
                 image.Mutate(x => x.Resize(new ResizeOptions
                 {
                     Size = _config.ImageProperties.TargetSizes.Square.ToImageSharpSize(),
                     Mode = ResizeMode.Crop
                 }));
-                templateImagePath = _config.Paths.TemplateFiles.Square;
                 break;
         }
+    }
 
-        using var template = Image.Load<Rgba32>(templateImagePath);
-        using var templateCopy = template.Clone();
+    private Image<Rgba32> LoadTemplate(CardShape imageShape)
+    {
+        var templateImagePath = imageShape switch
+        {
+            CardShape.Landscape => _config.Paths.TemplateFiles.Landscape,
+            CardShape.Portrait => _config.Paths.TemplateFiles.Portrait,
+            _ => _config.Paths.TemplateFiles.Square
+        };
 
-        // Superimpose the image onto the template copy
+        return Image.Load<Rgba32>(templateImagePath);
+    }
+
+    private void SuperimposeImageOntoTemplate(Image<Rgba32> image, Image<Rgba32> templateCopy)
+    {
         templateCopy.Mutate(x => x.DrawImage(image, _config.ImageProperties.Offset.ToImageSharpPoint(), 1f));
+    }
 
-        ImageHelper.ResizeImageToHeight(templateCopy, _config.ImageProperties.MaximumTextureHeight);
-
-        // Save as a temporary PNG file
+    private static string SaveAsTemporaryPng(Image<Rgba32> templateCopy)
+    {
         var tempOutputPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".png");
-        TempFiles.Add(tempOutputPath); // Track the temp file for cleanup
         templateCopy.Save(tempOutputPath, new PngEncoder());
+        return tempOutputPath;
+    }
 
-        try
-        {
-            // Convert the PNG to DDS
-            FileOperations.ConvertToDds(tempOutputPath, destImagePath);
-            var outputDirectory = Path.GetDirectoryName(destImagePath) ?? Directory.GetCurrentDirectory();
-            var generatedDdsPath =
-                Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(tempOutputPath) + ".dds");
-            if (File.Exists(generatedDdsPath))
-            {
-                File.Move(generatedDdsPath, destImagePath, overwrite: true);
-                Log.Verbose($"Moved generated DDS file to '{destImagePath}'");
-            }
-        }
-        finally
-        {
-            // Clean up temporary file
-            if (File.Exists(tempOutputPath))
-            {
-                File.Delete(tempOutputPath);
-                Log.Verbose($"Deleted temporary image file at '{tempOutputPath}");
-            }
-        }
+    private static void ConvertPngToDds(string tempOutputPath, string destImagePath)
+    {
+        FileOperations.ConvertToDds(tempOutputPath, destImagePath);
+        var outputDirectory = Path.GetDirectoryName(destImagePath) ?? Directory.GetCurrentDirectory();
+        var generatedDdsPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(tempOutputPath) + ".dds");
+        if (!File.Exists(generatedDdsPath)) return;
+        
+        File.Move(generatedDdsPath, destImagePath, overwrite: true);
+        Log.Verbose($"Moved generated DDS file to '{destImagePath}'");
+    }
 
-        return imageShape;
+    private static void CleanupTemporaryFile(string tempOutputPath)
+    {
+        if (!File.Exists(tempOutputPath)) return;
+        
+        File.Delete(tempOutputPath);
+        Log.Verbose($"Deleted temporary image file at '{tempOutputPath}'");
     }
 
     private static void RegisterCleanupHandlers()

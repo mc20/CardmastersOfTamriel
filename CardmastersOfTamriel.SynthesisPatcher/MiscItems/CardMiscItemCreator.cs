@@ -26,7 +26,8 @@ public class CardMiscItemCreator : ICardMiscItemCreator
         foreach (var card in cards)
         {
             var miscItem = InsertAsMiscItem(card);
-            if (miscItem is null) continue;
+            if (miscItem == null) continue;
+
             miscItems.Add(card, miscItem);
             Log.Information($"Inserted MiscItem: {miscItem.EditorID}");
         }
@@ -36,54 +37,21 @@ public class CardMiscItemCreator : ICardMiscItemCreator
 
     private MiscItem? InsertAsMiscItem(Card card)
     {
-        var newMiscItemId = $"MiscItem_Set_{card.SetId}_Card_{card.Id}".AddModNamePrefix();
-        var newTextureSetId = $"TextureSet_Set_{card.SetId}_Card_{card.Id}".AddModNamePrefix();
+        var newMiscItemId = GenerateEditorId("MiscItem", card);
+        var newTextureSetId = GenerateEditorId("TextureSet", card);
 
-        // Create a HashSet of existing EditorIDs for quick lookup
-
-        if (_state.CheckIfExists<IMiscItemGetter>(newMiscItemId) || _customMod.CheckIfExists<MiscItem>(newMiscItemId)
-        || _state.CheckIfExists<ITextureSetGetter>(newTextureSetId) || _customMod.CheckIfExists<TextureSet>(newTextureSetId))
+        if (ItemExists(newMiscItemId, newTextureSetId))
         {
             Log.Warning($"MiscItem {newMiscItemId} already exists in the load order.");
-            return default;
+            return null;
         }
 
-        var newMiscItem = _customMod.MiscItems.AddNew();
-        newMiscItem.EditorID = newMiscItemId;
-        newMiscItem.Name = card.DisplayName;
-        newMiscItem.Value = card.Value == 0 ? 10 : card.Value;
-        newMiscItem.Weight = card.Weight;
+        var newMiscItem = CreateMiscItem(card, newMiscItemId);
+        var textureSetForWorldModel = CreateTextureSet(card, newTextureSetId);
 
-        ModificationTracker.IncrementMiscItemCount(newMiscItem.EditorID);
+        newMiscItem.Model = CreateModel(card, textureSetForWorldModel);
 
-        Log.Information($"_state.DataFolderPath: {_state.DataFolderPath}");
-
-        var textureSetForWorldModel = _customMod.TextureSets.AddNew();
-        textureSetForWorldModel.EditorID = newTextureSetId;
-        textureSetForWorldModel.Diffuse = @$"CardmastersOfTamriel\{card.DestinationRelativeFilePath}";
-        textureSetForWorldModel.NormalOrGloss = card.GetNormalOrGloss();
-        //ITMNoteUp [SNDR:000C7A54]
-
-        Log.Information($"Added TextureSet {textureSetForWorldModel.EditorID} with Diffuse Path: '{textureSetForWorldModel.Diffuse}'");
-
-        ModificationTracker.IncrementTextureSetCount(textureSetForWorldModel.EditorID);
-
-        newMiscItem.Model = new Model()
-        {
-            File = card.GetModelForCard(),
-            AlternateTextures =
-            [
-                new AlternateTexture()
-                {
-                    Name = "Card",
-                    Index = 0,
-                    NewTexture = textureSetForWorldModel.ToLink()
-                }
-            ]
-        };
-
-
-        if (card.Keywords is not null && card.Keywords.Length > 0)
+        if (card.Keywords is not null)
         {
             AddKeywordsToMiscItem(newMiscItem, card.Keywords);
         }
@@ -91,22 +59,74 @@ public class CardMiscItemCreator : ICardMiscItemCreator
         return newMiscItem;
     }
 
-    private void AddKeywordsToMiscItem(MiscItem miscItem, params string[] keywordEditorIDs)
+    private static string GenerateEditorId(string prefix, Card card)
     {
-        // Initialize the Keywords list if it's null
-        miscItem.Keywords ??= [];
+        return $"{prefix}_Set_{card.SetId}_Card_{card.Id}".AddModNamePrefix();
+    }
 
+    private bool ItemExists(string miscItemId, string textureSetId)
+    {
+        return _state.CheckIfExists<IMiscItemGetter>(miscItemId) || _customMod.CheckIfExists<MiscItem>(miscItemId)
+                                                                 || _state.CheckIfExists<ITextureSetGetter>(
+                                                                     textureSetId) ||
+                                                                 _customMod.CheckIfExists<TextureSet>(textureSetId);
+    }
+
+    private MiscItem CreateMiscItem(Card card, string editorId)
+    {
+        var newMiscItem = _customMod.MiscItems.AddNew();
+        newMiscItem.EditorID = editorId;
+        newMiscItem.Name = card.DisplayName;
+        newMiscItem.Value = card.Value == 0 ? 10 : card.Value;
+        newMiscItem.Weight = card.Weight;
+
+        ModificationTracker.IncrementMiscItemCount(newMiscItem.EditorID);
+
+        return newMiscItem;
+    }
+
+    private TextureSet CreateTextureSet(Card card, string editorId)
+    {
+        var textureSet = _customMod.TextureSets.AddNew();
+        textureSet.EditorID = editorId;
+        textureSet.Diffuse = @$"CardmastersOfTamriel\{card.DestinationRelativeFilePath}";
+        textureSet.NormalOrGloss = card.GetNormalOrGloss();
+
+        Log.Information($"Added TextureSet {textureSet.EditorID} with Diffuse Path: '{textureSet.Diffuse}'");
+
+        ModificationTracker.IncrementTextureSetCount(textureSet.EditorID);
+
+        return textureSet;
+    }
+
+    private static Model CreateModel(Card card, TextureSet textureSet)
+    {
+        return new Model
+        {
+            File = card.GetModelForCard(),
+            AlternateTextures =
+            [
+                new AlternateTexture
+                {
+                    Name = "Card",
+                    Index = 0,
+                    NewTexture = textureSet.ToLink()
+                }
+            ]
+        };
+    }
+
+    private void AddKeywordsToMiscItem(MiscItem miscItem, HashSet<string> keywordEditorIDs)
+    {
+        miscItem.Keywords ??= [];
         foreach (var keywordEditorId in keywordEditorIDs)
         {
-            // Find the keyword by EditorID in the load order
             var keyword = _state.LoadOrder.PriorityOrder.Keyword().WinningOverrides()
                 .FirstOrDefault(kw => kw.EditorID == keywordEditorId);
 
             if (keyword != null)
             {
-                // Add the keyword to the MiscItem's Keywords list
                 miscItem.Keywords.Add(keyword.ToLink());
-                // Log.Verbose($"Added keyword {keywordEditorId} to {miscItem.EditorID}");
             }
             else
             {

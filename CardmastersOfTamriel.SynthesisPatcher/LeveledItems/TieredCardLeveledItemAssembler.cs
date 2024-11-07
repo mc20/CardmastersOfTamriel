@@ -11,7 +11,7 @@ namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 
 public class TieredCardLeveledItemAssembler
 {
-    private const int MAX_ENTRIES_PER_LEVELED_LIST = 100;
+    private const int MaxEntriesPerLeveledList = 100;
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _skyrimMod;
 
@@ -69,33 +69,23 @@ public class TieredCardLeveledItemAssembler
 
     private void AddMiscItemsToTierLeveledItem(LeveledItem tierLeveledItem, List<MiscItem> tierMiscItems, CardTier tier)
     {
-        // Split items into chunks of MAX_ENTRIES_PER_LEVELED_LIST
-        var itemChunks = tierMiscItems.Chunk(MAX_ENTRIES_PER_LEVELED_LIST).ToList();
+        // Split items into chunks of MaxEntriesPerLeveledList
+        var itemChunks = tierMiscItems.Chunk(MaxEntriesPerLeveledList).ToList();
 
         if (itemChunks.Count == 0) return;
 
-        // If we have 100 or fewer items, add them directly to the tier leveled item
-        if (itemChunks.Count == 1)
-        {
-            foreach (var miscItem in itemChunks[0])
-            {
-                AddMiscItemToLeveledItem(tierLeveledItem, miscItem);
-            }
-            return;
-        }
-
-        // Create sub-lists for chunks larger than 100 items
-        for (int i = 0; i < itemChunks.Count; i++)
+        // Create sub-lists for all chunks
+        for (var i = 0; i < itemChunks.Count; i++)
         {
             var subList = CreateSubLeveledItem(tier, i);
             if (subList == null) continue;
-
+        
             // Add MiscItems to sub-list
             foreach (var miscItem in itemChunks[i])
             {
                 AddMiscItemToLeveledItem(subList, miscItem);
             }
-
+        
             // Add sub-list to tier leveled item
             AddSubListToTierLeveledItem(tierLeveledItem, subList);
         }
