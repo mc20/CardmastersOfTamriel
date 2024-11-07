@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CardmastersOfTamriel.ImageProcessor.Factories;
+using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
@@ -7,56 +8,13 @@ using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
-public class CardSetProcessor : ICardSetProcessor
+public class CardSetImageConversionProcessor : ICardSetProcessor
 {
-    private readonly Config _config;
-    private readonly MasterMetadataHandler _handler;
-
-    public CardSetProcessor(Config appConfig, MasterMetadataHandler handler)
-    {
-        _config = appConfig;
-        _handler = handler;
-    }
-
-    private static List<Card> LoadCardsFromJsonFile(string savedJsonFilePath, string savedJsonBackupFilePath)
-    {
-        if (File.Exists(savedJsonFilePath))
-        {
-            // If a backup already exists, delete it
-            if (File.Exists(savedJsonBackupFilePath))
-            {
-                File.Delete(savedJsonBackupFilePath);
-            }
-
-            // Move the original file to create a backup
-            File.Copy(savedJsonFilePath, savedJsonBackupFilePath);
-
-            var lines = new HashSet<string>(File.ReadLines(savedJsonFilePath));
-            var uniqueCards = new HashSet<string>(); // Set to track unique Ids
-
-            var cardsFromMetadataFile = lines
-                .Where(line => !string.IsNullOrWhiteSpace(line))
-                .Select(line => JsonSerializer.Deserialize<Card>(line, JsonSettings.Options))
-                .Where(card =>
-                    card != null && uniqueCards.Add(card.Id!)) // Add to the set and check if the Id is unique
-                .Select(card => card!) // Use the null-forgiving operator
-                .ToList();
-
-            File.Delete(savedJsonFilePath);
-
-            return cardsFromMetadataFile;
-        }
-        else
-        {
-            return [];
-        }
-    }
+    private readonly Config _config = ConfigurationProvider.Instance.Config;
 
     public void ProcessSetAndImages(CardSet set)
     {
         Log.Information($"Processing Set from Source Path: '{set.SourceAbsoluteFolderPath}'");
-
-        if (set.Id == null) return;
 
         set.Cards ??= [];
         set.Cards.Clear();
@@ -66,7 +24,7 @@ public class CardSetProcessor : ICardSetProcessor
 
         var cardsFromMetadataFile = LoadCardsFromJsonFile(savedJsonFilePath, savedJsonBackupFilePath);
 
-        var imageFilePathsAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath)
+        var imageFilePathsAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath ?? string.Empty)
             .OrderBy(file => file).ToList();
 
         var cardsFromSource = CardFactory.CreateCardsFromImagesAtFolderPath(set, [.. imageFilePathsAtSource], true);
@@ -81,12 +39,54 @@ public class CardSetProcessor : ICardSetProcessor
 
         var finalCards = updatedCards.ConsolidateCardsWith(cardsAtDestination).ToList();
 
+        ProcessEligibleImages(set, finalCards, cardsAtDestination);
+
+        UpdateDisplayCards(set, finalCards);
+
+        finalCards.ForEach(card => FileOperations.AppendCardToFile(card, savedJsonFilePath));
+
+        set.Cards = finalCards.ToHashSet();
+
+        var handler = MasterMetadataProvider.Instance.MetadataHandler;
+        handler .WriteMetadataToFile();
+    }
+
+    private static List<Card> LoadCardsFromJsonFile(string savedJsonFilePath, string savedJsonBackupFilePath)
+    {
+        if (!File.Exists(savedJsonFilePath)) return [];
+
+        if (File.Exists(savedJsonBackupFilePath))
+        {
+            File.Delete(savedJsonBackupFilePath);
+        }
+
+        File.Copy(savedJsonFilePath, savedJsonBackupFilePath);
+
+        var lines = new HashSet<string>(File.ReadLines(savedJsonFilePath));
+        var uniqueCards = new HashSet<string>();
+
+        var cardsFromMetadataFile = lines
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .Select(line => JsonSerializer.Deserialize<Card>(line, JsonSettings.Options))
+            .Where(card => card != null && uniqueCards.Add(card.Id!))
+            .Select(card => card!)
+            .ToList();
+
+        File.Delete(savedJsonFilePath);
+
+        return cardsFromMetadataFile;
+    }
+
+    private void ProcessEligibleImages(CardSet set, List<Card> finalCards, List<Card> cardsAtDestination)
+    {
         var eligibleFilePathsForConversion = finalCards.Select(card => card?.SourceAbsoluteFilePath ?? string.Empty)
             .Where(filePath => !string.IsNullOrWhiteSpace(filePath)).ToHashSet();
         Log.Verbose($"Found {eligibleFilePathsForConversion.Count} eligible images for conversion");
 
-        var randomCards = CardSetImageHelper.SelectRandomImageFilePaths(_config.General.MaxSampleSize - cardsAtDestination.Count,
+        var randomCards = CardSetImageHelper.SelectRandomImageFilePaths(
+            _config.General.MaxSampleSize - cardsAtDestination.Count,
             eligibleFilePathsForConversion);
+        
         Log.Verbose($"Selected {randomCards.Count} random images for conversion");
 
         foreach (var info in finalCards.OrderBy(card => card.Id).Select((card, index) => (card, index)))
@@ -99,6 +99,7 @@ public class CardSetProcessor : ICardSetProcessor
                 var result = ConvertAndSaveImage(set, info.card.SourceAbsoluteFilePath,
                     NameHelper.CreateImageFileName(set, (uint)info.index + 1));
 
+                info.card.ConversionDate = DateTime.UtcNow;
                 info.card.Shape = result.Shape;
                 info.card.DisplayName = null;
                 info.card.DestinationAbsoluteFilePath = result.DestinationAbsoluteFilePath;
@@ -114,10 +115,8 @@ public class CardSetProcessor : ICardSetProcessor
                 if (string.IsNullOrEmpty(info.card.DestinationAbsoluteFilePath))
                 {
                     Log.Verbose($"Card {info.card.Id} was not converted and will be skipped");
-                    // Clear out data for cards that haven't been converted or weren't chosen for conversion
                     info.card.Shape = null;
                     info.card.DisplayName = null;
-                    info.card.ImageFileName = null;
                     info.card.DestinationAbsoluteFilePath = null;
                     info.card.DestinationRelativeFilePath = null;
                     info.card.DisplayedIndex = 0;
@@ -131,7 +130,10 @@ public class CardSetProcessor : ICardSetProcessor
                 }
             }
         }
+    }
 
+    private static void UpdateDisplayCards(CardSet set, List<Card> finalCards)
+    {
         var cardsEligibleForDisplay =
             finalCards.Where(card => !string.IsNullOrWhiteSpace(card.DestinationAbsoluteFilePath)).ToList();
         foreach (var cardInfo in cardsEligibleForDisplay.OrderBy(card => card.Id)
@@ -142,19 +144,13 @@ public class CardSetProcessor : ICardSetProcessor
             cardInfo.card.DisplayedIndex = (uint)cardInfo.index + 1;
             cardInfo.card.DisplayedTotalCount = (uint)cardsEligibleForDisplay.Count;
         }
-
-        finalCards.ForEach(card => FileOperations.AppendCardToFile(card, savedJsonFilePath));
-
-        set.Cards = finalCards;
-
-        _handler.WriteMetadataToFile();
     }
 
-    private ConversionResult ConvertAndSaveImage(CardSet set, string sourceImageFilePath, string imageFileName)
+    private static ConversionResult ConvertAndSaveImage(CardSet set, string sourceImageFilePath, string imageFileName)
     {
         var imageDestinationFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, imageFileName);
 
-        var helper = new ImageConverter(_config);
+        var helper = new ImageConverter();
         var imageShape = helper.ConvertImageAndSaveToDestination(sourceImageFilePath, imageDestinationFilePath);
 
         return new ConversionResult()
@@ -163,5 +159,4 @@ public class CardSetProcessor : ICardSetProcessor
             DestinationAbsoluteFilePath = imageDestinationFilePath
         };
     }
-
 }

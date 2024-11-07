@@ -29,21 +29,8 @@ public class CollectorLeveledItemDistributor
     {
         foreach (var collector in collectors)
         {
-            var leveledItemCollectorId = $"LeveledItem_Collector{collector.Type}".AddModNamePrefix();
-
-            if (_state.CheckIfExists<ILeveledItemGetter>(leveledItemCollectorId) ||
-                _skyrimMod.CheckIfExists<LeveledItem>(leveledItemCollectorId))
-            {
-                Log.Warning($"LeveledItem {leveledItemCollectorId} already exists in the load order.");
-                continue;
-            }
-
-            var leveledItemForCollector = _skyrimMod.LeveledItems.AddNew();
-            leveledItemForCollector.EditorID = leveledItemCollectorId;
-            leveledItemForCollector.ChanceNone = collector.ChanceNone;
-            leveledItemForCollector.Entries ??= [];
-            ModificationTracker.IncrementLeveledItemCount(
-                $"Collector{collector.Type}\t{leveledItemForCollector.EditorID}\tChanceNone: {leveledItemForCollector.ChanceNone}");
+            var leveledItemForCollector = CreateLeveledItemForCollector(collector);
+            if (leveledItemForCollector == null) continue;
 
             foreach (var probability in collector.CardTierProbabilities)
             {
@@ -51,9 +38,29 @@ public class CollectorLeveledItemDistributor
             }
 
             DistributeToNpcs(collector, leveledItemForCollector);
-
             DistributeToContainers(collector, leveledItemForCollector);
         }
+    }
+
+    private LeveledItem? CreateLeveledItemForCollector(ICollector collector)
+    {
+        var leveledItemCollectorId = $"LeveledItem_Collector{collector.Type}".AddModNamePrefix();
+
+        if (_state.CheckIfExists<ILeveledItemGetter>(leveledItemCollectorId) ||
+            _skyrimMod.CheckIfExists<LeveledItem>(leveledItemCollectorId))
+        {
+            Log.Warning($"LeveledItem {leveledItemCollectorId} already exists in the load order.");
+            return null;
+        }
+
+        var leveledItemForCollector = _skyrimMod.LeveledItems.AddNew();
+        leveledItemForCollector.EditorID = leveledItemCollectorId;
+        leveledItemForCollector.ChanceNone = collector.ChanceNone;
+        leveledItemForCollector.Entries ??= [];
+
+        ModificationTracker.IncrementLeveledItemCount(
+            $"Collector{collector.Type}\t{leveledItemForCollector.EditorID}\tChanceNone: {leveledItemForCollector.ChanceNone}");
+        return leveledItemForCollector;
     }
 
     private void AddLeveledItemForCollector(ICollector collector, ITierProbability probability,
@@ -100,7 +107,8 @@ public class CollectorLeveledItemDistributor
                 }
             };
 
-            ModificationTracker.IncrementLeveledItemEntryCount(newLeveledItemForCollectorProbability.EditorID ?? "UNKNOWN");
+            ModificationTracker.IncrementLeveledItemEntryCount(newLeveledItemForCollectorProbability.EditorID ??
+                                                               "UNKNOWN");
             cardCollectorLeveledItem.Entries ??= [];
             cardCollectorLeveledItem.Entries.Add(entry);
         }
@@ -115,33 +123,33 @@ public class CollectorLeveledItemDistributor
                 _appConfig.RetrieveLeveledItemConfigFilePath(_state));
         Log.Information(
             $"Retrieved: {designatedLeveledItemJsonData.Count} CollectorTypes from '{_appConfig.RetrieveLeveledItemConfigFilePath(_state)}'");
-        if (designatedLeveledItemJsonData.TryGetValue(collector.Type, out var editorIdsFromLeveledItemJsonData))
+
+        if (!designatedLeveledItemJsonData.TryGetValue(collector.Type, out var editorIdsFromLeveledItemJsonData))
+            return;
+        
+        foreach (var designatedEditorId in editorIdsFromLeveledItemJsonData.Where(id =>
+                     !string.IsNullOrWhiteSpace(id)))
         {
-            foreach (var designatedEditorId in editorIdsFromLeveledItemJsonData.Where(id =>
-                         !string.IsNullOrWhiteSpace(id)))
+            var designatedLeveledItem = _state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides()
+                .FirstOrDefault(ll => ll.EditorID == designatedEditorId);
+
+            if (designatedLeveledItem is null) continue;
+            var designatedLeveledItemToModify = _skyrimMod.LeveledItems.GetOrAddAsOverride(designatedLeveledItem);
+            designatedLeveledItemToModify.Entries ??= [];
+
+            var entry = new LeveledItemEntry
             {
-                var designatedLeveledItem = _state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides()
-                    .FirstOrDefault(ll => ll.EditorID == designatedEditorId);
-
-                if (designatedLeveledItem is null) continue;
-                var designatedLeveledItemToModify =
-                    _skyrimMod.LeveledItems.GetOrAddAsOverride(designatedLeveledItem);
-                designatedLeveledItemToModify.Entries ??= [];
-
-                var entry = new LeveledItemEntry
+                Data = new LeveledItemEntryData
                 {
-                    Data = new LeveledItemEntryData
-                    {
-                        Reference = leveledItemForCollector.ToLink(),
-                        Count = 1,
-                        Level = 1,
-                    }
-                };
+                    Reference = leveledItemForCollector.ToLink(),
+                    Count = 1,
+                    Level = 1,
+                }
+            };
 
-                designatedLeveledItemToModify.Entries.Add(entry);
-                Log.Information(
-                    $"Added LeveledItem: {leveledItemForCollector.EditorID} to LeveledItem: {designatedLeveledItem.EditorID}");
-            }
+            designatedLeveledItemToModify.Entries.Add(entry);
+            Log.Information(
+                $"Added LeveledItem: {leveledItemForCollector.EditorID} to LeveledItem: {designatedLeveledItem.EditorID}");
         }
     }
 
@@ -155,14 +163,11 @@ public class CollectorLeveledItemDistributor
         Log.Information(
             $"Retrieved: {designatedContainerJsonData.Count} CollectorTypes from '{_appConfig.RetrieveContainerConfigFilePath(_state)}'");
 
-        // Log.Information(JsonSerializer.Serialize(designatedContainerJsonData));
-
         if (!designatedContainerJsonData.TryGetValue(collector.Type, out var editorIdsFromContainerJsonData)) return;
 
         Log.Information(
             $"Retrieved: {editorIdsFromContainerJsonData.Count} Containers for CollectorType: {collector.Type}");
-        foreach (var designatedEditorId in editorIdsFromContainerJsonData.Where(
-                     id => !string.IsNullOrWhiteSpace(id)))
+        foreach (var designatedEditorId in editorIdsFromContainerJsonData.Where(id => !string.IsNullOrWhiteSpace(id)))
         {
             Log.Information($"Designated Container: {designatedEditorId}");
             var designatedContainer = _state.LoadOrder.PriorityOrder.Container().WinningOverrides()

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CardmastersOfTamriel.ImageProcessor.Factories;
+using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
@@ -8,13 +9,12 @@ namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
 public class CardSetReplicator
 {
-    private readonly MasterMetadataHandler _handler;
+    private readonly MasterMetadataHandler _handler = MasterMetadataProvider.Instance.MetadataHandler;
     private readonly CardSeries _series;
 
-    public CardSetReplicator(MasterMetadataHandler handler, string seriesId)
+    public CardSetReplicator(string seriesId)
     {
-        _handler = handler;
-        _series = handler.Metadata.Series?.FirstOrDefault(series => series.Id == seriesId) ??
+        _series = _handler.Metadata.Series?.FirstOrDefault(series => series.Id == seriesId) ??
                   throw new KeyNotFoundException($"No series found with id: {seriesId}");
     }
 
@@ -22,6 +22,8 @@ public class CardSetReplicator
     {
         foreach (var (setFolderName, sourceSetPaths) in groupedFolders)
         {
+            Log.Verbose($"Checking Set {setFolderName} having {sourceSetPaths.Count} source set folders");
+
             if (sourceSetPaths.Count > 1)
             {
                 Log.Verbose($"Creating multiple set folders for {setFolderName}");
@@ -53,31 +55,34 @@ public class CardSetReplicator
         string sourceSetPath)
     {
         Directory.CreateDirectory(destinationSetFolderPath);
-
-        _series.Sets?.RemoveAll(set => set.Id == _series.Id);
+        Log.Verbose("Created destination Set folder: " + destinationSetFolderPath);
 
         CardSet? newCardSetMetadata = null;
 
         var destinationSetMetadataFilePath = Path.Combine(destinationSetFolderPath, "set_metadata.json");
-        if (File.Exists(destinationSetMetadataFilePath))
+        if (!File.Exists(destinationSetMetadataFilePath))
         {
-            try
-            {
-                newCardSetMetadata = JsonFileReader.ReadFromJson<CardSet>(destinationSetMetadataFilePath);
-                Log.Verbose(
-                    $"Found existing Series Metadata file at Destination Path: '{destinationSetMetadataFilePath}'");
-            }
-            catch (Exception e)
-            {
-                Log.Error(e,
-                    $"Could not convert the the Destination Metadata file at '{destinationSetMetadataFilePath}' to a CardSet");
-            }
+            Log.Warning("No existing Series Metadata file found at Destination Path: " +
+                        destinationSetMetadataFilePath);
+            _handler.WriteMetadataToFile();
+            return;
         }
 
+        try
+        {
+            newCardSetMetadata = JsonFileReader.ReadFromJson<CardSet?>(destinationSetMetadataFilePath);
+            Log.Verbose(
+                $"Found existing Series Metadata file at Destination Path: '{destinationSetMetadataFilePath}'");
+        }
+        catch (Exception e)
+        {
+            Log.Error(e,
+                $"Could not convert the the Destination Metadata file at '{destinationSetMetadataFilePath}' to a CardSet");
+        }
+        
         if (newCardSetMetadata is null)
         {
             newCardSetMetadata = CardSetFactory.CreateNewSet(setFolderName, _series);
-            newCardSetMetadata.SeriesId = _series.Id;
             newCardSetMetadata.Tier = _series.Tier;
         }
 
@@ -85,6 +90,7 @@ public class CardSetReplicator
         newCardSetMetadata.DestinationAbsoluteFolderPath = destinationSetFolderPath;
 
         _series.Sets ??= [];
+        _series.Sets.RemoveWhere(set => set.Id == newCardSetMetadata.Id);
         _series.Sets.Add(newCardSetMetadata);
 
         var serializedJson = JsonSerializer.Serialize(newCardSetMetadata, JsonSettings.Options);

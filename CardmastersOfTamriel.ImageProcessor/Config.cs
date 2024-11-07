@@ -10,6 +10,7 @@ public class Config
 public class GeneralSettings
 {
     public required int MaxSampleSize { get; set; }
+    public required HashSet<string> DefaultMiscItemKeywords { get; set; }
 }
 
 public class PathSettings

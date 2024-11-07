@@ -1,4 +1,5 @@
-﻿using CardmastersOfTamriel.Models;
+﻿using CardmastersOfTamriel.ImageProcessor.Providers;
+using CardmastersOfTamriel.Models;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -7,8 +8,10 @@ namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public static class ImageHelper
 {
-    public static CardShape DetermineOptimalShape(Config config, string imagePath)
+    public static CardShape DetermineOptimalShape(string imagePath)
     {
+        var config = ConfigurationProvider.Instance.Config;
+        
         using var image = Image.Load(imagePath);
         var width = image.Width;
         var height = image.Height;
@@ -35,16 +38,16 @@ public static class ImageHelper
 
         return optimalShape;
     }
-    
+
     // Method to calculate the retained area when resizing the image
-    public static double CalculateRetainedArea(int originalWidth, int originalHeight, Size targetSize)
+    private static double CalculateRetainedArea(int originalWidth, int originalHeight, Size targetSize)
     {
         var scale = Math.Min((double)originalWidth / targetSize.Width, (double)originalHeight / targetSize.Height);
         var retainedWidth = scale * targetSize.Width;
         var retainedHeight = scale * targetSize.Height;
         return retainedWidth * retainedHeight / (originalWidth * originalHeight);
     }
-    
+
     public static void ResizeImageToHeight(Image<Rgba32> image, int targetHeight)
     {
         // Calculate the new width to maintain the aspect ratio

@@ -29,9 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="localsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -44,5 +41,13 @@
     <None Update="Config\collectors_leveleditems.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="InternalData\localsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="LeveledItems\CollectorLeveledItemCreator.cs" />
+    <Compile Remove="Utilities\LeveledItemExtensionMethods.cs" />
   </ItemGroup>
 </Project>

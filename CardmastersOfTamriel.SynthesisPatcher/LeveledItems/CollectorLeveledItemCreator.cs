@@ -4,11 +4,11 @@ using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Noggog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.LeveledLists;
+namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 
 public class CollectorLeveledItemCreator
 {
-    private const int MAX_ENTRIES_PER_LEVELED_LIST = 100;
+    private const int MaxEntriesPerLeveledList = 100;
     private readonly ISkyrimMod _skyrimMod;
 
     public CollectorLeveledItemCreator(ISkyrimMod skyrimMod)
@@ -36,23 +36,13 @@ public class CollectorLeveledItemCreator
 
     private void AddMiscItemsToLeveledItem(LeveledItem leveledItem, List<MiscItem> miscItems)
     {
-        // Split items into chunks of MAX_ENTRIES_PER_LEVELED_LIST
-        var itemChunks = miscItems.Chunk(MAX_ENTRIES_PER_LEVELED_LIST).ToList();
+        // Split items into chunks of MaxEntriesPerLeveledList
+        var itemChunks = miscItems.Chunk(MaxEntriesPerLeveledList).ToList();
 
         if (itemChunks.Count == 0) return;
 
-        // If we have 100 or fewer items, add them directly
-        if (itemChunks.Count == 1)
-        {
-            foreach (var miscItem in itemChunks[0])
-            {
-                leveledItem.AddToLeveledItem(miscItem);
-            }
-            return;
-        }
-
         // Create sub-lists for chunks larger than 100 items
-        for (int i = 0; i < itemChunks.Count; i++)
+        for (var i = 0; i < itemChunks.Count; i++)
         {
             var subList = CreateSubLeveledItem(leveledItem.EditorID ?? "Unknown", i);
 

@@ -5,17 +5,17 @@ namespace CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 
 public static class ModificationTracker
 {
-    public static int MiscItemInsertCount { get; set; } = 0;
-    public static List<string> MiscItemInsertLocations { get; set; } = new List<string>();
+    private static int MiscItemInsertCount { get; set; } = 0;
+    private static List<string> MiscItemInsertLocations { get; set; } = [];
 
-    public static int TextureSetInsertCount { get; set; } = 0;
-    public static List<string> TextureSetInsertLocations { get; set; } = new List<string>();
+    private static int TextureSetInsertCount { get; set; } = 0;
+    private static List<string> TextureSetInsertLocations { get; set; } = [];
 
-    public static int LeveledItemInsertCount { get; set; } = 0;
-    public static List<string> LeveledItemInsertLocations { get; set; } = new List<string>();
+    private static int LeveledItemInsertCount { get; set; }
+    private static List<string> LeveledItemInsertLocations { get; set; } = [];
 
-    public static int LeveledItemEntryInsertCount { get; set; } = 0;
-    public static List<string> LeveledItemEntryInsertLocations { get; set; } = new List<string>();
+    private static int LeveledItemEntryInsertCount { get; set; }
+    private static List<string> LeveledItemEntryInsertLocations { get; set; } = [];
 
     public static void IncrementMiscItemCount(string context, [CallerMemberName] string callerName = "",
         [CallerFilePath] string callerFilePath = "",
