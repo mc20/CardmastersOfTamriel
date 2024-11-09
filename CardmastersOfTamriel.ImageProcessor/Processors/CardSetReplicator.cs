@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CardmastersOfTamriel.ImageProcessor.Factories;
 using CardmastersOfTamriel.ImageProcessor.Providers;
+using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
@@ -60,32 +61,35 @@ public class CardSetReplicator
         CardSet? newCardSetMetadata = null;
 
         var destinationSetMetadataFilePath = Path.Combine(destinationSetFolderPath, "set_metadata.json");
+
         if (!File.Exists(destinationSetMetadataFilePath))
         {
-            Log.Warning("No existing Series Metadata file found at Destination Path: " +
-                        destinationSetMetadataFilePath);
+            Log.Verbose("No existing Series Metadata file found at Destination Path: " + destinationSetMetadataFilePath);
             _handler.WriteMetadataToFile();
-            return;
+        }
+        else
+        {
+            try
+            {
+                newCardSetMetadata = JsonFileReader.ReadFromJson<CardSet?>(destinationSetMetadataFilePath);
+                Log.Verbose(
+                    $"Found existing Series Metadata file at Destination Path: '{destinationSetMetadataFilePath}'");
+            }
+            catch (Exception e)
+            {
+                Log.Error(e,
+                    $"Could not convert the the Destination Metadata file at '{destinationSetMetadataFilePath}' to a CardSet");
+            }
         }
 
-        try
-        {
-            newCardSetMetadata = JsonFileReader.ReadFromJson<CardSet?>(destinationSetMetadataFilePath);
-            Log.Verbose(
-                $"Found existing Series Metadata file at Destination Path: '{destinationSetMetadataFilePath}'");
-        }
-        catch (Exception e)
-        {
-            Log.Error(e,
-                $"Could not convert the the Destination Metadata file at '{destinationSetMetadataFilePath}' to a CardSet");
-        }
-        
         if (newCardSetMetadata is null)
         {
             newCardSetMetadata = CardSetFactory.CreateNewSet(setFolderName, _series);
             newCardSetMetadata.Tier = _series.Tier;
         }
 
+        // Ensure there's a properly formatted Set DisplayName
+        newCardSetMetadata.DisplayName = NameHelper.FormatDisplayNameFromId(newCardSetMetadata.Id);
         newCardSetMetadata.SourceAbsoluteFolderPath = sourceSetPath;
         newCardSetMetadata.DestinationAbsoluteFolderPath = destinationSetFolderPath;
 

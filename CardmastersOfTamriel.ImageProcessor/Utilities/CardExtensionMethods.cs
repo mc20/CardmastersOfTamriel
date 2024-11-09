@@ -1,5 +1,3 @@
-using CardmastersOfTamriel.Models;
-
 namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public static class CardExtensionMethods

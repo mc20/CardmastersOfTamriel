@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 
@@ -6,23 +5,16 @@ namespace CardmastersOfTamriel.ImageProcessor.Factories;
 
 public static class CardFactory
 {
-    public static List<Card> CreateCardsFromImagesAtFolderPath(CardSet set, HashSet<string> imageFilePaths,
+    public static HashSet<Card> CreateCardsFromImagesAtFolderPath(CardSet set, HashSet<string> imageFilePaths,
         bool recordFilePathAsSource = true)
     {
-        var cards = new List<Card>();
+        var cards = new HashSet<Card>();
         foreach (var imageInfo in imageFilePaths.Select((path, index) => new { filePath = path, index }))
         {
             var imageIndex = imageInfo.index + 1;
 
-            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(imageInfo.filePath);
-            const string pattern = @".+_\d{3}$";
-            var isMatch = Regex.IsMatch(fileNameWithoutExtension, pattern);
-
-            var idToUse = isMatch
-                ? fileNameWithoutExtension
-                : Path.GetFileNameWithoutExtension(NameHelper.CreateImageFileName(set, (uint)imageIndex));
-
-            var newCard = new Card(idToUse, set.Id)
+            var newCardId = Path.GetFileNameWithoutExtension(NameHelper.CreateImageFileName(set, (uint)imageIndex));
+            var newCard = new Card(newCardId, set.Id)
             {
                 SetDisplayName = set.DisplayName,
                 SeriesId = set.SeriesId,

@@ -1,4 +1,3 @@
-using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;

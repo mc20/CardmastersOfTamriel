@@ -11,7 +11,7 @@ public static class ImageHelper
     public static CardShape DetermineOptimalShape(string imagePath)
     {
         var config = ConfigurationProvider.Instance.Config;
-        
+
         using var image = Image.Load(imagePath);
         var width = image.Width;
         var height = image.Height;
@@ -20,9 +20,7 @@ public static class ImageHelper
         var shapeAreas = new Dictionary<CardShape, double>
         {
             { CardShape.Portrait, CalculateRetainedArea(width, height, config.ImageProperties.TargetSizes.Portrait) },
-            {
-                CardShape.Landscape, CalculateRetainedArea(width, height, config.ImageProperties.TargetSizes.Landscape)
-            },
+            { CardShape.Landscape, CalculateRetainedArea(width, height, config.ImageProperties.TargetSizes.Landscape) },
             { CardShape.Square, CalculateRetainedArea(width, height, config.ImageProperties.TargetSizes.Square) }
         };
 

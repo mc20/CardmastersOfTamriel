@@ -5,9 +5,9 @@ using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
-public class CardSetImageSizeProcessor : ICardSetProcessor
+public class CardSetImageSizeProcessor : ICardSetHandler
 {
-    public void ProcessSetAndImages(CardSet set)
+    public void ProcessCardSet(CardSet set)
     {
         Log.Information($"Processing Set from Source Path: '{set.SourceAbsoluteFolderPath}'");
 

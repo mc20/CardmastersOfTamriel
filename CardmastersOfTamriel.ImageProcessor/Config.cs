@@ -18,10 +18,20 @@ public class PathSettings
     public required string SourceImagesFolderPath { get; set; }
     public required string OutputFolderPath { get; set; }
     public required string MasterMetadataFilePath { get; set; }
-    public required TemplateFiles TemplateFiles { get; set; }
+    public required string SetMetadataOverrideFilePath { get; set; }
+    public required string RebuildListFilePath { get; set; }
+    public required CardTierFilePaths TemplateFiles { get; set; }
 }
 
-public class TemplateFiles
+public class CardTierFilePaths
+{
+    public required CardShapeFilePaths Tier1 { get; set; }
+    public required CardShapeFilePaths Tier2 { get; set; }
+    public required CardShapeFilePaths Tier3 { get; set; }
+    public required CardShapeFilePaths Tier4 { get; set; }
+}
+
+public class CardShapeFilePaths
 {
     public required string Portrait { get; set; }
     public required string Landscape { get; set; }

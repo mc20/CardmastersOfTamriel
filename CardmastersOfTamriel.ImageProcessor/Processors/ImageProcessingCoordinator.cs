@@ -6,13 +6,16 @@ namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
 public static class ImageProcessingCoordinator
 {
-    public static void BeginProcessing(ICardSetProcessor cardSetProcessor)
+    public static void BeginProcessing(ICardSetHandler cardSetProcessor)
     {
         var config = ConfigurationProvider.Instance.Config;
-        
+
         var handler = MasterMetadataProvider.Instance.MetadataHandler;
+
+        handler.LoadFromFile();
+        handler.CreateBackup();
         handler.InitializeEmptyMetadata();
-        
+
         FileOperations.EnsureDirectoryExists(config.Paths.OutputFolderPath);
 
         foreach (var tierSourceFolderPath in

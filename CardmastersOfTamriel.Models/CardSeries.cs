@@ -1,6 +1,6 @@
 namespace CardmastersOfTamriel.Models;
 
-public class CardSeries : IEquatable<CardSeries>
+public class CardSeries : IEquatable<CardSeries>, IIdentifiable
 {
     public CardSeries(string id)
     {
@@ -9,7 +9,7 @@ public class CardSeries : IEquatable<CardSeries>
 
     // Immutable identity property
     public string Id { get; init; }
-    
+
     // Mutable properties
     public string? DisplayName { get; set; }
     public CardTier Tier { get; set; }
@@ -42,5 +42,10 @@ public class CardSeries : IEquatable<CardSeries>
     public static bool operator !=(CardSeries? left, CardSeries? right)
     {
         return !(left == right);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as CardSeries);
     }
 }

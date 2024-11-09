@@ -1,4 +1,3 @@
-using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda;
@@ -19,7 +18,7 @@ public class CardMiscItemCreator : ICardMiscItemCreator
         _customMod = customMod;
     }
 
-    public Dictionary<Card, MiscItem> InsertAndMapCardsToMiscItems(IEnumerable<Card> cards)
+    public Dictionary<Card, MiscItem> InsertAndMapCardsToMiscItems(HashSet<Card> cards)
     {
         var miscItems = new Dictionary<Card, MiscItem>();
 
@@ -28,8 +27,9 @@ public class CardMiscItemCreator : ICardMiscItemCreator
             var miscItem = InsertAsMiscItem(card);
             if (miscItem == null) continue;
 
+
             miscItems.Add(card, miscItem);
-            Log.Information($"Inserted MiscItem: {miscItem.EditorID}");
+            Log.Verbose($"Inserted MiscItem: {miscItem.EditorID}");
         }
 
         return miscItems;
@@ -42,7 +42,7 @@ public class CardMiscItemCreator : ICardMiscItemCreator
 
         if (ItemExists(newMiscItemId, newTextureSetId))
         {
-            Log.Warning($"MiscItem {newMiscItemId} already exists in the load order.");
+            Log.Error($"MiscItem '{newMiscItemId}' already exists in the load order.");
             return null;
         }
 
@@ -51,17 +51,22 @@ public class CardMiscItemCreator : ICardMiscItemCreator
 
         newMiscItem.Model = CreateModel(card, textureSetForWorldModel);
 
+        card.Keywords ??= [];
+        card.Keywords.Add("CMOT_CollectorCard");
+
         if (card.Keywords is not null)
         {
             AddKeywordsToMiscItem(newMiscItem, card.Keywords);
         }
+
+        Log.Verbose($"Card: {card.Id} '{card.DisplayName}' inserted as MiscItem: {newMiscItem.EditorID}");
 
         return newMiscItem;
     }
 
     private static string GenerateEditorId(string prefix, Card card)
     {
-        return $"{prefix}_Set_{card.SetId}_Card_{card.Id}".AddModNamePrefix();
+        return $"{prefix}_Card_{card.Id}".AddModNamePrefix();
     }
 
     private bool ItemExists(string miscItemId, string textureSetId)
@@ -80,6 +85,8 @@ public class CardMiscItemCreator : ICardMiscItemCreator
         newMiscItem.Value = card.Value == 0 ? 10 : card.Value;
         newMiscItem.Weight = card.Weight;
 
+        Log.Verbose($"Added MiscItem {newMiscItem.EditorID} with Name: '{newMiscItem.Name}'");
+
         ModificationTracker.IncrementMiscItemCount(newMiscItem.EditorID);
 
         return newMiscItem;
@@ -92,7 +99,7 @@ public class CardMiscItemCreator : ICardMiscItemCreator
         textureSet.Diffuse = @$"CardmastersOfTamriel\{card.DestinationRelativeFilePath}";
         textureSet.NormalOrGloss = card.GetNormalOrGloss();
 
-        Log.Information($"Added TextureSet {textureSet.EditorID} with Diffuse Path: '{textureSet.Diffuse}'");
+        Log.Verbose($"Added TextureSet {textureSet.EditorID} with Diffuse Path: '{textureSet.Diffuse}'");
 
         ModificationTracker.IncrementTextureSetCount(textureSet.EditorID);
 
@@ -118,11 +125,26 @@ public class CardMiscItemCreator : ICardMiscItemCreator
 
     private void AddKeywordsToMiscItem(MiscItem miscItem, HashSet<string> keywordEditorIDs)
     {
+        var keywordNotFound = string.Empty;
+
         miscItem.Keywords ??= [];
         foreach (var keywordEditorId in keywordEditorIDs)
         {
-            var keyword = _state.LoadOrder.PriorityOrder.Keyword().WinningOverrides()
-                .FirstOrDefault(kw => kw.EditorID == keywordEditorId);
+            keywordNotFound = !keywordNotFound.Equals(keywordEditorId) ? keywordEditorId : string.Empty;
+
+            var keyword = _state.LoadOrder.PriorityOrder.Keyword().WinningOverrides().FirstOrDefault(kw => kw.EditorID == keywordEditorId);
+            if (keyword is null && string.IsNullOrWhiteSpace(keywordNotFound))
+            {
+                keywordNotFound = keywordEditorId;
+                Log.Warning($"Keyword {keywordEditorId} not found in the Game load order.");
+            }
+
+            keyword ??= _customMod.Keywords.FirstOrDefault(kw => kw.EditorID == keywordEditorId);
+            if (keyword is null && string.IsNullOrWhiteSpace(keywordNotFound))
+            {
+                keywordNotFound = keywordEditorId;
+                Log.Warning($"Keyword {keywordEditorId} not found in the Mod load order.");
+            }
 
             if (keyword != null)
             {
