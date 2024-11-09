@@ -7,9 +7,9 @@ using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
-public class CardSetReportProcessor : ICardSetProcessor
+public class CardSetReportProcessor : ICardSetHandler
 {
-    public void ProcessSetAndImages(CardSet set)
+    public void ProcessCardSet(CardSet set)
     {
         var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
         var savedCards = LoadCardsFromJsonFile(savedJsonFilePath);
@@ -18,7 +18,7 @@ public class CardSetReportProcessor : ICardSetProcessor
         var imagesAtDestination =
             CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
 
-        CardSetReportProvider.Instance.UpdateWithSetInfo(set,savedCards, imagesAtDestination.Count, imagesAtSource.Count);
+        CardSetReportProvider.Instance.UpdateWithSetInfo(set, savedCards, imagesAtDestination.Count, imagesAtSource.Count);
     }
 
     private static List<Card> LoadCardsFromJsonFile(string savedJsonFilePath)
@@ -28,7 +28,7 @@ public class CardSetReportProcessor : ICardSetProcessor
             Log.Warning($"No saved cards found at path: '{savedJsonFilePath}'");
             return [];
         }
-        
+
         var lines = new HashSet<string>(File.ReadLines(savedJsonFilePath));
         var uniqueCards = new HashSet<string>();
 

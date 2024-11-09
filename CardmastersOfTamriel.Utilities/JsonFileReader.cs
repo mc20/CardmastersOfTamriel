@@ -27,4 +27,23 @@ public static class JsonFileReader
             throw e;
         }
     }
+
+    public static HashSet<T?> LoadFromJsonLineFile<T>(string jsonlFilePath)
+    {
+        if (!File.Exists(jsonlFilePath))
+        {
+            Log.Error($"No cards.jsonl file found at '{jsonlFilePath}'");
+            return [];
+        }
+
+        var lines = new HashSet<string>(File.ReadLines(jsonlFilePath));
+        var uniqueCards = new HashSet<string>();
+
+        var cardsFromMetadataFile = lines
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .Select(line => JsonSerializer.Deserialize<T>(line, JsonSettings.Options))
+            .ToHashSet();
+
+        return cardsFromMetadataFile;
+    }
 }

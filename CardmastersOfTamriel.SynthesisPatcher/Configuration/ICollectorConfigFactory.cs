@@ -5,5 +5,5 @@ namespace CardmastersOfTamriel.SynthesisPatcher.Configuration;
 
 public interface ICollectorConfigFactory
 {
-    ICollector CreateCollector(CollectorType type);
+    ICollector? CreateCollector(CollectorType type);
 }

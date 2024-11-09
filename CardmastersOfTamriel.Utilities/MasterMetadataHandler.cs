@@ -42,6 +42,37 @@ public class MasterMetadataHandler : IMasterMetadataHandler
         }
     }
 
+    /// <summary>
+    /// Creates a backup of the metadata file with a timestamp in the filename.
+    /// </summary>
+    /// <returns>
+    /// The file path of the created backup file, or an empty string if the backup creation failed.
+    /// </returns>
+    /// <remarks>
+    /// The backup file is saved in a "Backups" subdirectory within the directory of the original metadata file.
+    /// If the backup file already exists, it will be deleted before creating a new one.
+    /// </remarks>
+    public string CreateBackup()
+    {
+        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        var directoryPath = Path.GetDirectoryName(_metadataFilePath);
+        if (string.IsNullOrWhiteSpace(directoryPath))
+        {
+            Log.Error($"Failed to create backup for metadata file: '{_metadataFilePath}' because the directory path is empty.");
+            return string.Empty;
+        }
+
+        var backupFilePath = Path.Combine(directoryPath, "Backups", $"master_metadata_{timestamp}.backup");
+        if (File.Exists(backupFilePath))
+        {
+            File.Delete(backupFilePath);
+        }
+
+        File.Copy(_metadataFilePath, backupFilePath);
+
+        return backupFilePath;
+    }
+
     public void WriteMetadataToFile([CallerMemberName] string callerName = "",
         [CallerFilePath] string callerFilePath = "",
         [CallerLineNumber] int callerLineNumber = 0)
@@ -49,7 +80,7 @@ public class MasterMetadataHandler : IMasterMetadataHandler
     {
         var serializedJson = JsonSerializer.Serialize(Metadata, JsonSettings.Options);
         File.WriteAllText(_metadataFilePath, serializedJson);
-        Log.Information(
+        Log.Verbose(
             $"SAVING METADATA: {Path.GetFileName(callerFilePath)} Caller '{callerName}' (line:{callerLineNumber}) to '{_metadataFilePath}'");
     }
 }

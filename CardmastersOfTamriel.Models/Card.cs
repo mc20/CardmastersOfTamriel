@@ -1,6 +1,6 @@
 using CardmastersOfTamriel.Models;
 
-public class Card : IEquatable<Card>
+public class Card : IEquatable<Card>, IIdentifiable
 {
     // Immutable identity properties (used for hash code)
     public Card(string id, string setId)
@@ -31,16 +31,10 @@ public class Card : IEquatable<Card>
     public string? DestinationAbsoluteFilePath { get; set; }
     public string? DestinationRelativeFilePath { get; set; }
 
-    public void GetGenericDisplayName()
+    public void SetGenericDisplayName()
     {
-        DisplayName = CreateGenericDisplayName(SetDisplayName ?? DisplayName, DisplayedIndex, DisplayedTotalCount);
+        DisplayName = $"{SetDisplayName ?? DisplayName ?? Id} - Card #{DisplayedIndex} of {DisplayedTotalCount}";
     }
-
-    public static string
-        CreateGenericDisplayName(string? setDisplayName, uint displayedIndex, uint displayedTotalCount) =>
-        string.IsNullOrWhiteSpace(setDisplayName)
-            ? $"Card #{displayedIndex} of {displayedTotalCount}"
-            : $"{setDisplayName} - Card #{displayedIndex} of {displayedTotalCount}";
 
     public override int GetHashCode()
     {
@@ -67,5 +61,10 @@ public class Card : IEquatable<Card>
     public static bool operator !=(Card? left, Card? right)
     {
         return !(left == right);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as Card);
     }
 }

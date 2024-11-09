@@ -9,13 +9,13 @@ namespace CardmastersOfTamriel.SynthesisPatcher.Configuration;
 
 public class CollectorConfigFactory : ICollectorConfigFactory
 {
-    private readonly Dictionary<CollectorType, CollectorConfig> _collectorConfigs;
+    private readonly Dictionary<CollectorType, CollectorConfig> _collectorConfigs = [];
 
     public CollectorConfigFactory(string configFilePath)
     {
         Log.Information($"Loading collector config from: '{configFilePath}'");
+
         var configRoot = JsonFileReader.ReadFromJson<CollectorConfigRoot>(configFilePath);
-        _collectorConfigs = new Dictionary<CollectorType, CollectorConfig>();
 
         foreach (var collector in configRoot.Collectors)
         {
@@ -23,11 +23,13 @@ public class CollectorConfigFactory : ICollectorConfigFactory
         }
     }
 
-    public ICollector CreateCollector(CollectorType type)
+    public ICollector? CreateCollector(CollectorType type)
     {
         if (!_collectorConfigs.TryGetValue(type, out var config))
         {
-            throw new ArgumentException("Invalid collector type", nameof(type));
+            Log.Error($"No config found for collector type: {type}");
+            return null;
+            // throw new ArgumentException("Invalid collector type", nameof(type));
         }
 
         var cardTierProbabilities = config.CardTierProbabilities.Select(probConfig => new TierProbability

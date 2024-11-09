@@ -8,11 +8,19 @@ using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
-public class CardSetImageConversionProcessor : ICardSetProcessor
+public class ImageConversionProcessor : ICardSetHandler
+{
+    public void ProcessCardSet(CardSet set)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class CardSetImageConversionProcessor : ICardSetHandler
 {
     private readonly Config _config = ConfigurationProvider.Instance.Config;
 
-    public void ProcessSetAndImages(CardSet set)
+    public void ProcessCardSet(CardSet set)
     {
         Log.Information($"Processing Set from Source Path: '{set.SourceAbsoluteFolderPath}'");
 
@@ -24,31 +32,45 @@ public class CardSetImageConversionProcessor : ICardSetProcessor
 
         var cardsFromMetadataFile = LoadCardsFromJsonFile(savedJsonFilePath, savedJsonBackupFilePath);
 
+        Log.Verbose($"Loaded {cardsFromMetadataFile.Count} cards from metadata file");
+
         var imageFilePathsAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath ?? string.Empty)
             .OrderBy(file => file).ToList();
 
+        Log.Verbose($"Found {imageFilePathsAtSource.Count} images at source path");
+
         var cardsFromSource = CardFactory.CreateCardsFromImagesAtFolderPath(set, [.. imageFilePathsAtSource], true);
 
+        Log.Verbose($"Created {cardsFromSource.Count} cards from source images");
+
         var updatedCards = cardsFromMetadataFile.ConsolidateCardsWith(cardsFromSource);
+
+        Log.Verbose($"Consolidated {updatedCards.Count} cards from metadata and source images");
 
         var imageFilePathsAtDestination =
             CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
 
+        Log.Verbose($"Found {imageFilePathsAtDestination.Count} DDS images at destination path");
+
         var cardsAtDestination =
             CardFactory.CreateCardsFromImagesAtFolderPath(set, [.. imageFilePathsAtDestination], false);
 
+        Log.Verbose($"Created {cardsAtDestination.Count} cards from destination images");
+
         var finalCards = updatedCards.ConsolidateCardsWith(cardsAtDestination).ToList();
+
+        Log.Verbose($"Consolidated {finalCards.Count} cards from metadata, source, and destination images");
 
         ProcessEligibleImages(set, finalCards, cardsAtDestination);
 
         UpdateDisplayCards(set, finalCards);
 
-        finalCards.ForEach(card => FileOperations.AppendCardToFile(card, savedJsonFilePath));
+        finalCards.ForEach(card => FileOperations.AppendDataToFile(card, savedJsonFilePath));
 
         set.Cards = finalCards.ToHashSet();
 
         var handler = MasterMetadataProvider.Instance.MetadataHandler;
-        handler .WriteMetadataToFile();
+        handler.WriteMetadataToFile();
     }
 
     private static List<Card> LoadCardsFromJsonFile(string savedJsonFilePath, string savedJsonBackupFilePath)
@@ -77,24 +99,39 @@ public class CardSetImageConversionProcessor : ICardSetProcessor
         return cardsFromMetadataFile;
     }
 
-    private void ProcessEligibleImages(CardSet set, List<Card> finalCards, List<Card> cardsAtDestination)
+    private void ProcessEligibleImages(CardSet set, List<Card> finalCards, HashSet<Card> cardsAtDestination)
     {
         var eligibleFilePathsForConversion = finalCards.Select(card => card?.SourceAbsoluteFilePath ?? string.Empty)
             .Where(filePath => !string.IsNullOrWhiteSpace(filePath)).ToHashSet();
-        Log.Verbose($"Found {eligibleFilePathsForConversion.Count} eligible images for conversion");
 
-        var randomCards = CardSetImageHelper.SelectRandomImageFilePaths(
-            _config.General.MaxSampleSize - cardsAtDestination.Count,
-            eligibleFilePathsForConversion);
-        
-        Log.Verbose($"Selected {randomCards.Count} random images for conversion");
+        Log.Information($"Found {eligibleFilePathsForConversion.Count} eligible images for conversion (no destination specified)");
+
+        Log.Information($"MaxSampleSize is {_config.General.MaxSampleSize} and Available Card Count is {finalCards.Count}");
+
+        var maximumNumberOfCards = Math.Min(_config.General.MaxSampleSize, finalCards.Count);
+
+        var needMoreRandomCards = cardsAtDestination.Count < maximumNumberOfCards;
+
+        Log.Information($"Maximum Number of Cards: {maximumNumberOfCards} while there are {cardsAtDestination.Count} cards at destination. Need more random cards? {needMoreRandomCards}");
+
+        var randomCards = needMoreRandomCards ? CardSetImageHelper.SelectRandomImageFilePaths(maximumNumberOfCards - cardsAtDestination.Count, eligibleFilePathsForConversion) : [];
+
+        if (needMoreRandomCards)
+        {
+            Log.Information($"Selected {randomCards.Count} random images for conversion");
+        }
+        else
+        {
+            Log.Information("No more random images needed for conversion");
+        }
+
 
         foreach (var info in finalCards.OrderBy(card => card.Id).Select((card, index) => (card, index)))
         {
             if (!string.IsNullOrWhiteSpace(info.card.SourceAbsoluteFilePath) &&
                 randomCards.Contains(info.card.SourceAbsoluteFilePath))
             {
-                Log.Verbose($"Processing Card {Path.GetFileName(info.card.SourceAbsoluteFilePath)} for conversion");
+                Log.Information($"Processing Card {Path.GetFileName(info.card.SourceAbsoluteFilePath)} for conversion");
 
                 var result = ConvertAndSaveImage(set, info.card.SourceAbsoluteFilePath,
                     NameHelper.CreateImageFileName(set, (uint)info.index + 1));
@@ -109,13 +146,14 @@ public class CardSetImageConversionProcessor : ICardSetProcessor
                 info.card.DisplayedTotalCount = 0;
                 info.card.TrueIndex = (uint)info.index + 1;
                 info.card.TrueTotalCount = (uint)finalCards.Count;
+                info.card.SetGenericDisplayName();
             }
             else
             {
                 if (string.IsNullOrEmpty(info.card.DestinationAbsoluteFilePath))
                 {
                     Log.Verbose($"Card {info.card.Id} was not converted and will be skipped");
-                    info.card.Shape = null;
+                    info.card.Shape = ImageHelper.DetermineOptimalShape(info.card.SourceAbsoluteFilePath!); // Keep track of the shape for future reference
                     info.card.DisplayName = null;
                     info.card.DestinationAbsoluteFilePath = null;
                     info.card.DestinationRelativeFilePath = null;
@@ -126,6 +164,8 @@ public class CardSetImageConversionProcessor : ICardSetProcessor
                 }
                 else
                 {
+                    info.card.DestinationRelativeFilePath =
+                        FilePathHelper.GetRelativePath(info.card.DestinationAbsoluteFilePath, set.Tier);
                     Log.Verbose($"Card {info.card.Id} was possibly already converted and will be used as-is");
                 }
             }
@@ -139,10 +179,9 @@ public class CardSetImageConversionProcessor : ICardSetProcessor
         foreach (var cardInfo in cardsEligibleForDisplay.OrderBy(card => card.Id)
                      .Select((card, index) => (card, index)))
         {
-            cardInfo.card.DisplayName = Card.CreateGenericDisplayName(set.DisplayName, (uint)cardInfo.index + 1,
-                (uint)cardsEligibleForDisplay.Count);
             cardInfo.card.DisplayedIndex = (uint)cardInfo.index + 1;
             cardInfo.card.DisplayedTotalCount = (uint)cardsEligibleForDisplay.Count;
+            cardInfo.card.SetGenericDisplayName();
         }
     }
 
@@ -151,7 +190,7 @@ public class CardSetImageConversionProcessor : ICardSetProcessor
         var imageDestinationFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, imageFileName);
 
         var helper = new ImageConverter();
-        var imageShape = helper.ConvertImageAndSaveToDestination(sourceImageFilePath, imageDestinationFilePath);
+        var imageShape = helper.ConvertImageAndSaveToDestination(set.Tier, sourceImageFilePath, imageDestinationFilePath);
 
         return new ConversionResult()
         {

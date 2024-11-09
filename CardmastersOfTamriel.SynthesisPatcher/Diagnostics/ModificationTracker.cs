@@ -41,7 +41,7 @@ public static class ModificationTracker
     {
         LeveledItemInsertCount++;
         LeveledItemInsertLocations.Add($"{callerName} {callerFilePath} {callerLineNumber}");
-        Log.Verbose($"Incremented LeveledItem to {LeveledItemInsertCount:D3} from {Path.GetFileName(callerFilePath)}.{callerName} (line:{callerLineNumber}):\t{context}");
+        // Log.Verbose($"Incremented LeveledItem to {LeveledItemInsertCount:D3} from {Path.GetFileName(callerFilePath)}.{callerName} (line:{callerLineNumber}):\t{context}");
     }
 
     public static void IncrementLeveledItemEntryCount(string context, [CallerMemberName] string callerName = "",
@@ -50,7 +50,7 @@ public static class ModificationTracker
     {
         LeveledItemEntryInsertCount++;
         LeveledItemEntryInsertLocations.Add($"{callerName} {callerFilePath} {callerLineNumber}");
-        Log.Verbose($"Incremented LeveledItemEntry to {LeveledItemEntryInsertCount:D3} from {Path.GetFileName(callerFilePath)}.{callerName} (line:{callerLineNumber}):\t{context}");
+        // Log.Verbose($"Incremented LeveledItemEntry to {LeveledItemEntryInsertCount:D3} from {Path.GetFileName(callerFilePath)}.{callerName} (line:{callerLineNumber}):\t{context}");
     }
 
     public static void PrintToLog()

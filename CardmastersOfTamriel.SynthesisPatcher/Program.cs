@@ -1,4 +1,3 @@
-using CardmastersOfTamriel.Models;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Skyrim;
@@ -45,12 +44,15 @@ public class Program
         var metadataHandler = new MasterMetadataHandler(appConfig.RetrieveMetadataFilePath(state));
         metadataHandler.LoadFromFile();
 
-        var (npcCollectors, containerCollectors) = SetupCollectors(appConfig, state);
-
         var helper = new MetadataHelper(metadataHandler);
-        var cardList = helper.GetCards().ToList();
+        var cardList = helper.GetCards().ToHashSet();
 
         if (cardList.Count == 0) return;
+
+        Log.Verbose("Cards: {0}\n\n\t", string.Join("\n\t", cardList.Select(card => (card.Id, card.DisplayName)).ToList()));
+
+        // var keyword = customMod.Keywords.AddNew("CMOT_CollectorCard");
+        var keyword = customMod.Keywords.AddNew("CMOT_CollectorCard");
 
         var miscService = new CardMiscItemCreator(state, customMod);
         var mappedMiscItems = miscService.InsertAndMapCardsToMiscItems(cardList);
@@ -61,9 +63,15 @@ public class Program
         Log.Information(string.Empty);
         Log.Information("\n\nAssigning MiscItems to Collector LeveledItems..\n");
 
-        var itemProcessor = new CollectorLeveledItemDistributor(appConfig, state, customMod);
-        itemProcessor.SetupCollectorLeveledEntries(npcCollectors, cardTierMappings);
-        itemProcessor.SetupCollectorLeveledEntries(containerCollectors, cardTierMappings);
+        var npcCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorNpcConfigFilePath(state));
+        var npcDistributor = new NpcDistributor(appConfig, state, customMod);
+        var npcItemProcessor = new CollectorLeveledItemDistributor(state, customMod, npcCollectorService, npcDistributor);
+        npcItemProcessor.SetupCollectorLeveledEntries(cardTierMappings);
+
+        var containerCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorContainerConfigPath(state));
+        var containerDistributor = new ContainerDistributor(appConfig, state, customMod);
+        var containerItemProcessor = new CollectorLeveledItemDistributor(state, customMod, containerCollectorService, containerDistributor);
+        containerItemProcessor.SetupCollectorLeveledEntries(cardTierMappings);
 
         using var env = GameEnvironment.Typical.Skyrim(SkyrimRelease.SkyrimSE);
         var desiredFilePath = Path.Combine(env.DataFolderPath, "CardmastersOfTamriel.esp");
@@ -76,7 +84,7 @@ public class Program
 
         await Log.CloseAndFlushAsync();
     }
-    
+
     private static void SetupLogging(AppConfig appConfig, IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
     {
         // var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
@@ -90,7 +98,7 @@ public class Program
             .WriteTo.Debug()
             .CreateLogger();
     }
-    
+
     private static IConfigurationRoot SetupConfiguration(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
     {
         return new ConfigurationBuilder()
@@ -98,23 +106,5 @@ public class Program
             .AddJsonFile(state.RetrieveInternalFilePath("localsettings.json"), optional: true, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
-    }
-    
-    private static (List<ICollector>, List<ICollector>) SetupCollectors(AppConfig appConfig, IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
-    {
-        var npcCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorNpcConfigFilePath(state));
-        var containerCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorContainerConfigPath(state));
-
-        var npcCollectors = Enum.GetValues(typeof(CollectorType))
-            .Cast<CollectorType>()
-            .Select(npcCollectorService.CreateCollector)
-            .ToList();
-
-        var containerCollectors = Enum.GetValues(typeof(CollectorType))
-            .Cast<CollectorType>()
-            .Select(containerCollectorService.CreateCollector)
-            .ToList();
-
-        return (npcCollectors, containerCollectors);
     }
 }

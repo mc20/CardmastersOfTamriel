@@ -2,7 +2,7 @@
 
 namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
-public interface ICardSetProcessor
+public interface ICardSetHandler
 {
-    void ProcessSetAndImages(CardSet set);
+    void ProcessCardSet(CardSet set);
 }

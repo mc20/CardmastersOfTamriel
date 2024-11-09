@@ -19,7 +19,7 @@ public class ImageConverter
 
     private static readonly List<string> TempFiles = [];
 
-    public CardShape ConvertImageAndSaveToDestination(string srcImagePath, string destImagePath)
+    public CardShape ConvertImageAndSaveToDestination(CardTier cardTier, string srcImagePath, string destImagePath)
     {
         Log.Verbose($"Converting image from '{srcImagePath}' to DDS format at '{destImagePath}'");
         var imageShape = ImageHelper.DetermineOptimalShape(srcImagePath);
@@ -27,7 +27,7 @@ public class ImageConverter
         using var image = Image.Load<Rgba32>(srcImagePath);
         TransformImage(image, imageShape);
 
-        using var template = LoadTemplate(imageShape);
+        using var template = LoadTemplate(imageShape, cardTier);
         using var templateCopy = template.Clone();
 
         SuperimposeImageOntoTemplate(image, templateCopy);
@@ -78,13 +78,23 @@ public class ImageConverter
         }
     }
 
-    private Image<Rgba32> LoadTemplate(CardShape imageShape)
+    private Image<Rgba32> LoadTemplate(CardShape imageShape, CardTier cardTier)
     {
+        var templateFileTier = cardTier switch
+        {
+            CardTier.Tier1 => _config.Paths.TemplateFiles.Tier1,
+            CardTier.Tier2 => _config.Paths.TemplateFiles.Tier2,
+            CardTier.Tier3 => _config.Paths.TemplateFiles.Tier3,
+            CardTier.Tier4 => _config.Paths.TemplateFiles.Tier4,
+            _ => throw new ArgumentException($"Unsupported card tier: {cardTier}")
+        };
+
         var templateImagePath = imageShape switch
         {
-            CardShape.Landscape => _config.Paths.TemplateFiles.Landscape,
-            CardShape.Portrait => _config.Paths.TemplateFiles.Portrait,
-            _ => _config.Paths.TemplateFiles.Square
+            CardShape.Portrait => templateFileTier.Portrait,
+            CardShape.Landscape => templateFileTier.Landscape,
+            CardShape.Square => templateFileTier.Square,
+            _ => throw new ArgumentException($"Unsupported image shape: {imageShape}")
         };
 
         return Image.Load<Rgba32>(templateImagePath);
@@ -108,7 +118,7 @@ public class ImageConverter
         var outputDirectory = Path.GetDirectoryName(destImagePath) ?? Directory.GetCurrentDirectory();
         var generatedDdsPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(tempOutputPath) + ".dds");
         if (!File.Exists(generatedDdsPath)) return;
-        
+
         File.Move(generatedDdsPath, destImagePath, overwrite: true);
         Log.Verbose($"Moved generated DDS file to '{destImagePath}'");
     }
@@ -116,7 +126,7 @@ public class ImageConverter
     private static void CleanupTemporaryFile(string tempOutputPath)
     {
         if (!File.Exists(tempOutputPath)) return;
-        
+
         File.Delete(tempOutputPath);
         Log.Verbose($"Deleted temporary image file at '{tempOutputPath}'");
     }

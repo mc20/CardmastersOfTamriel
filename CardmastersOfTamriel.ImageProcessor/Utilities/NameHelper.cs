@@ -8,21 +8,23 @@ public static partial class NameHelper
 {
     private static readonly Regex NameNormalizerRegex = MyRegex();
 
-    public static string FormatDisplayNameFromId(string setName)
+    public static string FormatDisplayNameFromId(string setId)
     {
         var textInfo = CultureInfo.CurrentCulture.TextInfo;
 
         // Split and capitalize words
-        var words = setName.Split('_').Select(word => textInfo.ToTitleCase(word.ToLower())).ToList();
+        var words = setId.Split('_').Select(word => textInfo.ToTitleCase(word.ToLower())).ToList();
 
         var mainText = string.Join(" ", words);
         var lastWord = words.Last();
 
         // Check if the last word is a number
         if (!int.TryParse(lastWord, out var numericValue)) return mainText;
+
         words.RemoveAt(words.Count - 1); // Remove the numeric part from the main text
         mainText = string.Join(" ", words);
-        return $"{mainText} {numericValue}";
+
+        return $"{mainText} (Set {numericValue})";
     }
 
     public static string NormalizeName(string name)
@@ -46,4 +48,6 @@ public static partial class NameHelper
 
     [GeneratedRegex(@"[^a-z0-9_]", RegexOptions.Compiled)]
     private static partial Regex MyRegex();
+
+    public static readonly int MaxCardShapeTextLength = Enum.GetValues<CardShape>().Max(shape => shape.ToString().Length);
 }
