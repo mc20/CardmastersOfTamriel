@@ -5,7 +5,7 @@ using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessor.Processors;
+namespace CardmastersOfTamriel.ImageProcessor.CardSets;
 
 public class CardSetReportProcessor : ICardSetHandler
 {
@@ -18,7 +18,8 @@ public class CardSetReportProcessor : ICardSetHandler
         var imagesAtDestination =
             CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
 
-        CardSetReportProvider.Instance.UpdateWithSetInfo(set, savedCards, imagesAtDestination.Count, imagesAtSource.Count);
+        CardSetReportProvider.Instance.UpdateWithSetInfo(set, savedCards, imagesAtDestination.Count,
+            imagesAtSource.Count);
     }
 
     private static List<Card> LoadCardsFromJsonFile(string savedJsonFilePath)

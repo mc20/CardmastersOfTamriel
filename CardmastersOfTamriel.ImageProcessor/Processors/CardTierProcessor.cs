@@ -1,3 +1,4 @@
+using CardmastersOfTamriel.ImageProcessor.CardSets;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using Serilog;
@@ -6,7 +7,7 @@ namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
 public static class CardTierProcessor
 {
-    public static void ProcessTierFolder(string tierSourceFolderPath, string tierDestinationFolderPath, ICardSetHandler cardSetProcessor)
+    public static void ProcessTierFolder(string tierSourceFolderPath, string tierDestinationFolderPath, ICardSetHandler cardSetHandler)
     {
         Log.Information($"Processing Source Tier folder: '{tierSourceFolderPath}'");
 
@@ -18,7 +19,7 @@ public static class CardTierProcessor
 
         foreach (var seriesSourceFolderPath in Directory.EnumerateDirectories(tierSourceFolderPath).Order())
         {
-            processor.ProcessSeriesFolder(cardTier, seriesSourceFolderPath, tierDestinationFolderPath, cardSetProcessor);
+            processor.ProcessSeriesFolder(cardTier, seriesSourceFolderPath, tierDestinationFolderPath, cardSetHandler);
         }
     }
 }

@@ -1,4 +1,4 @@
-namespace CardmastersOfTamriel.ImageProcessor;
+namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public enum CommandMode
 {

@@ -1,6 +1,6 @@
-namespace CardmastersOfTamriel.ImageProcessor;
+namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
-public class CommandLineParser
+public static class CommandLineParser
 {
     private static readonly Dictionary<string, CommandMode> CommandMap = new()
     {

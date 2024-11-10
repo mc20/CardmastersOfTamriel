@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CardmastersOfTamriel.ImageProcessor.CardSets;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
@@ -12,7 +13,7 @@ public class CardSeriesProcessor
     private readonly MasterMetadataHandler _handler = MasterMetadataProvider.Instance.MetadataHandler;
 
     public void ProcessSeriesFolder(CardTier tier, string seriesSourceFolderPath,
-        string tierDestinationFolderPath, ICardSetHandler cardSetProcessor)
+        string tierDestinationFolderPath, ICardSetHandler cardSetHandler)
     {
         Log.Information($"Examining Source Series folder: '{seriesSourceFolderPath}'");
 
@@ -45,7 +46,8 @@ public class CardSeriesProcessor
         }
         else
         {
-            Log.Verbose($"{seriesId}\tDid not find an existing Series Metadata file at Destination Path: '{seriesDestinationMetadataFilePath}'");
+            Log.Verbose(
+                $"{seriesId}\tDid not find an existing Series Metadata file at Destination Path: '{seriesDestinationMetadataFilePath}'");
         }
 
         seriesMetadata ??= new CardSeries(seriesId)
@@ -78,19 +80,23 @@ public class CardSeriesProcessor
             return;
         }
 
+        var rebuildlist =
+            JsonFileReader.ReadFromJson<Dictionary<string, string>>(ConfigurationProvider.Instance.Config.Paths
+                .RebuildListFilePath);
         foreach (var cardSet in seriesMetadata.Sets)
         {
-            var rebuildlist = JsonFileReader.ReadFromJson<Dictionary<string, string>>(ConfigurationProvider.Instance.Config.Paths.RebuildListFilePath);
-            if (rebuildlist != null && rebuildlist.Count > 0)
+            if (rebuildlist.Count > 0)
             {
-                if (!rebuildlist.TryGetValue(cardSet.Id, out var rebuildSeriesId) || rebuildSeriesId != cardSet.SeriesId)
+                if (!rebuildlist.TryGetValue(cardSet.Id, out var rebuildSeriesId) ||
+                    rebuildSeriesId != cardSet.SeriesId)
                 {
-                    Log.Information($"{cardSet.Id}\tSkipping rebuild as set is not in rebuild list or series ID does not match");
+                    Log.Information(
+                        $"{cardSet.Id}\tSkipping rebuild as set is not in rebuild list or series ID does not match");
                     continue;
                 }
             }
 
-            cardSetProcessor.ProcessCardSet(cardSet);
+            cardSetHandler.ProcessCardSet(cardSet);
         }
 
         _handler.WriteMetadataToFile();

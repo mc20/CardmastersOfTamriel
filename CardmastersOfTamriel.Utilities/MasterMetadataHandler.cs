@@ -5,7 +5,7 @@ using Serilog;
 
 namespace CardmastersOfTamriel.Utilities;
 
-public class MasterMetadataHandler : IMasterMetadataHandler
+public class MasterMetadataHandler
 {
     private readonly string _metadataFilePath;
     public MasterMetadata Metadata { get; private set; }

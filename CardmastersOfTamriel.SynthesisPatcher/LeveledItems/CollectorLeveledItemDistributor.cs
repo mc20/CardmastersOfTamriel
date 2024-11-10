@@ -16,22 +16,25 @@ public class CollectorLeveledItemDistributor
     private readonly ISkyrimMod _skyrimMod;
     private readonly CollectorConfigFactory _configFactory;
     private readonly IDistributor _distributor;
+    private readonly FormIdGenerator _formIdGenerator;
 
-    public CollectorLeveledItemDistributor(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod skyrimMod, CollectorConfigFactory configFactory, IDistributor distributor)
+    public CollectorLeveledItemDistributor(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod skyrimMod,
+        CollectorConfigFactory configFactory, IDistributor distributor, FormIdGenerator formIdGenerator)
     {
         _state = state;
         _skyrimMod = skyrimMod;
         _configFactory = configFactory;
         _distributor = distributor;
+        _formIdGenerator = formIdGenerator;
     }
 
     public void SetupCollectorLeveledEntries(Dictionary<CardTier, LeveledItem> cardTierItemMappings)
     {
         var collectors = Enum.GetValues(typeof(CollectorType))
-                             .Cast<CollectorType>()
-                             .Select(_configFactory.CreateCollector)
-                             .Where(collector => collector is not null)
-                             .ToList();
+            .Cast<CollectorType>()
+            .Select(_configFactory.CreateCollector)
+            .Where(collector => collector is not null)
+            .ToList();
 
         foreach (var collector in collectors)
         {
@@ -47,41 +50,44 @@ public class CollectorLeveledItemDistributor
         }
     }
 
-    private LeveledItem? CreateLeveledItemForCollector(ICollector collector)
+    private LeveledItem? CreateLeveledItemForCollector(ICollectorConfig collectorConfig)
     {
-        var leveledItemCollectorId = $"LeveledItem_Collector{collector.Type}_{_distributor.UniqueIdentifier}".AddModNamePrefix();
+        var leveledItemFormKey =
+            _formIdGenerator.GetNextFormKey($"LeveledItem_COLLECTOR{collectorConfig.Type}_{_distributor.UniqueIdentifier}"
+                .AddModNamePrefix());
 
-        if (_state.CheckIfExists<ILeveledItemGetter>(leveledItemCollectorId) ||
-            _skyrimMod.CheckIfExists<LeveledItem>(leveledItemCollectorId))
+        if (_state.CheckIfExists<ILeveledItemGetter>(leveledItemFormKey) ||
+            _skyrimMod.CheckIfExists<LeveledItem>(leveledItemFormKey))
         {
-            Log.Warning($"LeveledItem {leveledItemCollectorId} already exists in the load order.");
+            Log.Warning($"LeveledItem {leveledItemFormKey} already exists in the load order.");
             return null;
         }
 
-        var leveledItemForCollector = _skyrimMod.LeveledItems.AddNew();
-        leveledItemForCollector.EditorID = leveledItemCollectorId;
-        leveledItemForCollector.ChanceNone = collector.ChanceNone;
+        var leveledItemForCollector = _skyrimMod.LeveledItems.AddNew(leveledItemFormKey);
+        leveledItemForCollector.ChanceNone = collectorConfig.ChanceNone;
         leveledItemForCollector.Entries ??= [];
 
-        ModificationTracker.IncrementLeveledItemCount(
-            $"Collector{collector.Type}\t{leveledItemForCollector.EditorID}\tChanceNone: {leveledItemForCollector.ChanceNone}");
+        ModificationTracker.IncrementLeveledItemCount($"Collector{collectorConfig.Type}" +
+                                                      $"\t{leveledItemForCollector.FormKey}" +
+                                                      $"\tChanceNone: {leveledItemForCollector.ChanceNone}");
         return leveledItemForCollector;
     }
 
-    private void AddLeveledItemForCollector(ICollector collector, ITierProbability probability,
+    private void AddLeveledItemForCollector(ICollectorConfig collectorConfig, ITierProbability probability,
         Dictionary<CardTier, LeveledItem> tierBasedLeveledItems, LeveledItem cardCollectorLeveledItem)
     {
-        var newProbabilityId = $"LeveledItem_Collector{collector.Type}_Card{probability.Tier}_{_distributor.UniqueIdentifier}".AddModNamePrefix();
+        var newProbabilityFormKey = _formIdGenerator.GetNextFormKey(
+            $"LeveledItem_COLLECTOR{collectorConfig.Type}_CARD{probability.Tier}_{_distributor.UniqueIdentifier}"
+                .AddModNamePrefix());
 
-        if (_state.CheckIfExists<ILeveledItemGetter>(newProbabilityId) ||
-            _skyrimMod.CheckIfExists<LeveledItem>(newProbabilityId))
+        if (_state.CheckIfExists<ILeveledItemGetter>(newProbabilityFormKey) ||
+            _skyrimMod.CheckIfExists<LeveledItem>(newProbabilityFormKey))
         {
-            Log.Error($"LeveledItem {newProbabilityId} already exists in the load order.");
+            Log.Error($"LeveledItem {newProbabilityFormKey} already exists in the load order.");
             return;
         }
 
-        var newLeveledItemForCollectorProbability = _skyrimMod.LeveledItems.AddNew();
-        newLeveledItemForCollectorProbability.EditorID = newProbabilityId;
+        var newLeveledItemForCollectorProbability = _skyrimMod.LeveledItems.AddNew(newProbabilityFormKey);
         newLeveledItemForCollectorProbability.ChanceNone = probability.ChanceNone;
         newLeveledItemForCollectorProbability.Entries ??= [];
 
@@ -97,8 +103,10 @@ public class CollectorLeveledItemDistributor
 
         newLeveledItemForCollectorProbability.Entries.Add(tierEntry);
 
-        ModificationTracker.IncrementLeveledItemCount(
-            $"Collector{collector.Type}\tProbability Card{probability.Tier}\t{newLeveledItemForCollectorProbability.EditorID}\tChanceNone: {newLeveledItemForCollectorProbability.ChanceNone}");
+        ModificationTracker.IncrementLeveledItemCount($"Collector{collectorConfig.Type}" +
+                                                      $"\tProbability Card{probability.Tier}" +
+                                                      $"\t{newLeveledItemForCollectorProbability.FormKey}" +
+                                                      $"\tChanceNone: {newLeveledItemForCollectorProbability.ChanceNone}");
 
         for (var i = 0; i < probability.NumberOfTimes; i++)
         {
@@ -112,7 +120,9 @@ public class CollectorLeveledItemDistributor
                 }
             };
 
-            ModificationTracker.IncrementLeveledItemEntryCount(newLeveledItemForCollectorProbability.EditorID ?? "UNKNOWN");
+            ModificationTracker.IncrementLeveledItemEntryCount(
+                newLeveledItemForCollectorProbability.FormKey.ToString() ??
+                "UNKNOWN");
             cardCollectorLeveledItem.Entries ??= [];
             cardCollectorLeveledItem.Entries.Add(entry);
         }

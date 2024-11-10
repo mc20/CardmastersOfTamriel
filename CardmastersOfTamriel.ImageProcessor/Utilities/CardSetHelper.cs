@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using CardmastersOfTamriel.ImageProcessor.Providers;
+using CardmastersOfTamriel.Utilities;
 using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.Utilities;
@@ -30,19 +30,4 @@ public static partial class CardSetHelper
 
     [GeneratedRegex(@"^([a-zA-Z]+(?:[ _][a-zA-Z]+)*)", RegexOptions.IgnoreCase, "en-CA")]
     private static partial Regex MyRegex();
-
-    public static string? FindMetadataLineBySetId(string setId)
-    {
-        var csvPath = ConfigurationProvider.Instance.Config.Paths.SetMetadataOverrideFilePath;
-        if (File.Exists(csvPath))
-        {
-            return File.ReadLines(csvPath)
-                .FirstOrDefault(line =>
-                {
-                    var columns = line.Split(',');
-                    return columns.Length > 0 && columns[0].Trim() == setId;
-                });
-        }
-        return null;
-    }
 }

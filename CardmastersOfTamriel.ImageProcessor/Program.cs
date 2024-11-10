@@ -1,5 +1,7 @@
-﻿using CardmastersOfTamriel.ImageProcessor.Processors;
+﻿using CardmastersOfTamriel.ImageProcessor.CardSets;
+using CardmastersOfTamriel.ImageProcessor.Processors;
 using CardmastersOfTamriel.ImageProcessor.Providers;
+using CardmastersOfTamriel.ImageProcessor.Utilities;
 using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor;
@@ -12,7 +14,7 @@ public class Program
 
         if (!Directory.Exists(config?.Paths?.OutputFolderPath))
         {
-            Log.Error($"Output folder does not exist: '{config?.Paths.OutputFolderPath}'");
+            Log.Error($"Output folder does not exist: '{config?.Paths?.OutputFolderPath}'");
             return;
         }
 
@@ -21,7 +23,7 @@ public class Program
 
         if (!File.Exists(config?.Paths?.MasterMetadataFilePath))
         {
-            Log.Error($"Master metadata file does not exist: '{config?.Paths.MasterMetadataFilePath}'");
+            Log.Error($"Master metadata file does not exist: '{config?.Paths?.MasterMetadataFilePath}'");
             return;
         }
 

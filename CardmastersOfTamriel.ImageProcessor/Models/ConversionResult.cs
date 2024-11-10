@@ -1,6 +1,6 @@
 using CardmastersOfTamriel.Models;
 
-namespace CardmastersOfTamriel.ImageProcessor.Processors;
+namespace CardmastersOfTamriel.ImageProcessor.Models;
 
 public struct ConversionResult
 {

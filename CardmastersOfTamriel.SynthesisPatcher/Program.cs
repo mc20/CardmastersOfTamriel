@@ -1,3 +1,4 @@
+using CardmastersOfTamriel.Models;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Skyrim;
@@ -28,6 +29,7 @@ public class Program
     private static async Task RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
     {
         var customMod = new SkyrimMod(new ModKey("CardmastersOfTamriel", ModType.Plugin), SkyrimRelease.SkyrimSE);
+        customMod.ModHeader.Flags |= SkyrimModHeader.HeaderFlag.Small;
 
         var configuration = SetupConfiguration(state);
 
@@ -53,8 +55,9 @@ public class Program
 
         // var keyword = customMod.Keywords.AddNew("CMOT_CollectorCard");
         var keyword = customMod.Keywords.AddNew("CMOT_CollectorCard");
-
-        var miscService = new CardMiscItemCreator(state, customMod);
+        
+        var formIdGenerator = new FormIdGenerator(customMod.ModKey);
+        var miscService = new CardMiscItemCreator(state, customMod, formIdGenerator);
         var mappedMiscItems = miscService.InsertAndMapCardsToMiscItems(cardList);
 
         var cardTierItemCreator = new TieredCardLeveledItemAssembler(state, customMod);
@@ -62,15 +65,29 @@ public class Program
 
         Log.Information(string.Empty);
         Log.Information("\n\nAssigning MiscItems to Collector LeveledItems..\n");
+        
+        var npcFactory = new CollectorConfigFactory(appConfig.RetrieveCollectorNpcConfigFilePath(state));
+        var collectors = Enum.GetValues(typeof(CollectorType))
+            .Cast<CollectorType>()
+            .Select(npcFactory.CreateCollector)
+            .Where(collector => collector is not null)
+            .ToList();
 
-        var npcCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorNpcConfigFilePath(state));
+        // var target = new NpcTarget();
+        // var service = new CollectorLeveledItemService(customMod, formIdGenerator, state);
+        // foreach (var collector in collectors)
+        // {
+        //     service.DistributeCardsToCollector(collector, cardTierMappings, target);
+        //     
+        // }
+
         var npcDistributor = new NpcDistributor(appConfig, state, customMod);
-        var npcItemProcessor = new CollectorLeveledItemDistributor(state, customMod, npcCollectorService, npcDistributor);
+        var npcItemProcessor = new CollectorLeveledItemDistributor(state, customMod, npcFactory, npcDistributor, formIdGenerator);
         npcItemProcessor.SetupCollectorLeveledEntries(cardTierMappings);
 
         var containerCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorContainerConfigPath(state));
         var containerDistributor = new ContainerDistributor(appConfig, state, customMod);
-        var containerItemProcessor = new CollectorLeveledItemDistributor(state, customMod, containerCollectorService, containerDistributor);
+        var containerItemProcessor = new CollectorLeveledItemDistributor(state, customMod, containerCollectorService, containerDistributor, formIdGenerator);
         containerItemProcessor.SetupCollectorLeveledEntries(cardTierMappings);
 
         using var env = GameEnvironment.Typical.Skyrim(SkyrimRelease.SkyrimSE);

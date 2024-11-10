@@ -1,4 +1,4 @@
-namespace CardmastersOfTamriel.ImageProcessor.Utilities;
+namespace CardmastersOfTamriel.Utilities;
 
 public static class CardExtensionMethods
 {

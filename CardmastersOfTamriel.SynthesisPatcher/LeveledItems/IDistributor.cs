@@ -6,5 +6,5 @@ namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 public interface IDistributor
 {
     string UniqueIdentifier { get; }
-    void Distribute(ICollector collector, LeveledItem leveledItemForCollector);
+    void Distribute(ICollectorConfig collectorConfig, LeveledItem leveledItemForCollector);
 }
