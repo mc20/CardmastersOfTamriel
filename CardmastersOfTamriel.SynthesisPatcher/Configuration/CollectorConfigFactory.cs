@@ -4,12 +4,13 @@ using CardmastersOfTamriel.SynthesisPatcher.Models;
 using CardmastersOfTamriel.Utilities;
 using Noggog;
 using Serilog;
+using CollectorConfig = CardmastersOfTamriel.SynthesisPatcher.Models.CollectorConfig;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Configuration;
 
 public class CollectorConfigFactory : ICollectorConfigFactory
 {
-    private readonly Dictionary<CollectorType, CollectorConfig> _collectorConfigs = [];
+    private readonly Dictionary<CollectorType, Models.CollectorConfig> _collectorConfigs = [];
 
     public CollectorConfigFactory(string configFilePath)
     {
@@ -23,22 +24,28 @@ public class CollectorConfigFactory : ICollectorConfigFactory
         }
     }
 
-    public ICollector? CreateCollector(CollectorType type)
+    public HashSet<ICollectorConfig> LoadCollectors()
     {
-        if (!_collectorConfigs.TryGetValue(type, out var config))
-        {
-            Log.Error($"No config found for collector type: {type}");
-            return null;
-            // throw new ArgumentException("Invalid collector type", nameof(type));
-        }
+        return [];
+    }
 
-        var cardTierProbabilities = config.CardTierProbabilities.Select(probConfig => new TierProbability
-        {
-            Tier = probConfig.Tier,
-            NumberOfTimes = probConfig.NumberOfTimes,
-            ChanceNone = new Percent(probConfig.ChanceNone)
-        }).ToList();
-
-        return new Collector(config.Type, new Percent(config.ChanceNone), cardTierProbabilities);
+    public ICollectorConfig? CreateCollector(CollectorType type)
+    {
+        return null;
+        // if (!_collectorConfigs.TryGetValue(type, out var config))
+        // {
+        //     Log.Error($"No config found for collector type: {type}");
+        //     return null;
+        //     // throw new ArgumentException("Invalid collector type", nameof(type));
+        // }
+        //
+        // var cardTierProbabilities = config.CardTierProbabilities.Select(probConfig => new TierProbability
+        // {
+        //     Tier = probConfig.Tier,
+        //     NumberOfTimes = probConfig.NumberOfTimes,
+        //     ChanceNone = new Percent(probConfig.ChanceNone)
+        // }).ToList();
+        //
+        // return new CollectorConfig(config.Type, new Percent(config.ChanceNone), cardTierProbabilities);
     }
 }

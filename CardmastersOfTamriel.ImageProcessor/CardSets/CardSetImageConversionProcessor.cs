@@ -1,20 +1,13 @@
 using System.Text.Json;
 using CardmastersOfTamriel.ImageProcessor.Factories;
+using CardmastersOfTamriel.ImageProcessor.Models;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessor.Processors;
-
-public class ImageConversionProcessor : ICardSetHandler
-{
-    public void ProcessCardSet(CardSet set)
-    {
-        throw new NotImplementedException();
-    }
-}
+namespace CardmastersOfTamriel.ImageProcessor.CardSets;
 
 public class CardSetImageConversionProcessor : ICardSetHandler
 {
@@ -34,7 +27,8 @@ public class CardSetImageConversionProcessor : ICardSetHandler
 
         Log.Verbose($"Loaded {cardsFromMetadataFile.Count} cards from metadata file");
 
-        var imageFilePathsAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath ?? string.Empty)
+        var imageFilePathsAtSource = CardSetImageHelper
+            .GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath ?? string.Empty)
             .OrderBy(file => file).ToList();
 
         Log.Verbose($"Found {imageFilePathsAtSource.Count} images at source path");
@@ -104,17 +98,23 @@ public class CardSetImageConversionProcessor : ICardSetHandler
         var eligibleFilePathsForConversion = finalCards.Select(card => card?.SourceAbsoluteFilePath ?? string.Empty)
             .Where(filePath => !string.IsNullOrWhiteSpace(filePath)).ToHashSet();
 
-        Log.Information($"Found {eligibleFilePathsForConversion.Count} eligible images for conversion (no destination specified)");
+        Log.Information(
+            $"Found {eligibleFilePathsForConversion.Count} eligible images for conversion (no destination specified)");
 
-        Log.Information($"MaxSampleSize is {_config.General.MaxSampleSize} and Available Card Count is {finalCards.Count}");
+        Log.Information(
+            $"MaxSampleSize is {_config.General.MaxSampleSize} and Available Card Count is {finalCards.Count}");
 
         var maximumNumberOfCards = Math.Min(_config.General.MaxSampleSize, finalCards.Count);
 
         var needMoreRandomCards = cardsAtDestination.Count < maximumNumberOfCards;
 
-        Log.Information($"Maximum Number of Cards: {maximumNumberOfCards} while there are {cardsAtDestination.Count} cards at destination. Need more random cards? {needMoreRandomCards}");
+        Log.Information(
+            $"Maximum Number of Cards: {maximumNumberOfCards} while there are {cardsAtDestination.Count} cards at destination. Need more random cards? {needMoreRandomCards}");
 
-        var randomCards = needMoreRandomCards ? CardSetImageHelper.SelectRandomImageFilePaths(maximumNumberOfCards - cardsAtDestination.Count, eligibleFilePathsForConversion) : [];
+        var randomCards = needMoreRandomCards
+            ? CardSetImageHelper.SelectRandomImageFilePaths(maximumNumberOfCards - cardsAtDestination.Count,
+                eligibleFilePathsForConversion)
+            : [];
 
         if (needMoreRandomCards)
         {
@@ -153,7 +153,9 @@ public class CardSetImageConversionProcessor : ICardSetHandler
                 if (string.IsNullOrEmpty(info.card.DestinationAbsoluteFilePath))
                 {
                     Log.Verbose($"Card {info.card.Id} was not converted and will be skipped");
-                    info.card.Shape = ImageHelper.DetermineOptimalShape(info.card.SourceAbsoluteFilePath!); // Keep track of the shape for future reference
+                    info.card.Shape =
+                        ImageHelper.DetermineOptimalShape(info.card
+                            .SourceAbsoluteFilePath!); // Keep track of the shape for future reference
                     info.card.DisplayName = null;
                     info.card.DestinationAbsoluteFilePath = null;
                     info.card.DestinationRelativeFilePath = null;
@@ -190,7 +192,8 @@ public class CardSetImageConversionProcessor : ICardSetHandler
         var imageDestinationFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, imageFileName);
 
         var helper = new ImageConverter();
-        var imageShape = helper.ConvertImageAndSaveToDestination(set.Tier, sourceImageFilePath, imageDestinationFilePath);
+        var imageShape =
+            helper.ConvertImageAndSaveToDestination(set.Tier, sourceImageFilePath, imageDestinationFilePath);
 
         return new ConversionResult()
         {

@@ -23,7 +23,7 @@ public class ContainerDistributor : IDistributor
 
     public string UniqueIdentifier => "Container";
 
-    public void Distribute(ICollector collector, LeveledItem leveledItemForCollector)
+    public void Distribute(ICollectorConfig collectorConfig, LeveledItem leveledItemForCollector)
     {
         Log.Information("\n\nAssigning Collector LeveledItems to Designated Containers..\n");
 
@@ -33,10 +33,10 @@ public class ContainerDistributor : IDistributor
         Log.Information(
             $"Retrieved: {designatedContainerJsonData.Count} CollectorTypes from '{_appConfig.RetrieveContainerConfigFilePath(_state)}'");
 
-        if (!designatedContainerJsonData.TryGetValue(collector.Type, out var editorIdsFromContainerJsonData)) return;
+        if (!designatedContainerJsonData.TryGetValue(collectorConfig.Type, out var editorIdsFromContainerJsonData)) return;
 
         Log.Information(
-            $"Retrieved: {editorIdsFromContainerJsonData.Count} Containers for CollectorType: {collector.Type}");
+            $"Retrieved: {editorIdsFromContainerJsonData.Count} Containers for CollectorType: {collectorConfig.Type}");
         foreach (var designatedEditorId in editorIdsFromContainerJsonData.Where(id => !string.IsNullOrWhiteSpace(id)))
         {
             Log.Information($"Designated Container: {designatedEditorId}");

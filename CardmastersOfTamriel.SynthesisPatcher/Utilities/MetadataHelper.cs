@@ -5,9 +5,9 @@ namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;
 
 public class MetadataHelper
 {
-    private readonly IMasterMetadataHandler _handler;
+    private readonly MasterMetadataHandler _handler;
 
-    public MetadataHelper(IMasterMetadataHandler handler)
+    public MetadataHelper(MasterMetadataHandler handler)
     {
         _handler = handler;
     }

@@ -23,9 +23,9 @@ public class NpcDistributor : IDistributor
 
     public string UniqueIdentifier => "Npc";
 
-    public void Distribute(ICollector collector, LeveledItem leveledItemForCollector)
+    public void Distribute(ICollectorConfig collectorConfig, LeveledItem leveledItemForCollector)
     {
-        Log.Verbose("\n\nAssigning Collector LeveledItems to Designated LeveledItems..\n");
+        Log.Information("Assigning Collector LeveledItems to Designated LeveledItems..");
 
         var designatedLeveledItemJsonData =
             JsonFileReader.ReadFromJson<Dictionary<CollectorType, HashSet<string>>>(
@@ -33,14 +33,21 @@ public class NpcDistributor : IDistributor
         Log.Information(
             $"Retrieved: {designatedLeveledItemJsonData.Count} CollectorTypes from '{_appConfig.RetrieveLeveledItemConfigFilePath(_state)}'");
 
-        if (!designatedLeveledItemJsonData.TryGetValue(collector.Type, out var editorIdsFromLeveledItemJsonData))
+        if (!designatedLeveledItemJsonData.TryGetValue(collectorConfig.Type, out var editorIdsFromLeveledItemJsonData))
             return;
 
-        foreach (var designatedEditorId in editorIdsFromLeveledItemJsonData.Where(id =>
-                     !string.IsNullOrWhiteSpace(id)))
+        var editorIdToFormKey = _state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides()
+            .Where(item => item.EditorID != null)
+            .ToDictionary(item => item.EditorID!, item => item.FormKey);
+
+        foreach (var designatedEditorId in editorIdsFromLeveledItemJsonData.Where(id => !string.IsNullOrWhiteSpace(id)))
         {
+            // Look up the FormKey using the EditorID
+            if (!editorIdToFormKey.TryGetValue(designatedEditorId, out var formKey))
+                continue;
+
             var designatedLeveledItem = _state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides()
-                .FirstOrDefault(ll => ll.EditorID == designatedEditorId);
+                .FirstOrDefault(ll => ll.FormKey == formKey);
 
             if (designatedLeveledItem is null) continue;
             var designatedLeveledItemToModify = _skyrimMod.LeveledItems.GetOrAddAsOverride(designatedLeveledItem);
@@ -57,7 +64,9 @@ public class NpcDistributor : IDistributor
             };
 
             designatedLeveledItemToModify.Entries.Add(entry);
-            Log.Information($"Added LeveledItem: {leveledItemForCollector.EditorID} to LeveledItem: {designatedLeveledItem.EditorID}");
+            Log.Information(
+                $"Added LeveledItem: {leveledItemForCollector.FormKey} (EditorID: {leveledItemForCollector.EditorID}) " +
+                $"to LeveledItem: {designatedLeveledItem.FormKey} (EditorID: {designatedLeveledItem.EditorID})");
         }
     }
 }

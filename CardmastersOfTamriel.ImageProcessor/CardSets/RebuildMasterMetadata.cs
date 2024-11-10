@@ -6,7 +6,7 @@ using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessor.Processors;
+namespace CardmastersOfTamriel.ImageProcessor.CardSets;
 
 public class RebuildMasterMetadata : ICardSetHandler
 {
@@ -30,14 +30,18 @@ public class RebuildMasterMetadata : ICardSetHandler
             Log.Warning($"{set.Id}\tNo cards.jsonl file found at '{savedJsonFilePath}'");
         }
 
-        Log.Information($"{set.Id}\t'{set.DisplayName}':\tProcessing from Source Path: '{set.SourceAbsoluteFolderPath}'");
+        Log.Information(
+            $"{set.Id}\t'{set.DisplayName}':\tProcessing from Source Path: '{set.SourceAbsoluteFolderPath}'");
 
-        var rebuildlist = JsonFileReader.ReadFromJson<Dictionary<string, string>>(ConfigurationProvider.Instance.Config.Paths.RebuildListFilePath);
-        if (rebuildlist != null && rebuildlist.Count > 0)
+        var rebuildlist =
+            JsonFileReader.ReadFromJson<Dictionary<string, string>>(ConfigurationProvider.Instance.Config.Paths
+                .RebuildListFilePath);
+        if (rebuildlist.Count > 0)
         {
             if (!rebuildlist.TryGetValue(set.Id, out var seriesId) || seriesId != set.SeriesId)
             {
-                Log.Information($"{set.Id}\tSkipping rebuild as set is not in rebuild list or series ID does not match");
+                Log.Information(
+                    $"{set.Id}\tSkipping rebuild as set is not in rebuild list or series ID does not match");
                 return;
             }
         }
@@ -63,44 +67,53 @@ public class RebuildMasterMetadata : ICardSetHandler
             CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
         Log.Information($"{set.Id}\tFound {imageFilePathsAtDestination.Count} DDS images at destination path");
 
-        var imageFilePathsAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath).OrderBy(file => Path.GetFileNameWithoutExtension(file)).ToHashSet();
+        var imageFilePathsAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath)
+            .OrderBy(file => Path.GetFileNameWithoutExtension(file)).ToHashSet();
         var cardsFromSource = CardFactory.CreateCardsFromImagesAtFolderPath(set, imageFilePathsAtSource, true);
         Log.Information($"{set.Id}\tCreated {cardsFromSource.Count} cards from source images");
 
         var validUniqueIdentifiersDeterminedFromSource = cardsFromSource.Select(card => card.Id).ToHashSet();
-        Log.Information($"{set.Id}\tFound {validUniqueIdentifiersDeterminedFromSource.Count} unique identifiers from source images");
+        Log.Information(
+            $"{set.Id}\tFound {validUniqueIdentifiersDeterminedFromSource.Count} unique identifiers from source images");
 
-        var uniqueIdentifiersAtDestination = imageFilePathsAtDestination.Select(Path.GetFileNameWithoutExtension).ToHashSet();
+        var uniqueIdentifiersAtDestination =
+            imageFilePathsAtDestination.Select(Path.GetFileNameWithoutExtension).ToHashSet();
 
-        Log.Information($"{set.Id}\tFound {uniqueIdentifiersAtDestination.Count} unique identifiers from destination images");
+        Log.Information(
+            $"{set.Id}\tFound {uniqueIdentifiersAtDestination.Count} unique identifiers from destination images");
 
-        var validIdentifiersAtDestination = uniqueIdentifiersAtDestination.Intersect(validUniqueIdentifiersDeterminedFromSource).ToHashSet();
+        var validIdentifiersAtDestination = uniqueIdentifiersAtDestination
+            .Intersect(validUniqueIdentifiersDeterminedFromSource).ToHashSet();
 
-        Log.Information($"{set.Id}\tFound {validIdentifiersAtDestination.Count} valid unique identifiers at destination");
+        Log.Information(
+            $"{set.Id}\tFound {validIdentifiersAtDestination.Count} valid unique identifiers at destination");
 
         Log.Information($"{set.Id}\tUpdating card metadata to be saved to '{savedJsonFilePath}'");
 
         var displayedIndex = 1;
-        var displayedTotalCount = validIdentifiersAtDestination.Count;
         var maxDisplayNameLength = 0;
         foreach (var cardWithIndex in cardsFromSource.OrderBy(card => card.Id).Select((card, index) => (card, index)))
         {
             if (cardWithIndex.card.SourceAbsoluteFilePath != null)
             {
-                cardWithIndex.card.Shape ??= ImageHelper.DetermineOptimalShape(cardWithIndex.card.SourceAbsoluteFilePath);
+                cardWithIndex.card.Shape ??=
+                    ImageHelper.DetermineOptimalShape(cardWithIndex.card.SourceAbsoluteFilePath);
             }
 
             if (validIdentifiersAtDestination.Contains(cardWithIndex.card.Id))
             {
-                cardWithIndex.card.DestinationAbsoluteFilePath = imageFilePathsAtDestination.FirstOrDefault(file => Path.GetFileNameWithoutExtension(file) == cardWithIndex.card.Id);
-                cardWithIndex.card.DestinationRelativeFilePath = FilePathHelper.GetRelativePath(cardWithIndex.card.DestinationAbsoluteFilePath, set.Tier);
+                cardWithIndex.card.DestinationAbsoluteFilePath = imageFilePathsAtDestination.FirstOrDefault(file =>
+                    Path.GetFileNameWithoutExtension(file) == cardWithIndex.card.Id);
+                cardWithIndex.card.DestinationRelativeFilePath =
+                    FilePathHelper.GetRelativePath(cardWithIndex.card.DestinationAbsoluteFilePath, set.Tier);
                 cardWithIndex.card.DisplayedIndex = (uint)displayedIndex;
                 cardWithIndex.card.DisplayedTotalCount = (uint)validIdentifiersAtDestination.Count;
                 cardWithIndex.card.TrueTotalCount = (uint)validUniqueIdentifiersDeterminedFromSource.Count;
                 cardWithIndex.card.SetGenericDisplayName();
                 displayedIndex++;
 
-                if (maxDisplayNameLength < cardWithIndex.card.DisplayName?.Length) maxDisplayNameLength = cardWithIndex.card.DisplayName?.Length ?? 0;
+                if (maxDisplayNameLength < cardWithIndex.card.DisplayName?.Length)
+                    maxDisplayNameLength = cardWithIndex.card.DisplayName?.Length ?? 0;
             }
             else
             {
@@ -112,11 +125,10 @@ public class RebuildMasterMetadata : ICardSetHandler
             }
 
             Log.Verbose($"{set.Id}\tRefreshed metadata for Card '{cardWithIndex.card.Id}' -> " +
-            $"Shape: '{cardWithIndex.card.Shape}'{new string(' ', NameHelper.MaxCardShapeTextLength - (cardWithIndex.card.Shape?.ToString().Length ?? 0))}\t" +
-            $"SourceAbsoluteFilePath: '{cardWithIndex.card.SourceAbsoluteFilePath}'\t" +
-            $"DisplayName: '{cardWithIndex.card.DisplayName}'{new string(' ', maxDisplayNameLength - (cardWithIndex.card.DisplayName?.Length ?? 0))}\t" +
-            $"DestinationRelativeFilePath: '{cardWithIndex.card.DestinationRelativeFilePath}'\t");
-
+                        $"Shape: '{cardWithIndex.card.Shape}'{new string(' ', NameHelper.MaxCardShapeTextLength - (cardWithIndex.card.Shape?.ToString().Length ?? 0))}\t" +
+                        $"SourceAbsoluteFilePath: '{cardWithIndex.card.SourceAbsoluteFilePath}'\t" +
+                        $"DisplayName: '{cardWithIndex.card.DisplayName}'{new string(' ', maxDisplayNameLength - (cardWithIndex.card.DisplayName?.Length ?? 0))}\t" +
+                        $"DestinationRelativeFilePath: '{cardWithIndex.card.DestinationRelativeFilePath}'\t");
         }
 
         foreach (var card in cardsFromSource.OrderBy(card => card.Id))
@@ -142,6 +154,5 @@ public class RebuildMasterMetadata : ICardSetHandler
         cardSetMetadata.Cards = cardsFromSource;
 
         handler.WriteMetadataToFile();
-
     }
 }

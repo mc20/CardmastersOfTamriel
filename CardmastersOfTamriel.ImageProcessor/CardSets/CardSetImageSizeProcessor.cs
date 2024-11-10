@@ -3,7 +3,7 @@ using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessor.Processors;
+namespace CardmastersOfTamriel.ImageProcessor.CardSets;
 
 public class CardSetImageSizeProcessor : ICardSetHandler
 {

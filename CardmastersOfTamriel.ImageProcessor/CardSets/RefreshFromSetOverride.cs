@@ -4,7 +4,7 @@ using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessor.Processors;
+namespace CardmastersOfTamriel.ImageProcessor.CardSets;
 
 public class OverrideSetMetadata : ICardSetHandler
 {
@@ -22,7 +22,8 @@ public class OverrideSetMetadata : ICardSetHandler
         }
 
         var setOverrideJsonPath = ConfigurationProvider.Instance.Config.Paths.SetMetadataOverrideFilePath;
-        var setMetadataOverride = FileOperations.FindMetadataLineBySetId<CardSetBasicMetadata>(setOverrideJsonPath, set.Id);
+        var setMetadataOverride =
+            FileOperations.FindMetadataLineBySetId<CardSetBasicMetadata>(setOverrideJsonPath, set.Id);
         if (setMetadataOverride is not null)
         {
             Log.Information($"{set.Id}\t'{set.DisplayName}':\tRefreshing data from set override file");
@@ -37,14 +38,15 @@ public class OverrideSetMetadata : ICardSetHandler
             var basicMetadata = cardSetMetadata.GetBasicMetadata();
             basicMetadata.DefaultKeywords = ConfigurationProvider.Instance.Config.General.DefaultMiscItemKeywords;
             FileOperations.AppendDataToFile<CardSetBasicMetadata>(basicMetadata, setOverrideJsonPath);
-            Log.Verbose($"{set.Id}\t'{set.DisplayName}':\tAdded missing Card Set metadatda to override file at {setOverrideJsonPath}");
+            Log.Verbose(
+                $"{set.Id}\t'{set.DisplayName}':\tAdded missing Card Set metadatda to override file at {setOverrideJsonPath}");
         }
 
         var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
         if (File.Exists(savedJsonFilePath))
         {
-            var cardsFromMasterMetadata = JsonFileReader.LoadFromJsonLineFile<Card>(savedJsonFilePath)
-                                                  .Where(card => card != null).Select(card => card!).ToHashSet();
+            var cardsFromMasterMetadata = JsonFileReader.LoadAllFromJsonLineFile<Card>(savedJsonFilePath)
+                .Where(card => card != null).Select(card => card!).ToHashSet();
             cardSetMetadata.Cards ??= cardsFromMasterMetadata;
         }
 

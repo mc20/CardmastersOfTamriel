@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using CardmastersOfTamriel.Models;
 
-namespace CardmastersOfTamriel.ImageProcessor.Utilities;
+namespace CardmastersOfTamriel.Utilities;
 
 public static partial class NameHelper
 {
