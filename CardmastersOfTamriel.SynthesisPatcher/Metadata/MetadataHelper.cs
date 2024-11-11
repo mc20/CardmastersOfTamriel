@@ -1,6 +1,6 @@
 using CardmastersOfTamriel.Utilities;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;
+namespace CardmastersOfTamriel.SynthesisPatcher.Metadata;
 
 
 public class MetadataHelper

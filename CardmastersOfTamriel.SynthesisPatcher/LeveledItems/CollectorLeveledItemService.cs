@@ -1,53 +1,89 @@
 ﻿using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.SynthesisPatcher.Collectors.Targets;
-using CardmastersOfTamriel.SynthesisPatcher.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Collectors;
+using CardmastersOfTamriel.SynthesisPatcher.Collectors.Configuration.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Skyrim;
-using Mutagen.Bethesda.Synthesis;
 using Noggog;
-using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 
 public class CollectorLeveledItemService
 {
-    private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _skyrimMod;
     private readonly FormIdGenerator _formIdGenerator;
 
-    public CollectorLeveledItemService(ISkyrimMod skyrimMod, FormIdGenerator formIdGenerator,
-        IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
+    public CollectorLeveledItemService(ISkyrimMod skyrimMod, FormIdGenerator formIdGenerator)
     {
         _skyrimMod = skyrimMod;
         _formIdGenerator = formIdGenerator;
-        _state = state;
+    }
+    
+    public void DistributeCardsToCollector(
+        ICollectorConfig<LeveledItemEntry> collectorConfig, 
+        IDictionary<CardTier, LeveledItem> cardMappings)
+    {
+        var collectorLeveledItem = CreateCollectorLeveledItem(collectorConfig);
+        var collection = collectorConfig.GetCollection(collectorLeveledItem);
+        DistributeItems(collection, collectorConfig.CardTierProbabilities, cardMappings, AddNpcEntry);
     }
 
-    public void DistributeCardsToCollector(ICollectorConfig collectorConfig,
-        IDictionary<CardTier, LeveledItem> cardMappings, HashSet<FormKey> collectorFormKeys, ICollectorTarget target)
+    public void DistributeCardsToCollector(
+        ICollectorConfig<ContainerEntry> collectorConfig, 
+        IDictionary<CardTier, LeveledItem> cardMappings)
     {
-        // var formKeyForCollectorType = _formIdGenerator.GetNextFormKey(
-        //     $"LeveledItem_COLLECTOR{collectorConfig.Type}_{collectorConfig.Name.ToUpper()}".AddModNamePrefix());
-        //
-        // if (_state.CheckIfExists<ILeveledItemGetter>(formKeyForCollectorType) ||
-        //     _skyrimMod.CheckIfExists<LeveledItem>(formKeyForCollectorType))
-        // {
-        //     Log.Error($"LeveledItem with FormKey {formKeyForCollectorType} already exists.");
-        //     return;
-        // }
-        //
-        // var collectorTypeLeveledItem = _skyrimMod.LeveledItems.AddNew(formKeyForCollectorType);
-        // collectorTypeLeveledItem.ChanceNone = collectorConfig.ChanceNone;
-        //
-        // var probabilityLeveledItem = _skyrimMod.LeveledItems.AddNew(collectorLeveledItem);
-        // probabilityLeveledItem.ChanceNone = collectorConfig.ChanceNone;
-        // probabilityLeveledItem.Entries ??= [];
-        //
-        // foreach (var probability in collectorConfig.CardTierProbabilities)
-        // {
-        //     target.AddItem(cardMappings[probability.Tier].ToLink());
-        // }
+        var collectorLeveledItem = CreateCollectorLeveledItem(collectorConfig);
+        var collection = collectorConfig.GetCollection(collectorLeveledItem);
+        DistributeItems(collection, collectorConfig.CardTierProbabilities, cardMappings, AddContainerEntry);
+    }
+    
+    private LeveledItem CreateCollectorLeveledItem<T>(ICollectorConfig<T> collectorConfig)
+    {
+        var formKeyForCollectorConfig = _formIdGenerator.GetNextFormKey(
+            $"LeveledItem_COLLECTOR{collectorConfig.Type}_{collectorConfig.Name.ToUpper()}".AddModNamePrefix());
+        var collectorLeveledItem = _skyrimMod.LeveledItems.AddNew(formKeyForCollectorConfig);
+        collectorLeveledItem.ChanceNone = collectorConfig.ChanceNone;
+        return collectorLeveledItem;
+    }
+
+    private static void AddNpcEntry(ExtendedList<LeveledItemEntry> collection, IFormLink<IItemGetter> item)
+    {
+        collection.Add(new LeveledItemEntry
+        {
+            Data = new LeveledItemEntryData
+            {
+                Reference = item,
+                Count = 1,
+                Level = 1
+            }
+        });
+    }
+
+    private static void AddContainerEntry(ExtendedList<ContainerEntry> collection, IFormLink<IItemGetter> item)
+    {
+        collection.Add(new ContainerEntry
+        {
+            Item = new ContainerItem
+            {
+                Item = item,
+                Count = 1
+            }
+        });
+    }
+
+    private static void DistributeItems<T>(
+        ExtendedList<T> collection,
+        IEnumerable<TierProbability> probabilities,
+        IDictionary<CardTier, LeveledItem> cardMappings,
+        Action<ExtendedList<T>, IFormLink<IItemGetter>> addAction)
+    {
+        foreach (var probability in probabilities)
+        {
+            for (var i = 0; i < probability.NumberOfTimes; i++)
+            {
+                addAction(collection, cardMappings[probability.Tier].ToLink());
+            }
+        }
     }
 }

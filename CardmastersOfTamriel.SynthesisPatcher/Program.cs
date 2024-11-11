@@ -1,4 +1,5 @@
 using CardmastersOfTamriel.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Collectors.Configuration.Factory;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Skyrim;
@@ -12,7 +13,7 @@ using Mutagen.Bethesda.Environments;
 using Mutagen.Bethesda.Plugins.Binary.Parameters;
 using CardmastersOfTamriel.SynthesisPatcher.MiscItems;
 using CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
-using CardmastersOfTamriel.SynthesisPatcher.Configuration;
+using CardmastersOfTamriel.SynthesisPatcher.Metadata;
 
 namespace CardmastersOfTamriel.SynthesisPatcher;
 
@@ -35,7 +36,8 @@ public class Program
 
         var appConfig = configuration.Get<AppConfig>();
 
-        if (appConfig is null || string.IsNullOrEmpty(appConfig.LogOutputFilePath) || string.IsNullOrEmpty(appConfig.MetadataFilePath))
+        if (appConfig is null || string.IsNullOrEmpty(appConfig.LogOutputFilePath) ||
+            string.IsNullOrEmpty(appConfig.MetadataFilePath))
         {
             Log.Error("App config is missing");
             return;
@@ -46,49 +48,43 @@ public class Program
         var metadataHandler = new MasterMetadataHandler(appConfig.RetrieveMetadataFilePath(state));
         metadataHandler.LoadFromFile();
 
-        var helper = new MetadataHelper(metadataHandler);
-        var cardList = helper.GetCards().ToHashSet();
-
-        if (cardList.Count == 0) return;
-
-        Log.Verbose("Cards: {0}\n\n\t", string.Join("\n\t", cardList.Select(card => (card.Id, card.DisplayName)).ToList()));
-
-        // var keyword = customMod.Keywords.AddNew("CMOT_CollectorCard");
-        var keyword = customMod.Keywords.AddNew("CMOT_CollectorCard");
-        
         var formIdGenerator = new FormIdGenerator(customMod.ModKey);
-        var miscService = new CardMiscItemCreator(state, customMod, formIdGenerator);
-        var mappedMiscItems = miscService.InsertAndMapCardsToMiscItems(cardList);
 
-        var cardTierItemCreator = new TieredCardLeveledItemAssembler(state, customMod);
-        var cardTierMappings = cardTierItemCreator.CreateCardTierLeveledItems(mappedMiscItems);
+        var helper = new MetadataHelper(metadataHandler);
+        var allDistributableCards = helper.GetCards().ToHashSet();
+
+        if (allDistributableCards.Count == 0)
+        {
+            Log.Error("No distributable cards found in metadata.");
+            return;
+        }
+
+        Log.Verbose("Cards: {0}\n\n\t",
+            string.Join("\n\t", allDistributableCards.Select(card => (card.Id, card.DisplayName)).ToList()));
+
+        var keyword = customMod.Keywords.AddNew("CMOT_CollectorCard");
+
+        var cardTierToLeveledItemMapping =
+            CreateCardTierToLeveledItemMapping(metadataHandler, customMod, state, formIdGenerator);
 
         Log.Information(string.Empty);
         Log.Information("\n\nAssigning MiscItems to Collector LeveledItems..\n");
+
+        var service = new CollectorLeveledItemService(customMod, formIdGenerator);
         
         var npcFactory = new CollectorConfigFactory(appConfig.RetrieveCollectorNpcConfigFilePath(state));
-        var collectors = Enum.GetValues(typeof(CollectorType))
-            .Cast<CollectorType>()
-            .Select(npcFactory.CreateCollector)
-            .Where(collector => collector is not null)
-            .ToList();
-
-        // var target = new NpcTarget();
-        // var service = new CollectorLeveledItemService(customMod, formIdGenerator, state);
-        // foreach (var collector in collectors)
-        // {
-        //     service.DistributeCardsToCollector(collector, cardTierMappings, target);
-        //     
-        // }
-
-        var npcDistributor = new NpcDistributor(appConfig, state, customMod);
-        var npcItemProcessor = new CollectorLeveledItemDistributor(state, customMod, npcFactory, npcDistributor, formIdGenerator);
-        npcItemProcessor.SetupCollectorLeveledEntries(cardTierMappings);
-
-        var containerCollectorService = new CollectorConfigFactory(appConfig.RetrieveCollectorContainerConfigPath(state));
-        var containerDistributor = new ContainerDistributor(appConfig, state, customMod);
-        var containerItemProcessor = new CollectorLeveledItemDistributor(state, customMod, containerCollectorService, containerDistributor, formIdGenerator);
-        containerItemProcessor.SetupCollectorLeveledEntries(cardTierMappings);
+        var npcCollectors = npcFactory.LoadNpcCollectors();
+        foreach (var collector in npcCollectors)
+        {
+            service.DistributeCardsToCollector(collector, cardTierToLeveledItemMapping);
+        }
+        
+        var containerFactor = new CollectorConfigFactory(appConfig.RetrieveCollectorContainerConfigPath(state));
+        var containerCollectors = containerFactor.LoadContainers();
+        foreach (var collector in containerCollectors)
+        {
+            service.DistributeCardsToCollector(collector, cardTierToLeveledItemMapping);
+        }
 
         using var env = GameEnvironment.Typical.Skyrim(SkyrimRelease.SkyrimSE);
         var desiredFilePath = Path.Combine(env.DataFolderPath, "CardmastersOfTamriel.esp");
@@ -123,5 +119,20 @@ public class Program
             .AddJsonFile(state.RetrieveInternalFilePath("localsettings.json"), optional: true, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
+    }
+    
+    private static Dictionary<CardTier, LeveledItem> CreateCardTierToLeveledItemMapping(
+        MasterMetadataHandler metadataHandler, ISkyrimMod customMod, IPatcherState<ISkyrimMod, ISkyrimModGetter> state,
+        FormIdGenerator formIdGenerator)
+    {
+        var helper = new MetadataHelper(metadataHandler);
+        var cardList = helper.GetCards().ToHashSet();
+
+        var miscService = new CardMiscItemCreator(state, customMod, formIdGenerator);
+        var mappedMiscItems = miscService.InsertAndMapCardsToMiscItems(cardList);
+
+        // Get all cards grouped by CardTier
+        var cardTierItemCreator = new TieredCardLeveledItemAssembler(state, customMod);
+        return cardTierItemCreator.CreateCardTierLeveledItems(mappedMiscItems);
     }
 }

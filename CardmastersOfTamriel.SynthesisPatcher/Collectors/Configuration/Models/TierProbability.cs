@@ -1,9 +1,9 @@
 using CardmastersOfTamriel.Models;
 using Noggog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Models;
+namespace CardmastersOfTamriel.SynthesisPatcher.Collectors.Configuration.Models;
 
-public class TierProbability : ITierProbability
+public class TierProbability
 {
     public CardTier Tier { get; set; }
     public int NumberOfTimes { get; set; }
