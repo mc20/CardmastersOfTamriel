@@ -1,6 +1,6 @@
 ﻿using Mutagen.Bethesda.Plugins;
 
-namespace CardmastersOfTamriel.SynthesisPatcher;
+namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;
 
 public class FormIdGenerator
 {
@@ -11,13 +11,13 @@ public class FormIdGenerator
     public FormIdGenerator(ModKey modKey)
     {
         _modKey = modKey;
-        _identifierToFormId = new Dictionary<string, uint>();
+        _identifierToFormId = [];
         _nextFormId = 0x800; // Start at 0x800 to avoid reserved IDs
     }
 
     public FormKey GetNextFormKey(string identifier)
     {
-        if (_identifierToFormId.TryGetValue(identifier, out uint existingId))
+        if (_identifierToFormId.TryGetValue(identifier, out var existingId))
         {
             return new FormKey(_modKey, existingId);
         }
@@ -30,5 +30,5 @@ public class FormIdGenerator
         var formId = _nextFormId++;
         _identifierToFormId[identifier] = formId;
         return new FormKey(_modKey, formId);
-    }   
+    }
 }
