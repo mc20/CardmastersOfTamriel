@@ -1,7 +1,6 @@
 using CardmastersOfTamriel.SynthesisPatcher.MiscItems.Factory;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda;
-using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
 using Serilog;
@@ -12,16 +11,19 @@ public class CardMiscItemCreator
 {
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _customMod;
-    private readonly FormIdGenerator _formIdGenerator;
 
-    public CardMiscItemCreator(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod,
-        FormIdGenerator formIdGenerator)
+
+    public CardMiscItemCreator(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
     {
         _state = state;
         _customMod = customMod;
-        _formIdGenerator = formIdGenerator;
     }
 
+    /// <summary>
+    /// Inserts a collection of cards as miscellaneous items and maps each card to its corresponding miscellaneous item.
+    /// </summary>
+    /// <param name="cards">A collection of cards to be inserted as miscellaneous items.</param>
+    /// <returns>A dictionary mapping each card to its corresponding miscellaneous item.</returns>
     public Dictionary<Card, MiscItem> InsertAndMapCardsToMiscItems(HashSet<Card> cards)
     {
         var miscItems = new Dictionary<Card, MiscItem>();
@@ -41,21 +43,16 @@ public class CardMiscItemCreator
 
     private MiscItem? InsertAsMiscItem(Card card)
     {
-        var newMiscItemFormKey = GenerateFormKey("MiscItem", card);
-        var newTextureSetFormKey = GenerateFormKey("TextureSet", card);
-
-        if (ItemExists(newMiscItemFormKey, newTextureSetFormKey))
-        {
-            Log.Error($"MiscItem '{newMiscItemFormKey}' already exists in the load order.");
-            return null;
-        }
-
-        var newMiscItem = MiscItemFactory.CreateMiscItem(_customMod, card, newMiscItemFormKey);
-        var textureSetForWorldModel = TextureSetFactory.CreateTextureSet(_customMod, card, newTextureSetFormKey);
+        var newMiscItem = MiscItemFactory.CreateMiscItem(_customMod, card);
+        var textureSetForWorldModel = TextureSetFactory.CreateTextureSet(_customMod, card);
 
         newMiscItem.Model = ModelFactory.CreateModel(card, textureSetForWorldModel);
 
-        card.Keywords ??= [];
+        card.Keywords = [];
+
+        var kw = card.Tier.ToString().ToUpper().AddModNamePrefix();
+        if (kw is not null)
+            _ = _customMod.Keywords.AddNewWithId(kw);
 
         if (card.Keywords is not null)
         {
@@ -67,21 +64,6 @@ public class CardMiscItemCreator
         return newMiscItem;
     }
 
-    private FormKey GenerateFormKey(string prefix, Card card)
-    {
-        return _formIdGenerator.GetNextFormKey($"{prefix}_CARD_{card.Id}".AddModNamePrefix());
-    }
-
-    private bool ItemExists(FormKey miscItemFormKey, FormKey textureSetFormKey)
-    {
-        return _state.CheckIfExists<IMiscItemGetter>(miscItemFormKey) || _customMod.CheckIfExists<MiscItem>(
-                                                                          miscItemFormKey)
-                                                                      || _state.CheckIfExists<ITextureSetGetter>(
-                                                                          textureSetFormKey)
-                                                                      || _customMod.CheckIfExists<TextureSet>(
-                                                                          textureSetFormKey);
-    }
-    
     private void AddKeywordsToMiscItem(MiscItem miscItem, HashSet<string> keywordEditorIDs)
     {
         var keywordNotFound = string.Empty;

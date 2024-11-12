@@ -1,19 +1,18 @@
-using System.Text.Json.Serialization;
 using CardmastersOfTamriel.Models;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Collectors.Configuration.Models;
 
-public class CollectorConfigRoot
+public class CollectorTypeConfiguration
 {
-    [JsonPropertyName("Collectors")]
-    public List<CollectorConfig> Collectors { get; set; } = [];
+    public required string Category { get; set; }
+    public HashSet<CollectorConfig> CollectorTypes { get; set; } = [];
 }
 
 public class CollectorConfig
 {
     public CollectorType Type { get; set; }
     public double ChanceNone { get; set; }
-    public List<TierProbabilityConfig> CardTierProbabilities { get; set; } = [];
+    public HashSet<TierProbabilityConfig> CardTierProbabilities { get; set; } = [];
 }
 
 public class TierProbabilityConfig

@@ -1,7 +1,5 @@
 ﻿using CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
-using Mutagen.Bethesda;
-using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Skyrim;
 using Serilog;
 
@@ -9,9 +7,10 @@ namespace CardmastersOfTamriel.SynthesisPatcher.MiscItems.Factory;
 
 public static class TextureSetFactory
 {
-    public static TextureSet CreateTextureSet(ISkyrimMod skyrimMod, Card card, FormKey formKey)
+    public static TextureSet CreateTextureSet(ISkyrimMod skyrimMod, Card card)
     {
-        var textureSet = skyrimMod.TextureSets.AddNew(formKey);
+        var editorId = $"TextureSet_SERIES_{card.SeriesId}_CARD_{card.Id}".AddModNamePrefix();
+        var textureSet = skyrimMod.TextureSets.AddNewWithId(editorId);
         textureSet.Diffuse = @$"CardmastersOfTamriel\{card.DestinationRelativeFilePath}";
         textureSet.NormalOrGloss = card.GetNormalOrGloss();
 
