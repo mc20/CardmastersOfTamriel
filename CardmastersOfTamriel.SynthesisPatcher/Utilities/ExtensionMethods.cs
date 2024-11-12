@@ -1,3 +1,4 @@
+using Mutagen.Bethesda;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Skyrim;
@@ -9,32 +10,6 @@ public static class ExtensionMethods
 {
     public static string AddModNamePrefix(this string str) =>
         string.IsNullOrWhiteSpace(str) ? str : $"CMT_{str}";
-
-    public static string RetrieveInternalFilePath(this IPatcherState<ISkyrimMod, ISkyrimModGetter> state,
-        string configPath)
-    {
-        return configPath is null
-            ? throw new ArgumentNullException(nameof(configPath))
-            : state.RetrieveInternalFile(configPath);
-    }
-
-    public static bool CheckIfExists<T>(this IPatcherState<ISkyrimMod, ISkyrimModGetter> state, string editorId)
-        where T : class, IMajorRecordGetter
-    {
-        return typeof(T) switch
-        {
-            { } t when t == typeof(IMiscItemGetter) =>
-                state.LoadOrder.PriorityOrder.MiscItem().WinningOverrides().Any(item =>
-                    item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
-            { } t when t == typeof(ITextureSetGetter) =>
-                state.LoadOrder.PriorityOrder.TextureSet().WinningOverrides().Any(item =>
-                    item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
-            { } t when t == typeof(ILeveledItemGetter) =>
-                state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides().Any(item =>
-                    item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
-            _ => throw new InvalidOperationException($"Unsupported type: {typeof(T)}")
-        };
-    }
 
     public static bool CheckIfExists<T>(this IPatcherState<ISkyrimMod, ISkyrimModGetter> state, FormKey formKey)
         where T : class, IMajorRecordGetter
@@ -54,23 +29,6 @@ public static class ExtensionMethods
         };
     }
 
-    public static bool CheckIfExists<T>(this ISkyrimMod skyrimMod, string editorId)
-    {
-        return typeof(T) switch
-        {
-            { } t when t == typeof(MiscItem) =>
-                skyrimMod.MiscItems.Any(item =>
-                    item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
-            { } t when t == typeof(TextureSet) =>
-                skyrimMod.TextureSets.Any(item =>
-                    item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
-            { } t when t == typeof(LeveledItem) =>
-                skyrimMod.LeveledItems.Any(item =>
-                    item.EditorID != null && item.EditorID.Equals(editorId, StringComparison.OrdinalIgnoreCase)),
-            _ => throw new InvalidOperationException($"Unsupported type: {typeof(T)}")
-        };
-    }
-
     public static bool CheckIfExists<T>(this ISkyrimMod skyrimMod, FormKey formKey)
     {
         return typeof(T) switch
@@ -83,5 +41,13 @@ public static class ExtensionMethods
                 skyrimMod.LeveledItems.Any(item => item.FormKey.Equals(formKey)),
             _ => throw new InvalidOperationException($"Unsupported type: {typeof(T)}")
         };
+    }
+
+    public static TMajor AddNewWithId<TMajor>(this IGroup<TMajor> group, string editorId) where TMajor : IMajorRecord
+    {
+        var formKey = FormKeyGeneratorProvider.Instance.FormKeyGenerator.GetNextFormKey(editorId);
+        var val = group.AddNew(formKey);
+        val.EditorID = editorId;
+        return val;
     }
 }

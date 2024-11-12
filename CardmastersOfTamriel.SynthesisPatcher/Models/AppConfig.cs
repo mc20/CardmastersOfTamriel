@@ -5,17 +5,48 @@ namespace CardmastersOfTamriel.SynthesisPatcher.Models;
 
 public class AppConfig
 {
-    public required string MetadataFilePath { get; init; }
+    public required string MasterMetadataFilePath { get; init; }
     public required string LogOutputFilePath { get; init; }
-    public required string CollectorNpcConfigFilePath { get; init; }
-    public required string CollectorContainerConfigFilePath { get; init; }
-    public required string ContainerConfigFilePath { get; init; }
-    public required string LeveledItemConfigFilePath { get; init; }
+    public required CollectorsFilePaths CollectorsFilePaths { get; init; }
+    public required DistributionsFilePaths DistributionsFilePaths { get; init; }
+    
+    public void ApplyInternalFilePaths(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
+    {
+        ApplyInternalFilePathsToProperties(this, state);
+    }
 
-    public string RetrieveMetadataFilePath(IPatcherState<ISkyrimMod, ISkyrimModGetter> state) => state.RetrieveInternalFile(MetadataFilePath);
-    public string RetrieveLogFilePath(IPatcherState<ISkyrimMod, ISkyrimModGetter> state) => state.RetrieveInternalFile(LogOutputFilePath);
-    public string RetrieveCollectorNpcConfigFilePath(IPatcherState<ISkyrimMod, ISkyrimModGetter> state) => state.RetrieveInternalFile(CollectorNpcConfigFilePath);
-    public string RetrieveCollectorContainerConfigPath(IPatcherState<ISkyrimMod, ISkyrimModGetter> state) => state.RetrieveInternalFile(CollectorContainerConfigFilePath);
-    public string RetrieveContainerConfigFilePath(IPatcherState<ISkyrimMod, ISkyrimModGetter> state) => state.RetrieveInternalFile(ContainerConfigFilePath);
-    public string RetrieveLeveledItemConfigFilePath(IPatcherState<ISkyrimMod, ISkyrimModGetter> state) => state.RetrieveInternalFile(LeveledItemConfigFilePath);
+    private static void ApplyInternalFilePathsToProperties(object configSection, IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
+    {
+        foreach (var property in configSection.GetType().GetProperties())
+        {
+            if (property.PropertyType == typeof(string) && property.CanWrite)
+            {
+                var originalPath = (string)property.GetValue(configSection)!;
+                var resolvedPath = state.RetrieveInternalFile(originalPath);
+                property.SetValue(configSection, resolvedPath);
+            }
+            else if (!property.PropertyType.IsPrimitive && !property.PropertyType.IsEnum)
+            {
+                var nestedConfig = property.GetValue(configSection);
+                if (nestedConfig != null)
+                {
+                    ApplyInternalFilePathsToProperties(nestedConfig, state);
+                }
+            }
+        }
+    }
+}
+
+public class CollectorsFilePaths
+{
+    public required string Container { get; init; }
+    public required string LeveledItem { get; init; }
+    public required string NonPlayerCharacter { get; init; }
+}
+
+public class DistributionsFilePaths
+{
+    public required string Container { get; init; }
+    public required string LeveledItem { get; init; }
+    public required string NonPlayerCharacter { get; init; }
 }

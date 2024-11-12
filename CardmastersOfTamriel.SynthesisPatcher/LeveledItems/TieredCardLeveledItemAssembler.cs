@@ -5,7 +5,6 @@ using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
 using Noggog;
-using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 
@@ -21,6 +20,11 @@ public class TieredCardLeveledItemAssembler
         _skyrimMod = skyrimMod;
     }
 
+    /// <summary>
+    /// Creates a dictionary of leveled items for each card tier.
+    /// </summary>
+    /// <param name="miscItems">A dictionary of cards and their corresponding miscellaneous items.</param>
+    /// <returns>A dictionary where the key is the card tier and the value is the leveled item for that tier.</returns>
     public Dictionary<CardTier, LeveledItem> CreateCardTierLeveledItems(Dictionary<Card, MiscItem> miscItems)
     {
         var cardTierLeveledItems = new Dictionary<CardTier, LeveledItem>();
@@ -41,17 +45,7 @@ public class TieredCardLeveledItemAssembler
 
     private LeveledItem? CreateTierLeveledItem(CardTier tier)
     {
-        var leveledItemId = $"LeveledItem_CardTier{tier}".AddModNamePrefix();
-
-        if (_state.CheckIfExists<ILeveledItemGetter>(leveledItemId) ||
-            _skyrimMod.CheckIfExists<LeveledItem>(leveledItemId))
-        {
-            Log.Warning($"LeveledItem {leveledItemId} already exists in the load order.");
-            return null;
-        }
-
-        var leveledItem = _skyrimMod.LeveledItems.AddNew();
-        leveledItem.EditorID = leveledItemId;
+        var leveledItem = _skyrimMod.LeveledItems.AddNewWithId($"LeveledItem_Card{tier}".AddModNamePrefix());
         leveledItem.ChanceNone = Percent.Zero;
         leveledItem.Entries ??= [];
 
@@ -93,17 +87,7 @@ public class TieredCardLeveledItemAssembler
 
     private LeveledItem? CreateSubLeveledItem(CardTier tier, int index)
     {
-        var subListId = $"LeveledItem_CardTier{tier}_Sub{index}".AddModNamePrefix();
-
-        if (_state.CheckIfExists<ILeveledItemGetter>(subListId) ||
-            _skyrimMod.CheckIfExists<LeveledItem>(subListId))
-        {
-            Log.Warning($"LeveledItem {subListId} already exists in the load order.");
-            return null;
-        }
-
-        var subList = _skyrimMod.LeveledItems.AddNew();
-        subList.EditorID = subListId;
+        var subList = _skyrimMod.LeveledItems.AddNewWithId($"LeveledItem_Card{tier}_SubList{index:D4}".AddModNamePrefix());
         subList.ChanceNone = Percent.Zero;
         subList.Entries ??= [];
 
