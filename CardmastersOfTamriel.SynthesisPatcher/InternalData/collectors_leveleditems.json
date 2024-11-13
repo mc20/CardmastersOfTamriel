@@ -8,15 +8,9 @@
         "LItemMiscVendorMiscItems75",
         "LItemCoffin75",
         "TGRPickpocketList",
-        "LitemJunk",
-        "EE_Miner",
-        "EE_Alchemist",
-        "EE_TravelingHealer",
-        "EE_Beggar"
+        "LitemJunk"
     ],
     "Tier2": [
-        "EE_EscapedPrisoner",
-        "EE_Headsman",
         "LootCitizenPocketsCommon",
         "CWSoldierImperialGear",
         "CWSoldierImperialGearNoTorch",
@@ -34,13 +28,6 @@
         "DLC2LItemBook1Combined"
     ],
     "Tier3": [
-        "EE_VaerminaDevotee",
-        "EE_AdventurerMage",
-        "EE_MerchantPeddler",
-        "EE_TransformingWerewolf",
-        "EE_Scavenger",
-        "EE_Bride",
-        "EE_LItemThiefLootItems",
         "LootCitizenPocketsRich",
         "DeathItemThalmor",
         "DeathItemDraugr",

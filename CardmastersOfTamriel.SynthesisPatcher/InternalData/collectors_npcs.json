@@ -23,7 +23,11 @@
         "Bassianus",
         "Fastred",
         "Jofthor",
-        "Boti"
+        "Boti",
+        "EE_Miner",
+        "EE_Alchemist",
+        "EE_TravelingHealer",
+        "EE_Beggar"
     ],
     "Tier2": [
         "Arcadia",
@@ -53,7 +57,9 @@
         "Faendal",
         "Sven",
         "LucanValerius",
-        "CamillaValerius"
+        "CamillaValerius",
+        "EE_EscapedPrisoner",
+        "EE_Headsman"
     ],
     "Tier3": [
         "EorlundGrayMane",
@@ -86,7 +92,14 @@
         "Sapphire",
         "Niruin",
         "Rune",
-        "Thrynn"
+        "Thrynn",
+        "EE_VaerminaDevotee",
+        "EE_AdventurerMage",
+        "EE_MerchantPeddler",
+        "EE_TransformingWerewolf",
+        "EE_Scavenger",
+        "EE_Bride",
+        "EE_LItemThiefLootItems"
     ],
     "Tier4": [
         "FarengarSecretFire",

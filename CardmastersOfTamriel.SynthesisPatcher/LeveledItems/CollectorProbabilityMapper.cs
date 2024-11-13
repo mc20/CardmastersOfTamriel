@@ -7,12 +7,12 @@ using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 
-public class CollectorProbabilityMapper
+public class CollectorProbabilityMappingService
 {
     private readonly ISkyrimMod _skyrimMod;
     private readonly Dictionary<CardTier, LeveledItem> _cardTierToLeveledItemMapping;
 
-    public CollectorProbabilityMapper(ISkyrimMod skyrimMod,
+    public CollectorProbabilityMappingService(ISkyrimMod skyrimMod,
         Dictionary<CardTier, LeveledItem> cardTierToLeveledItemMapping)
     {
         _skyrimMod = skyrimMod;
@@ -26,7 +26,7 @@ public class CollectorProbabilityMapper
         var items = new Dictionary<CollectorType, LeveledItem>();
         foreach (var collectorType in config.CollectorTypes)
         {
-            var collectorId = $"CATEGORY_{config.Category}_Collector{collectorType.Type}".AddModNamePrefix();
+            var collectorId = $"LeveledItem_{config.Category.ToUpper()}_Collector{collectorType.Type}".AddModNamePrefix();
 
             Log.Verbose($"Mapping new LeveledItem to {collectorType}: '{collectorId}'");
 
@@ -35,7 +35,7 @@ public class CollectorProbabilityMapper
 
             foreach (var probability in collectorType.CardTierProbabilities)
             {
-                var probId = collectorId + "_Tier" + probability.Tier;
+                var probId = collectorId + "_Card" + probability.Tier;
                 var probabilityLeveledItem = _skyrimMod.LeveledItems.AddNewWithId(probId);
                 probabilityLeveledItem.ChanceNone = new Percent(probability.ChanceNone);
 
