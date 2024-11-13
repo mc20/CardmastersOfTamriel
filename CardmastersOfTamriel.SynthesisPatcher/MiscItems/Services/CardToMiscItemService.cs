@@ -5,15 +5,15 @@ using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
 using Serilog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.MiscItems;
+namespace CardmastersOfTamriel.SynthesisPatcher.MiscItems.Services;
 
-public class CardMiscItemCreator
+public class CardToMiscItemService
 {
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _customMod;
 
 
-    public CardMiscItemCreator(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
+    public CardToMiscItemService(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
     {
         _state = state;
         _customMod = customMod;
@@ -48,11 +48,10 @@ public class CardMiscItemCreator
 
         newMiscItem.Model = ModelFactory.CreateModel(card, textureSetForWorldModel);
 
-        card.Keywords = [];
+        card.Keywords ??= [];
 
         var kw = card.Tier.ToString().ToUpper().AddModNamePrefix();
-        if (kw is not null)
-            _ = _customMod.Keywords.AddNewWithId(kw);
+        card.Keywords.Add(kw);
 
         if (card.Keywords is not null)
         {

@@ -6,7 +6,7 @@ using Mutagen.Bethesda.Synthesis;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;
 
-public static class ExtensionMethods
+public static class FormKeyExtensionMethods
 {
     public static string AddModNamePrefix(this string str) =>
         string.IsNullOrWhiteSpace(str) ? str : $"CMT_{str}";
