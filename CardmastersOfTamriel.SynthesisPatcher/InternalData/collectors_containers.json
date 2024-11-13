@@ -27,6 +27,7 @@
         "StrongBox"
     ],
     "Tier3": [
+        "DLC2MerchantTelMithrynNelothChest",
         "MerchantWhiterunBelethorsGoodsChest",
         "MerchantWhiterunFarengarsChest",
         "MerchantRiftenPawnedPrawnChest",
@@ -48,29 +49,27 @@
         "MerchantWCollegeFaraldaChest",
         "MerchantWCollegePhinisChest",
         "MerchantWCollegeTolfdirChest",
-        "DLC2MerchantTelMithrynNelothChest",
         "TreasGiantChest",
         "TGTQ02CaptainsFootlocker",
         "TGTQ02RedWaveSafe",
         "RiftenConfiscatedGoodsChest",
-        "TG00MadesiChest",
+        "TGFenceMerchantChestEnthir",
+        "TGFenceMerchantChestGulumEi",
+        "TGFenceMerchantChestMallus",
+        "TGFenceMerchantChestNiranye",
+        "TGFenceMerchantChestTonilia",
         "dunTreasMapTreasChest"
     ],
     "Tier5": [
         "TGFenceMerchantChestCaravanAtahba",
         "TGFenceMerchantChestCaravanMajhad",
         "TGFenceMerchantChestCaravanZaynabi",
-        "TGFenceMerchantChestEnthir",
-        "TGFenceMerchantChestGulumEi",
-        "TGFenceMerchantChestMallus",
-        "TGFenceMerchantChestNiranye",
-        "TGFenceMerchantChestTonilia",
         "MerchantWCollegeUragChest",
         "TGGuildChest",
+        "TG00MadesiChest",
         "TGTributeChest"
     ],
     "Tier6": [
-        "DLC2TreasApocryphaChestBoss",
         "DLC2TreasBanditChestBoss",
         "DLC2TreasDraugrChestBoss",
         "DLC2TreasDwarvenChestBoss",
@@ -86,6 +85,7 @@
     ],
     "MasterTier": [
         "TGREndSafe",
+        "DLC2TreasApocryphaChestBoss",
         "dunKatariahEmperorsChest",
         "DLC2RR02BossChest",
         "DLC01SC_ChestBoss",
