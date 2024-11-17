@@ -4,11 +4,11 @@ public static class CommandLineParser
 {
     private static readonly Dictionary<string, CommandMode> CommandMap = new()
     {
-        ["--update"] = CommandMode.Update,
+        // ["--update"] = CommandMode.Update,
         ["--rebuild"] = CommandMode.Rebuild,
         ["--convert"] = CommandMode.Convert,
         ["--report"] = CommandMode.Report,
-        ["--replicate"] = CommandMode.Replicate,
+        // ["--replicate"] = CommandMode.Replicate,
         ["--overridesets"] = CommandMode.OverrideSetData
     };
 
@@ -16,9 +16,9 @@ public static class CommandLineParser
     {
         [CommandMode.Convert] = "Convert images to DDS format",
         [CommandMode.Report] = "Generate a metadata report",
-        [CommandMode.Update] = "Update master metadata",
+        // [CommandMode.Update] = "Update master metadata",
         [CommandMode.Rebuild] = "Rebuild all metadata",
-        [CommandMode.Replicate] = "Replicate folder structure",
+        // [CommandMode.Replicate] = "Replicate folder structure",
         [CommandMode.OverrideSetData] = "Refresh card sets"
     };
 

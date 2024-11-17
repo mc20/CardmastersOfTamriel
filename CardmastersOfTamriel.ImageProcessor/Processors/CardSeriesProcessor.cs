@@ -80,9 +80,18 @@ public class CardSeriesProcessor
             return;
         }
 
-        var rebuildlist =
-            JsonFileReader.ReadFromJson<Dictionary<string, string>>(ConfigurationProvider.Instance.Config.Paths
-                .RebuildListFilePath);
+        if (!File.Exists(ConfigurationProvider.Instance.Config.Paths.RebuildListFilePath))
+        {
+            Log.Warning("Rebuild list file does not exist at the specified path. Creating a empty placeholder..");
+
+            var newRebuildList = new Dictionary<string, string>();
+            var rebuildListFilePath = ConfigurationProvider.Instance.Config.Paths.RebuildListFilePath;
+            var emptyJson = JsonSerializer.Serialize(newRebuildList, JsonSettings.Options);
+            File.WriteAllText(rebuildListFilePath, emptyJson);
+            Log.Information($"Created empty rebuild list file at {rebuildListFilePath}");
+        }
+
+        var rebuildlist = JsonFileReader.ReadFromJson<Dictionary<string, string>>(ConfigurationProvider.Instance.Config.Paths.RebuildListFilePath);
         foreach (var cardSet in seriesMetadata.Sets)
         {
             if (rebuildlist.Count > 0)

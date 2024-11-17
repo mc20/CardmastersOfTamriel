@@ -30,12 +30,9 @@ public class RebuildMasterMetadata : ICardSetHandler
             Log.Warning($"{set.Id}\tNo cards.jsonl file found at '{savedJsonFilePath}'");
         }
 
-        Log.Information(
-            $"{set.Id}\t'{set.DisplayName}':\tProcessing from Source Path: '{set.SourceAbsoluteFolderPath}'");
+        Log.Information($"{set.Id}\t'{set.DisplayName}':\tProcessing from Source Path: '{set.SourceAbsoluteFolderPath}'");
 
-        var rebuildlist =
-            JsonFileReader.ReadFromJson<Dictionary<string, string>>(ConfigurationProvider.Instance.Config.Paths
-                .RebuildListFilePath);
+        var rebuildlist = JsonFileReader.ReadFromJson<Dictionary<string, string>>(ConfigurationProvider.Instance.Config.Paths.RebuildListFilePath);
         if (rebuildlist.Count > 0)
         {
             if (!rebuildlist.TryGetValue(set.Id, out var seriesId) || seriesId != set.SeriesId)
@@ -63,8 +60,7 @@ public class RebuildMasterMetadata : ICardSetHandler
             FileOperations.AppendDataToFile<CardSetBasicMetadata>(basicMetadata, jsonlPath);
         }
 
-        var imageFilePathsAtDestination =
-            CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
+        var imageFilePathsAtDestination = CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
         Log.Information($"{set.Id}\tFound {imageFilePathsAtDestination.Count} DDS images at destination path");
 
         var imageFilePathsAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath)
@@ -73,20 +69,17 @@ public class RebuildMasterMetadata : ICardSetHandler
         Log.Information($"{set.Id}\tCreated {cardsFromSource.Count} cards from source images");
 
         var validUniqueIdentifiersDeterminedFromSource = cardsFromSource.Select(card => card.Id).ToHashSet();
-        Log.Information(
-            $"{set.Id}\tFound {validUniqueIdentifiersDeterminedFromSource.Count} unique identifiers from source images");
+        Log.Information($"{set.Id}\tFound {validUniqueIdentifiersDeterminedFromSource.Count} unique identifiers from source images");
 
         var uniqueIdentifiersAtDestination =
             imageFilePathsAtDestination.Select(Path.GetFileNameWithoutExtension).ToHashSet();
 
-        Log.Information(
-            $"{set.Id}\tFound {uniqueIdentifiersAtDestination.Count} unique identifiers from destination images");
+        Log.Information($"{set.Id}\tFound {uniqueIdentifiersAtDestination.Count} unique identifiers from destination images");
 
         var validIdentifiersAtDestination = uniqueIdentifiersAtDestination
             .Intersect(validUniqueIdentifiersDeterminedFromSource).ToHashSet();
 
-        Log.Information(
-            $"{set.Id}\tFound {validIdentifiersAtDestination.Count} valid unique identifiers at destination");
+        Log.Information($"{set.Id}\tFound {validIdentifiersAtDestination.Count} valid unique identifiers at destination");
 
         Log.Information($"{set.Id}\tUpdating card metadata to be saved to '{savedJsonFilePath}'");
 

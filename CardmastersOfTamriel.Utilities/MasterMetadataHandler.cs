@@ -62,13 +62,22 @@ public class MasterMetadataHandler
             return string.Empty;
         }
 
-        var backupFilePath = Path.Combine(directoryPath, "Backups", $"master_metadata_{timestamp}.backup");
-        if (File.Exists(backupFilePath))
+        var backupDirectoryPath = Path.Combine(directoryPath, "Backups");
+        if (!Directory.Exists(backupDirectoryPath))
         {
-            File.Delete(backupFilePath);
+            Directory.CreateDirectory(backupDirectoryPath);
         }
 
-        File.Copy(_metadataFilePath, backupFilePath);
+        var backupFilePath = Path.Combine(backupDirectoryPath, $"master_metadata_{timestamp}.backup");
+
+        if (File.Exists(_metadataFilePath))
+        {
+            File.Copy(_metadataFilePath, backupFilePath);
+        }
+        else
+        {
+            Log.Information($"No existing metadata file found at '{_metadataFilePath}'. Created backup directory at '{backupDirectoryPath}'.");
+        }
 
         return backupFilePath;
     }

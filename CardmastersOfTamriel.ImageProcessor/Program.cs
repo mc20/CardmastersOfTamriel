@@ -1,14 +1,16 @@
-﻿using CardmastersOfTamriel.ImageProcessor.CardSets;
+﻿using System.Text.Json;
+using CardmastersOfTamriel.ImageProcessor.CardSets;
 using CardmastersOfTamriel.ImageProcessor.Processors;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
+using CardmastersOfTamriel.Utilities;
 using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor;
 
 public class Program
 {
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         var config = ConfigurationProvider.Instance.Config;
 
@@ -23,11 +25,25 @@ public class Program
 
         if (!File.Exists(config?.Paths?.MasterMetadataFilePath))
         {
-            Log.Error($"Master metadata file does not exist: '{config?.Paths?.MasterMetadataFilePath}'");
-            return;
+            Log.Warning($"Master metadata file does not exist: '{config?.Paths?.MasterMetadataFilePath}', creating a new one.");
+            if (config?.Paths?.MasterMetadataFilePath != null)
+            {
+                var defaultMetadata = new
+                {
+                    Sets = new List<object>()
+                };
+
+                var json = JsonSerializer.Serialize(defaultMetadata, JsonSettings.Options);
+                await File.WriteAllTextAsync(config.Paths.MasterMetadataFilePath, json);
+            }
+            else
+            {
+                Log.Error("Master metadata file path is null.");
+                return;
+            }
         }
 
-        Log.Verbose($"User entered arguments {args}");
+        Log.Verbose($"User entered arguments {string.Join(", ", args)}");
 
         if (!CommandLineParser.TryParseCommand(args, out var mode))
         {
