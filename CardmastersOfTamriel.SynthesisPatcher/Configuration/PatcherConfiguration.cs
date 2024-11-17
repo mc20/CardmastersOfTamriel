@@ -20,7 +20,7 @@ public class PatcherConfiguration
         foreach (var config in DistributionConfigurations)
         {
             config.DistributionFilePath = state.RetrieveInternalFile(config.DistributionFilePath);
-            config.CollectorConfigFilePath = state.RetrieveInternalFile(config.CollectorConfigFilePath);
+            config.CollectorConfigFilePaths = [.. config.CollectorConfigFilePaths.Select(state.RetrieveInternalFile)];
         }
     }
 

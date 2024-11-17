@@ -1,0 +1,74 @@
+{
+    "Tier1": [
+        "zzzCHDeathItemBloodsucker",
+        "zzzCHDeathItemCaveWorm"
+    ],
+    "Tier2": [
+        "zzzCHDeathItemBoneStrider",
+        "zzzCHDeathItemBloodsuckerKing",
+        "zzzCHDeathItemAlessianSleeper",
+        "zzzBMLItemFeralVampire1H",
+        "zzzAoMDeathItemJovanni"
+    ],
+    "Tier3": [
+        "zzzCHDeathItemBrotherOfMarkhu",
+        "zzzCHDeathItemAlessianGhoul",
+        "zzzBMDeathItemPaulo",
+        "zzzBMDeathItemJericho",
+        "zzzBMDeathItemGwaji",
+        "zzzAoMLvlBQRewardSummoner",
+        "zzzAoMLvlBQReward",
+        "zzzAoMDeathItemFrog",
+        "zzzAoMLvlBQRewardChickTrader"
+    ],
+    "Tier4": [
+        "zzzCHDeathItemCaveWormBoss01",
+        "zzzCHDeathItemCaveWormBoss02",
+        "zzzCHDeathItemBossArachne",
+        "zzzCHDeathItemAuroranGuardian01",
+        "zzzCHDeathItemAlessianPriest",
+        "zzzCHDeathItemAlessianKnight",
+        "zzzBMDeathItemLamVampireLich",
+        "zzzAoMLvlRQRewardUndead",
+        "zzzAoMDeathItemMarso",
+        "zzzAoMLvlBQRewardHorn",
+        "zzzAoMLvlBQRewardMeridia"
+    ],
+    "Tier5": [
+        "zzzCHDeathItemBoneLord",
+        "zzzCHDeathItemAlessianLawmage",
+        "zzzAoMLvlBQRewardPornBook",
+        "zzzBMDeathItemLamVampireFeral",
+        "zzzBMDeathItemBossTrollVampire",
+        "zzzBMDeathItemBossWereVampire",
+        "zzzBMDeathItemAredhel",
+        "zzzAoMLvlRQRewardVamp",
+        "zzzAoMLvlRQRewardHunter",
+        "zzzAoMLvlBQRewardVampire",
+        "zzzAoMLvlBQRewardPiper",
+        "zzzAoMDeathItemTaranis",
+        "zzzAoMDeathItemRahelBal"
+    ],
+    "Tier6": [
+        "zzzCHDeathItemChef",
+        "zzzChDeathItemBelharza",
+        "zzzCHDeathItemAuroranBattlelord",
+        "zzzCHDeathItemAmicusTharn",
+        "zzzAoMLvlBQRewardWitch",
+        "zzzAoMDeathItemVampireWhore",
+        "zzzAoMLvlRQRewardDoppler"
+    ],
+    "MasterTier": [
+        "zzzChDeathItemBlackWorm",
+        "zzzCHDeathItemBartholo",
+        "zzzCHDeathItemAuroranGuardian02",
+        "zzzCHDeathItemAuroranValkyrie",
+        "zzzCHDeathItemArchPriest",
+        "zzzCHDeathItemAbbot",
+        "zzzAoMLvlRQRewardMolag",
+        "zzzAoMDeathItemReyda",
+        "zzzAoMDeathItemAltano",
+        "zzzAoMDeathItemBalor",
+        "zzzAoMDeathItemDragonMolagBal"
+    ]
+}

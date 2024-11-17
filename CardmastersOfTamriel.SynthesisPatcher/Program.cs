@@ -49,6 +49,10 @@ public class Program
             return;
         }
 
+        var patcherConfigJson = JsonSerializer.Serialize(patcherConfig, new JsonSerializerOptions { WriteIndented = true });
+        Console.WriteLine("Patcher Configuration:");
+        Console.WriteLine(patcherConfigJson);
+
         patcherConfig.ApplyInternalFilePaths(state);
 
         if (string.IsNullOrEmpty(patcherConfig.LogOutputFilePath))
@@ -86,6 +90,7 @@ public class Program
         KeywordHelper.AddKeywords(customMod);
 
         // Creating card to leveled item mapping
+        Log.Information("Creating card to leveled item mapping..");
         var cardService = new CardLeveledItemService(metadataHandler, state, customMod);
         var cardTierToLeveledItemMapping = cardService.CreateCardTierToLeveledItemMapping();
 
@@ -127,6 +132,8 @@ public class Program
 
     public static void ValidateBeforeWrite(ISkyrimMod mod)
     {
+        Log.Information("Validating mod before writing..");
+
         var formKeys = new HashSet<FormKey>();
         var duplicates = new List<(string GroupName, string FormKey)>();
 

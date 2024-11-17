@@ -10,6 +10,18 @@ using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Distribution;
 
+/// <summary>
+/// Handles the distribution of card collections throughout the game world by managing different distribution strategies
+/// for various game object types (LeveledItems, Containers, and NPCs).
+/// </summary>
+/// <remarks>
+/// This distributor uses type-specific strategies to handle card distribution based on collector configurations
+/// and probability mappings. It supports:
+/// - Distribution to LeveledItems
+/// - Distribution to Containers
+/// - Distribution to NPCs
+/// Each strategy is initialized with its own configuration and handles the specifics of distribution for its type.
+/// </remarks>
 public class CardCollectionDistributor
 {
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
@@ -28,9 +40,7 @@ public class CardCollectionDistributor
         _strategies = InitializeStrategies();
     }
 
-    private IDictionary<Type, ICardDistributionStrategy> InitializeStrategies()
-    {
-        return new Dictionary<Type, ICardDistributionStrategy>
+    private IDictionary<Type, ICardDistributionStrategy> InitializeStrategies() => new Dictionary<Type, ICardDistributionStrategy>
         {
             {
                 typeof(LeveledItem),
@@ -54,10 +64,12 @@ public class CardCollectionDistributor
                     _configuration.GetConfigurationForTarget("npcs"))
             }
         };
-    }
+
     public void DistributeToCollectorsInWorld<T>()
     {
-        // DebugExistingLoadOrder();
+        Log.Information($"Distributing cards to {typeof(T).Name} collectors in world..");
+
+        DebugExistingLoadOrder();
 
         if (!_strategies.TryGetValue(typeof(T), out var strategy))
         {
@@ -88,12 +100,12 @@ public class CardCollectionDistributor
         Log.Information("Setting up entries for LeveledItems..");
 
         var configuration = CollectorConfigFactory.RetrieveCollectorConfiguration(strategy.Configuration.DistributionFilePath);
-        Log.Verbose($"Loaded Configuration for: {configuration.Category} from '{strategy.Configuration.DistributionFilePath}'");
+        Log.Information($"Loaded Configuration for: {configuration.Category} from '{strategy.Configuration.DistributionFilePath}'");
 
         var collectorLeveledListMapping = _probabilityLeveledListBuilder.CreateCollectorTypeMapping(configuration);
-        Log.Verbose($"Mapped {collectorLeveledListMapping.Count} CollectorTypes with LeveledItems.");
+        Log.Information($"Mapped {collectorLeveledListMapping.Count} CollectorTypes with LeveledItems.");
 
-        var collectorTypeMappings = CollectorLoader.GetCollectorIds(strategy.Configuration.CollectorConfigFilePath).OrderBy(
+        var collectorTypeMappings = CollectorLoader.GetCollectorIds(strategy.Configuration.CollectorConfigFilePaths).OrderBy(
             kvp => new[]
                 {
                     CollectorType.Tier1, CollectorType.Tier2, CollectorType.Tier3, CollectorType.Tier4,
