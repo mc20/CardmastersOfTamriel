@@ -66,6 +66,16 @@ public class PatcherConfiguration
         if (!File.Exists(MasterMetadataFilePath))
         {
             Log.Error($"Master metadata file not found at: {MasterMetadataFilePath}");
+            try
+            {
+                File.Create(MasterMetadataFilePath).Dispose();
+                Log.Information($"Created missing master metadata file at: {MasterMetadataFilePath}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Failed to create master metadata file at: {MasterMetadataFilePath}");
+                return false;
+            }
             return false;
         }
 
