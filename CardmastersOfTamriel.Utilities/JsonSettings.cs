@@ -12,7 +12,19 @@ public static class JsonSettings
         WriteIndented = true,
         Converters =
         {
-            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase), 
+            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
+            new FormKeyJsonConverter()
+        }
+    };
+
+    public static readonly JsonSerializerOptions OptionsJsonl = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        WriteIndented = false,
+        Converters =
+        {
+            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
             new FormKeyJsonConverter()
         }
     };

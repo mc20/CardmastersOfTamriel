@@ -4,24 +4,25 @@ public static class CommandLineParser
 {
     private static readonly Dictionary<string, CommandMode> CommandMap = new()
     {
-        // ["--update"] = CommandMode.Update,
         ["--rebuild"] = CommandMode.Rebuild,
         ["--rebuildasync"] = CommandMode.RebuildAsync,
         ["--convert"] = CommandMode.Convert,
+        ["--convertasync"] = CommandMode.ConvertAsync,
         ["--report"] = CommandMode.Report,
-        // ["--replicate"] = CommandMode.Replicate,
         ["--overridesets"] = CommandMode.OverrideSetData
+        // ["--replicate"] = CommandMode.Replicate,
+        // ["--update"] = CommandMode.Update,
     };
 
     private static readonly Dictionary<CommandMode, string> CommandHelp = new()
     {
         [CommandMode.Convert] = "Convert images to DDS format",
         [CommandMode.Report] = "Generate a metadata report",
-        // [CommandMode.Update] = "Update master metadata",
         [CommandMode.Rebuild] = "Rebuild all metadata",
         [CommandMode.RebuildAsync] = "Rebuild all metadata asynchronously",
-        // [CommandMode.Replicate] = "Replicate folder structure",
         [CommandMode.OverrideSetData] = "Refresh card sets"
+        // [CommandMode.Replicate] = "Replicate folder structure",
+        // [CommandMode.Update] = "Update master metadata",
     };
 
     public static bool TryParseCommand(string[] args, out CommandMode mode)

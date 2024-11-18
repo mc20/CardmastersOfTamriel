@@ -8,24 +8,13 @@ using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
+[Obsolete("Use CardSeriesProcessorAsync instead", false)]
 public class CardSeriesProcessor
 {
     private readonly MasterMetadataHandler _handler = MasterMetadataProvider.Instance.MetadataHandler;
 
-    [Obsolete("Use ProcessSeriesFolderAsync instead", false)]
     public CardSeriesProcessor()
     {
-    }
-
-    private CardSeriesProcessor(MasterMetadataHandler handler)
-    {
-        _handler = handler;
-    }
-
-    public static async Task<CardSeriesProcessor> CreateAsync(CancellationToken cancellationToken)
-    {
-        var provider = await MasterMetadataProvider.InstanceAsync(cancellationToken);
-        return new CardSeriesProcessor(provider.MetadataHandler);
     }
 
     [Obsolete("Use ProcessSeriesFolderAsync instead", false)]
@@ -141,105 +130,5 @@ public class CardSeriesProcessor
         }
 
         return groupedFolders;
-    }
-
-    public async Task ProcessSeriesFolderAsync(CardTier tier, string seriesSourceFolderPath,
-        string tierDestinationFolderPath, IAsyncCardSetHandler asyncCardSetHandler,
-        CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        Log.Information($"Examining Source Series folder: '{seriesSourceFolderPath}'");
-
-        var seriesId = Path.GetFileName(seriesSourceFolderPath);
-
-        var seriesDestinationFolderPath = Path.Combine(tierDestinationFolderPath, seriesId);
-
-        FileOperations.EnsureDirectoryExists(seriesDestinationFolderPath);
-
-        await _handler.WriteMetadataToFileAsync(cancellationToken); // Save progress
-
-        Log.Verbose($"{seriesId}\tDetermining folder grouping at path: '{seriesDestinationFolderPath}'");
-        var groupedFolders = DetermineFolderGrouping(seriesSourceFolderPath, cancellationToken);
-
-        if (groupedFolders.Count == 0)
-        {
-            Log.Warning($"{seriesId}\tNo folder groups found in '{seriesSourceFolderPath}'");
-            await _handler.WriteMetadataToFileAsync(cancellationToken);
-            return;
-        }
-
-        const string seriesMetadataFileName = "series_metadata.json";
-        var seriesDestinationMetadataFilePath = Path.Combine(seriesDestinationFolderPath, seriesMetadataFileName);
-
-        CardSeries? seriesMetadata = null;
-        if (File.Exists(seriesDestinationMetadataFilePath))
-        {
-            seriesMetadata = await JsonFileReader.ReadFromJsonAsync<CardSeries?>(seriesDestinationMetadataFilePath, cancellationToken);
-        }
-        else
-        {
-            Log.Verbose($"{seriesId}\tDid not find an existing Series Metadata file at Destination Path: '{seriesDestinationMetadataFilePath}'");
-        }
-
-        seriesMetadata ??= new CardSeries(seriesId)
-        {
-            DisplayName = NameHelper.FormatDisplayNameFromId(seriesId),
-            Tier = tier,
-            Description = string.Empty,
-            Sets = [],
-            SourceFolderPath = seriesSourceFolderPath,
-            DestinationFolderPath = seriesDestinationFolderPath,
-        };
-
-        // Refresh the folder paths in case they were changed 
-        seriesMetadata.SourceFolderPath = seriesSourceFolderPath;
-        seriesMetadata.DestinationFolderPath = seriesDestinationFolderPath;
-
-        _handler.Metadata.Series ??= [];
-        _handler.Metadata.Series.Add(seriesMetadata);
-
-        await JsonFileWriter.WriteToJsonAsync(seriesMetadata, seriesDestinationMetadataFilePath, cancellationToken);
-        Log.Verbose($"{seriesId}\tSerialized Card Series metadata written to {seriesDestinationMetadataFilePath}");
-
-        var replicator = await CardSetReplicator.CreateAsync(seriesId, cancellationToken);
-        await replicator.HandleDestinationSetCreationAsync(groupedFolders, cancellationToken);
-
-        if (seriesMetadata.Sets is null || seriesMetadata.Sets.Count == 0)
-        {
-            Log.Warning($"{seriesId}\tNo CardSets found for Series in Metadata");
-            return;
-        }
-
-        if (!File.Exists(ConfigurationProvider.Instance.Config.Paths.RebuildListFilePath))
-        {
-            Log.Warning("Rebuild list file does not exist at the specified path. Creating a empty placeholder..");
-
-            var newRebuildList = new Dictionary<string, string>();
-            var rebuildListFilePath = ConfigurationProvider.Instance.Config.Paths.RebuildListFilePath;
-            await JsonFileWriter.WriteToJsonAsync(newRebuildList, rebuildListFilePath, cancellationToken);
-            Log.Information($"Created empty rebuild list file at {rebuildListFilePath}");
-        }
-
-        var rebuildlist = await JsonFileReader.ReadFromJsonAsync<Dictionary<string, string>>(ConfigurationProvider
-            .Instance.Config.Paths
-            .RebuildListFilePath);
-        foreach (var cardSet in seriesMetadata.Sets)
-        {
-            if (rebuildlist.Count > 0)
-            {
-                if (!rebuildlist.TryGetValue(cardSet.Id, out var rebuildSeriesId) ||
-                    rebuildSeriesId != cardSet.SeriesId)
-                {
-                    Log.Information(
-                        $"{cardSet.Id}\tSkipping rebuild as set is not in rebuild list or series ID does not match");
-                    continue;
-                }
-            }
-
-            await asyncCardSetHandler.ProcessCardSetAsync(cardSet, cancellationToken);
-        }
-
-        await _handler.WriteMetadataToFileAsync(cancellationToken);
     }
 }

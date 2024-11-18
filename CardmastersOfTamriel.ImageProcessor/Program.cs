@@ -1,10 +1,10 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Concurrent;
 using CardmastersOfTamriel.ImageProcessor.CardSets;
 using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 using CardmastersOfTamriel.ImageProcessor.Processors;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
-using CardmastersOfTamriel.Utilities;
+using CardmastersOfTamriel.Models;
 using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor;
@@ -15,6 +15,8 @@ public class Program
     {
         try
         {
+            var cts = new CancellationTokenSource();
+
             var config = ConfigurationProvider.Instance.Config;
 
             if (!Directory.Exists(config?.Paths?.OutputFolderPath))
@@ -25,27 +27,6 @@ public class Program
 
             // Relies on OutputFolderPath being set
             SetupLogging(config);
-
-            if (!File.Exists(config?.Paths?.MasterMetadataFilePath))
-            {
-                Log.Warning(
-                    $"Master metadata file does not exist: '{config?.Paths?.MasterMetadataFilePath}', creating a new one.");
-                if (config?.Paths?.MasterMetadataFilePath != null)
-                {
-                    var defaultMetadata = new
-                    {
-                        Sets = new List<object>()
-                    };
-
-                    var json = JsonSerializer.Serialize(defaultMetadata, JsonSettings.Options);
-                    await File.WriteAllTextAsync(config.Paths.MasterMetadataFilePath, json);
-                }
-                else
-                {
-                    Log.Error("Master metadata file path is null.");
-                    return;
-                }
-            }
 
             Log.Verbose($"User entered arguments {string.Join(", ", args)}");
 
@@ -58,6 +39,10 @@ public class Program
             await ExecuteCommand(mode);
 
             Log.Information("Processing complete.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred");
         }
         finally
         {
@@ -80,43 +65,35 @@ public class Program
 
     private static async Task ExecuteCommand(CommandMode mode)
     {
-        ICardSetHandler? command = null;
-        IAsyncCardSetHandler? asyncCommand = null;
+        // ICardSetHandler? command = null;
 
-        switch (mode)
+        IAsyncCardSetHandler? asyncCommand = mode switch
         {
-            case CommandMode.Convert:
-                command = new CardSetImageConversionHandler();
-                break;
-            case CommandMode.Report:
-                command = new CardSetReportHandler();
-                break;
-            case CommandMode.Update:
-                // Update metadata logic
-                break;
-            case CommandMode.Rebuild:
-                command = new RebuildMasterMetadata();
-                break;
-            case CommandMode.RebuildAsync:
-                asyncCommand = new RebuildMasterMetadataAsync();
-                break;
-            case CommandMode.Replicate:
-                // Replicate folders logic
-                //MapSourceFoldersToDestinationSets.BeginProcessing();
-                break;
-            case CommandMode.OverrideSetData:
-                command = new OverrideSetMetadataHandler();
-                break;
-            default:
-                command = null;
-                break;
-        }
+            CommandMode.ConvertAsync => new CardSetImageConversionHandlerAsync(),
+            CommandMode.RebuildAsync => new RebuildMasterMetadataAsync(),
+            // case CommandMode.Convert:
+            //     command = new CardSetImageConversionHandler();
+            //     break;
+            // case CommandMode.Report:
+            //     command = new CardSetReportHandler();
+            //     break;
+            // case CommandMode.Update:
+            //     // Update metadata logic
+            //     break;
+            // case CommandMode.Rebuild:
+            //     command = new RebuildMasterMetadata();
+            //     break;
+            // case CommandMode.Replicate:
+            //     // Replicate folders logic
+            //     //MapSourceFoldersToDestinationSets.BeginProcessing();
+            //     break;
+            // case CommandMode.OverrideSetData:
+            //     command = new OverrideSetMetadataHandler();
+            //     break;
+            _ => null,
+        };
 
-        if (command is not null)
-        {
-            ImageProcessingCoordinator.BeginProcessing(command);
-        }
-        else if (asyncCommand is not null)
+        if (asyncCommand is not null)
         {
             var cts = new CancellationTokenSource();
             await ImageProcessingCoordinator.BeginProcessingAsync(asyncCommand, cts.Token);
@@ -124,6 +101,34 @@ public class Program
         else
         {
             Log.Error("Invalid command");
+        }
+    }
+}
+
+public class ProgressEventArgs : EventArgs
+{
+    public CardTier Tier { get; }
+    public string SetId { get; }
+
+    public ProgressEventArgs(CardTier tier, string setId)
+    {
+        Tier = tier;
+        SetId = setId;
+    }
+}
+
+public class ProgressManager
+{
+    private readonly ConcurrentDictionary<CardTier, int> _progress = new();
+
+    public void OnProgressUpdated(object sender, ProgressEventArgs e)
+    {
+        _progress[e.Tier]++;
+
+        lock (_progress)
+        {
+            Console.SetCursorPosition(0, Array.IndexOf(_progress.Keys.ToArray(), e.Tier));
+            Console.WriteLine($"{e.Tier}: {_progress[e.Tier]}");
         }
     }
 }

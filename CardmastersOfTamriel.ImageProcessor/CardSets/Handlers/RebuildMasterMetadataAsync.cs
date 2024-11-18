@@ -153,14 +153,13 @@ public class RebuildMasterMetadataAsync : IAsyncCardSetHandler
             card.DisplayedTotalCount = 0;
         }
 
-        if (Log.IsEnabled(Serilog.Events.LogEventLevel.Debug))
+        if (Log.IsEnabled(Serilog.Events.LogEventLevel.Information))
         {
-            Log.Debug($"{card.SetId}\tRefreshed metadata for Card '{card.Id}' -> " +
-                        $"Shape: '{card.Shape}'{NameHelper.PadString(card.Shape?.ToString(), NameHelper.MaxCardShapeTextLength)}\t" +
-                        $"SourceAbsoluteFilePath: '{card.SourceAbsoluteFilePath}'\t" +
-                        $"DisplayName: '{card.DisplayName}'{NameHelper.PadString(card.DisplayName?.ToString(), _maxDisplayNameLength)}\t" +
-                        $"DestinationRelativeFilePath: '{card.DestinationRelativeFilePath}'\t");
+            Log.Information($"{card.SetId}\tRefreshed metadata for Card '{card.Id}' -> " +
+                            $"Shape: '{card.Shape}'{NameHelper.PadString(card.Shape?.ToString(), NameHelper.MaxCardShapeTextLength)}\t" +
+                            $"SourceAbsoluteFilePath: '{card.SourceAbsoluteFilePath}'\t" +
+                            $"DisplayName: '{card.DisplayName}'{NameHelper.PadString(card.DisplayName, _maxDisplayNameLength)}\t" +
+                            $"DestinationRelativeFilePath: '{card.DestinationRelativeFilePath}'\t");
         }
-
     }
 }

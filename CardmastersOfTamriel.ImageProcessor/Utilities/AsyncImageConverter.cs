@@ -8,44 +8,43 @@ using SixLabors.ImageSharp.Processing;
 
 namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
-[Obsolete("This class is deprecated. Use the AsyncImageConverter class instead.", false)]
-public class ImageConverter
+public class AsyncImageConverter
 {
     private readonly Config _config = ConfigurationProvider.Instance.Config;
 
-    public ImageConverter()
+    public AsyncImageConverter()
     {
         RegisterCleanupHandlers();
     }
 
     private static readonly List<string> TempFiles = [];
 
-    [Obsolete("This method is deprecated. Use the AsyncImageConverter class instead.", false)]
-    public CardShape ConvertImageAndSaveToDestination(CardTier cardTier, string srcImagePath, string destImagePath)
+    public async Task<CardShape> ConvertImageAndSaveToDestinationAsync(CardTier cardTier, string srcImagePath, string destImagePath, CancellationToken cancellationToken)
+
     {
         Log.Verbose($"Converting image from '{srcImagePath}' to DDS format at '{destImagePath}'");
         var imageShape = ImageHelper.DetermineOptimalShape(srcImagePath);
 
-        using var image = Image.Load<Rgba32>(srcImagePath);
+        using var image = await Task.Run(() => Image.Load<Rgba32>(srcImagePath), cancellationToken);
         TransformImage(image, imageShape);
 
-        using var template = LoadTemplate(imageShape, cardTier);
+        using var template = await LoadTemplateAsync(imageShape, cardTier, cancellationToken);
         using var templateCopy = template.Clone();
 
         SuperimposeImageOntoTemplate(image, templateCopy);
 
         ImageHelper.ResizeImageToHeight(templateCopy, _config.ImageProperties.MaximumTextureHeight);
 
-        var tempOutputPath = SaveAsTemporaryPng(templateCopy);
+        var tempOutputPath = await SaveAsTemporaryPngAsync(templateCopy, cancellationToken);
         TempFiles.Add(tempOutputPath);
 
         try
         {
-            ConvertPngToDds(tempOutputPath, destImagePath);
+            await ConvertPngToDdsAsync(tempOutputPath, destImagePath, cancellationToken);
         }
         finally
         {
-            CleanupTemporaryFile(tempOutputPath);
+            await CleanupTemporaryFileAsync(tempOutputPath);
         }
 
         return imageShape;
@@ -80,7 +79,7 @@ public class ImageConverter
         }
     }
 
-    private Image<Rgba32> LoadTemplate(CardShape imageShape, CardTier cardTier)
+    private async Task<Image<Rgba32>> LoadTemplateAsync(CardShape imageShape, CardTier cardTier, CancellationToken cancellationToken)
     {
         var templateFileTier = cardTier switch
         {
@@ -99,7 +98,7 @@ public class ImageConverter
             _ => throw new ArgumentException($"Unsupported image shape: {imageShape}")
         };
 
-        return Image.Load<Rgba32>(templateImagePath);
+        return await Task.Run(() => Image.Load<Rgba32>(templateImagePath), cancellationToken);
     }
 
     private void SuperimposeImageOntoTemplate(Image<Rgba32> image, Image<Rgba32> templateCopy)
@@ -107,29 +106,30 @@ public class ImageConverter
         templateCopy.Mutate(x => x.DrawImage(image, _config.ImageProperties.Offset.ToImageSharpPoint(), 1f));
     }
 
-    private static string SaveAsTemporaryPng(Image<Rgba32> templateCopy)
+    private static async Task<string> SaveAsTemporaryPngAsync(Image<Rgba32> templateCopy, CancellationToken cancellationToken)
     {
         var tempOutputPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".png");
-        templateCopy.Save(tempOutputPath, new PngEncoder());
+        await Task.Run(() => templateCopy.Save(tempOutputPath, new PngEncoder()), cancellationToken);
         return tempOutputPath;
     }
 
-    private static void ConvertPngToDds(string tempOutputPath, string destImagePath)
+    private static async Task ConvertPngToDdsAsync(string tempOutputPath, string destImagePath, CancellationToken cancellationToken)
     {
-        FileOperations.ConvertToDds(tempOutputPath, destImagePath);
+        await Task.Run(() => FileOperations.ConvertToDdsAsync(tempOutputPath, destImagePath, cancellationToken), cancellationToken);
+
         var outputDirectory = Path.GetDirectoryName(destImagePath) ?? Directory.GetCurrentDirectory();
         var generatedDdsPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(tempOutputPath) + ".dds");
         if (!File.Exists(generatedDdsPath)) return;
 
-        File.Move(generatedDdsPath, destImagePath, overwrite: true);
+        await Task.Run(() => File.Move(generatedDdsPath, destImagePath, overwrite: true), cancellationToken);
         Log.Verbose($"Moved generated DDS file to '{destImagePath}'");
     }
 
-    private static void CleanupTemporaryFile(string tempOutputPath)
+    private static async Task CleanupTemporaryFileAsync(string tempOutputPath)
     {
         if (!File.Exists(tempOutputPath)) return;
 
-        File.Delete(tempOutputPath);
+        await Task.Run(() => File.Delete(tempOutputPath));
         Log.Verbose($"Deleted temporary image file at '{tempOutputPath}'");
     }
 
@@ -142,7 +142,7 @@ public class ImageConverter
             Environment.Exit(0);
         };
 
-        AppDomain.CurrentDomain.ProcessExit += ((sender, e) => { CleanupTempFiles(); });
+        AppDomain.CurrentDomain.ProcessExit += (sender, e) => { CleanupTempFiles(); };
     }
 
     private static void CleanupTempFiles()
