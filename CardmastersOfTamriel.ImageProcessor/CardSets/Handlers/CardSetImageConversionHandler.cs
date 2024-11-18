@@ -7,9 +7,9 @@ using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessor.CardSets;
+namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
-public class CardSetImageConversionProcessor : ICardSetHandler
+public class CardSetImageConversionHandler : ICardSetHandler
 {
     private readonly Config _config = ConfigurationProvider.Instance.Config;
 

@@ -6,6 +6,7 @@ public static class CommandLineParser
     {
         // ["--update"] = CommandMode.Update,
         ["--rebuild"] = CommandMode.Rebuild,
+        ["--rebuildasync"] = CommandMode.RebuildAsync,
         ["--convert"] = CommandMode.Convert,
         ["--report"] = CommandMode.Report,
         // ["--replicate"] = CommandMode.Replicate,
@@ -18,6 +19,7 @@ public static class CommandLineParser
         [CommandMode.Report] = "Generate a metadata report",
         // [CommandMode.Update] = "Update master metadata",
         [CommandMode.Rebuild] = "Rebuild all metadata",
+        [CommandMode.RebuildAsync] = "Rebuild all metadata asynchronously",
         // [CommandMode.Replicate] = "Replicate folder structure",
         [CommandMode.OverrideSetData] = "Refresh card sets"
     };
