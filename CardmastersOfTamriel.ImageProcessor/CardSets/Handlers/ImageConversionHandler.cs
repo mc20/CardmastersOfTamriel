@@ -1,6 +1,6 @@
 ﻿using CardmastersOfTamriel.Models;
 
-namespace CardmastersOfTamriel.ImageProcessor.CardSets;
+namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class ImageConversionHandler : ICardSetHandler
 {

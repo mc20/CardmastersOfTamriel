@@ -5,9 +5,9 @@ using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessor.CardSets;
+namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
-public class CardSetReportProcessor : ICardSetHandler
+public class CardSetReportHandler : ICardSetHandler
 {
     public void ProcessCardSet(CardSet set)
     {

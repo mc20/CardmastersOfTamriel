@@ -50,4 +50,10 @@ public static partial class NameHelper
     private static partial Regex MyRegex();
 
     public static readonly int MaxCardShapeTextLength = Enum.GetValues<CardShape>().Max(shape => shape.ToString().Length);
+
+    public static string PadString(string? value, int maxLength)
+    {
+        var length = value?.Length ?? 0;
+        return new string(' ', maxLength - length);
+    }
 }

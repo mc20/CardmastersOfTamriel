@@ -60,11 +60,20 @@ public static class FileOperations
 
     public static void EnsureDirectoryExists(string path)
     {
-        if (Directory.Exists(path)) return;
-        Directory.CreateDirectory(path);
-        Log.Information($"Created directory: '{path}'");
+        try
+        {
+            if (Directory.Exists(path)) return;
+            Directory.CreateDirectory(path);
+            Log.Information($"Created directory: '{path}'");
+        }
+        catch (Exception e)
+        {
+           Log.Error(e, "Failed to create directory");
+            throw;
+        }
     }
 
+    [Obsolete("Use FindMetadataLineBySetIdAsync instead", false)]
     public static T? FindMetadataLineBySetId<T>(string jsonlPath, string targetId) where T : class
     {
         if (!File.Exists(jsonlPath))
@@ -88,9 +97,11 @@ public static class FileOperations
             catch (JsonException ex)
             {
                 Log.Error($"Failed to parse line: {ex.Message}");
-                continue;
+                throw;
             }
         }
         return null;
     }
+    
+
 }
