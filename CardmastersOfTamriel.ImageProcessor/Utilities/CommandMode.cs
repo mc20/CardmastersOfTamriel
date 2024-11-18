@@ -6,6 +6,7 @@ public enum CommandMode
     Rebuild,
     RebuildAsync,
     Convert,
+    ConvertAsync,
     Report,
     Replicate,
     OverrideSetData

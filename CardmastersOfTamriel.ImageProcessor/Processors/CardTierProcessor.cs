@@ -31,13 +31,24 @@ public static class CardTierProcessor
 
         FileOperations.EnsureDirectoryExists(tierDestinationFolderPath);
 
-        var processor = await CardSeriesProcessor.CreateAsync(cancellationToken);
-
         var cardTier = Enum.Parse<CardTier>(Path.GetFileName(tierSourceFolderPath));
 
-        foreach (var seriesSourceFolderPath in Directory.EnumerateDirectories(tierSourceFolderPath).Order())
+        var seriesSourceFolders = Directory.EnumerateDirectories(tierSourceFolderPath).Order();
+
+        await Parallel.ForEachAsync(seriesSourceFolders, new ParallelOptions
         {
-            await processor.ProcessSeriesFolderAsync(cardTier, seriesSourceFolderPath, tierDestinationFolderPath, asyncCardSetHandler, cancellationToken);
-        }
+            MaxDegreeOfParallelism = Environment.ProcessorCount,
+            CancellationToken = cancellationToken
+        }, async (seriesSourceFolderPath, cancellationToken) =>
+        {
+            try
+            {
+                await CardSeriesProcessorAsync.ProcessSeriesFolderAsync(cardTier, seriesSourceFolderPath, tierDestinationFolderPath, asyncCardSetHandler, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Error processing series folder: '{seriesSourceFolderPath}'");
+            }
+        });
     }
 }

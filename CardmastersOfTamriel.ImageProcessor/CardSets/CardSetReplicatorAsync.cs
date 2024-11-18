@@ -1,64 +1,58 @@
-using System.Text.Json;
 using CardmastersOfTamriel.ImageProcessor.Factories;
-using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.CardSets;
 
-[Obsolete("Use CardSetReplicatorAsync instead", false)]
-public class CardSetReplicator
+public class CardSetReplicatorAsync
 {
-    private readonly MasterMetadataHandler _handler = MasterMetadataProvider.Instance.MetadataHandler;
     private readonly CardSeries _series;
 
-    public CardSetReplicator(string seriesId)
+    public CardSetReplicatorAsync(CardSeries series)
     {
-        _series = _handler.Metadata.Series?.FirstOrDefault(series => series.Id == seriesId) ??
-                  throw new KeyNotFoundException($"No series found with id: {seriesId}");
+        _series = series;
     }
 
-    [Obsolete("Use HandleDestinationSetCreationAsync instead", false)]
-    public void HandleDestinationSetCreation(Dictionary<string, List<string>> groupedFolders)
+    public async Task HandleDestinationSetCreationAsync(Dictionary<string, List<string>> groupedFolders, CancellationToken cancellationToken)
     {
         foreach (var (setFolderName, sourceSetPaths) in groupedFolders)
         {
-            Log.Verbose($"Checking Set {setFolderName} having {sourceSetPaths.Count} source set folders");
+            cancellationToken.ThrowIfCancellationRequested();
+
+            Log.Information($"Checking Set {setFolderName} having {sourceSetPaths.Count} source set folders");
 
             if (sourceSetPaths.Count > 1)
             {
                 Log.Verbose($"Creating multiple set folders for {setFolderName}");
-                CreateMultipleFolders(setFolderName, sourceSetPaths);
+                await CreateMultipleFoldersAsync(setFolderName, sourceSetPaths, cancellationToken);
             }
             else
             {
                 Log.Verbose($"Creating single set folder for {setFolderName}");
                 var destinationSetFolderPath = Path.Combine(_series.DestinationFolderPath, setFolderName);
-                SaveNewSetAndCreateAtDestination(setFolderName, destinationSetFolderPath, sourceSetPaths[0]);
+                await SaveNewSetAndCreateAtDestinationAsync(setFolderName, destinationSetFolderPath, sourceSetPaths[0], cancellationToken);
             }
         }
     }
 
-
-    [Obsolete("Use CreateMultipleFoldersAsync instead", false)]
-    private void CreateMultipleFolders(string uniqueSetFolderName, List<string> sourceSetFolderPaths)
+    private async Task CreateMultipleFoldersAsync(string uniqueSetFolderName, List<string> sourceSetFolderPaths, CancellationToken cancellationToken)
     {
         // Multiple folders: rename with incremented suffixes
         for (var index = 0; index < sourceSetFolderPaths.Count; index++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var destinationSetFolderName = $"{uniqueSetFolderName}_{index + 1:D2}";
             var destinationSetFolderPath = Path.Combine(_series.DestinationFolderPath, destinationSetFolderName);
 
-            SaveNewSetAndCreateAtDestination(destinationSetFolderName, destinationSetFolderPath,
-                sourceSetFolderPaths[index]);
+            await SaveNewSetAndCreateAtDestinationAsync(destinationSetFolderName, destinationSetFolderPath,
+                sourceSetFolderPaths[index], cancellationToken);
         }
     }
 
-
-    [Obsolete("Use SaveNewSetAndCreateAtDestinationAsync instead", false)]
-    private void SaveNewSetAndCreateAtDestination(string setFolderName, string destinationSetFolderPath,
-            string sourceSetPath)
+    private async Task SaveNewSetAndCreateAtDestinationAsync(string setFolderName, string destinationSetFolderPath,
+        string sourceSetPath, CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(destinationSetFolderPath);
         Log.Verbose("Created destination Set folder: " + destinationSetFolderPath);
@@ -69,15 +63,13 @@ public class CardSetReplicator
 
         if (!File.Exists(destinationSetMetadataFilePath))
         {
-            Log.Verbose("No existing Series Metadata file found at Destination Path: " +
-                        destinationSetMetadataFilePath);
-            _handler.WriteMetadataToFile();
+            Log.Verbose("No existing Series Metadata file found at Destination Path: " + destinationSetMetadataFilePath);
         }
         else
         {
             try
             {
-                newCardSetMetadata = JsonFileReader.ReadFromJson<CardSet?>(destinationSetMetadataFilePath);
+                newCardSetMetadata = await JsonFileReader.ReadFromJsonAsync<CardSet?>(destinationSetMetadataFilePath, cancellationToken);
                 Log.Verbose(
                     $"Found existing Series Metadata file at Destination Path: '{destinationSetMetadataFilePath}'");
             }
@@ -103,14 +95,10 @@ public class CardSetReplicator
         _series.Sets.RemoveWhere(set => set.Id == newCardSetMetadata.Id);
         _series.Sets.Add(newCardSetMetadata);
 
-        var serializedJson = JsonSerializer.Serialize(newCardSetMetadata, JsonSettings.Options);
-        File.WriteAllText(destinationSetMetadataFilePath, serializedJson);
-        Log.Information($"New serialized Card Set metadata written to {destinationSetMetadataFilePath}");
+        await JsonFileWriter.WriteToJsonAsync(newCardSetMetadata, destinationSetMetadataFilePath, cancellationToken);
 
-        Log.Information(
+        Log.Verbose($"New serialized Card Set metadata written to {destinationSetMetadataFilePath}");
+        Log.Verbose(
             $"New Set: '{newCardSetMetadata.Id}' saved to path: '{newCardSetMetadata.DestinationAbsoluteFolderPath}'");
-
-        _handler.WriteMetadataToFile();
     }
-
 }

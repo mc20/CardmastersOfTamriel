@@ -13,6 +13,7 @@ public class CardSetImageConversionHandler : ICardSetHandler
 {
     private readonly Config _config = ConfigurationProvider.Instance.Config;
 
+    [Obsolete("Use ProcessCardSetAsync instead.", false)]
     public void ProcessCardSet(CardSet set)
     {
         Log.Information($"Processing Set from Source Path: '{set.SourceAbsoluteFolderPath}'");

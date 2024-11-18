@@ -49,7 +49,7 @@ public static class JsonFileWriter
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var jsonLine = JsonSerializer.Serialize(item, JsonSettings.Options);
+                var jsonLine = JsonSerializer.Serialize(item, JsonSettings.OptionsJsonl);
                 await writer.WriteLineAsync(jsonLine.AsMemory(), cancellationToken);
             }
         }
