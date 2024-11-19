@@ -1,5 +1,3 @@
-﻿using System.Text.Json;
-using CardmastersOfTamriel.ImageProcessor.Factories;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
@@ -10,41 +8,102 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class RebuildMasterMetadata : ICardSetHandler
 {
-    public void ProcessCardSet(CardSet set)
+    private int _displayedIndex = 1;
+    private int _maxDisplayNameLength = 0;
+
+    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
     {
-        var handler = MasterMetadataProvider.Instance.MetadataHandler;
+        var handler = await MasterMetadataProvider.InstanceAsync(cancellationToken);
 
         set.Cards ??= [];
         set.Cards.Clear();
 
-        var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
-        var savedJsonBackupFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl.backup");
+        await HandleSavedCardDataAsync(set, cancellationToken);
+        await UpdateSetMetadataAsync(set, cancellationToken);
 
-        if (File.Exists(savedJsonFilePath))
+        var savedJsonFilePath = GetSavedJsonFilePath(set);
+        Log.Information($"{set.Id}\tUpdating card metadata to be saved to '{savedJsonFilePath}'");
+
+        var data = MasterMetadataRebuildData.Load(set, cancellationToken);
+        data.LogInformation();
+
+        _displayedIndex = 1;
+        _maxDisplayNameLength = 0;
+        foreach (var card in data.CardsFromSource.OrderBy(card => card.Id))
         {
-            File.Move(savedJsonFilePath, savedJsonBackupFilePath, true);
-            File.Delete(savedJsonFilePath);
+            HandleCard(data, card, cancellationToken);
         }
-        else
+
+        foreach (var card in data.CardsFromSource.OrderBy(card => card.Id))
         {
-            Log.Warning($"{set.Id}\tNo cards.jsonl file found at '{savedJsonFilePath}'");
+            await JsonFileWriter.AppendDataToFileAsync(card, savedJsonFilePath, cancellationToken);
         }
 
-        Log.Information($"{set.Id}\t'{set.DisplayName}':\tProcessing from Source Path: '{set.SourceAbsoluteFolderPath}'");
-
-        var rebuildlist = JsonFileReader.ReadFromJson<Dictionary<string, string>>(ConfigurationProvider.Instance.Config.Paths.RebuildListFilePath);
-        if (rebuildlist.Count > 0)
+        if (data.CardsFromSource.All(card => card.DestinationAbsoluteFilePath == null))
         {
-            if (!rebuildlist.TryGetValue(set.Id, out var seriesId) || seriesId != set.SeriesId)
+            Log.Error($"{set.Id}\tThere were no cards saved to the metadata file having destination file paths.");
+        }
+
+        var destinationSetMetadataFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "set_metadata.json");
+        await JsonFileWriter.WriteToJsonAsync(set, destinationSetMetadataFilePath, cancellationToken);
+        Log.Verbose($"{set.Id}\tUpdated metadata written to {destinationSetMetadataFilePath}");
+
+        var cardSetMetadata = handler.MetadataHandler.Metadata.Series?.SelectMany(series => series.Sets ?? [])
+            .FirstOrDefault(s => s.Id == set.Id);
+
+        if (cardSetMetadata == null) return;
+
+        cardSetMetadata.Cards = data.CardsFromSource;
+
+        await handler.MetadataHandler.WriteMetadataToFileAsync(cancellationToken);
+    }
+
+    private static string GetSavedJsonFilePath(CardSet set) => Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
+
+    private static async Task HandleSavedCardDataAsync(CardSet set, CancellationToken cancellationToken)
+    {
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var savedJsonFilePath = GetSavedJsonFilePath(set);
+            var savedJsonBackupFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl.backup");
+
+            if (File.Exists(savedJsonFilePath))
             {
-                Log.Information(
-                    $"{set.Id}\tSkipping rebuild as set is not in rebuild list or series ID does not match");
-                return;
+                File.Move(savedJsonFilePath, savedJsonBackupFilePath, true);
+                File.Delete(savedJsonFilePath);
+            }
+            else
+            {
+                Log.Warning($"{set.Id}\tNo cards.jsonl file found at '{savedJsonFilePath}'");
+            }
+
+            Log.Information($"{set.Id}\t'{set.DisplayName}':\tProcessing from Source Path: '{set.SourceAbsoluteFolderPath}'");
+
+            var rebuildlist = await JsonFileReader.ReadFromJsonAsync<Dictionary<string, string>>(ConfigurationProvider.Instance.Config.Paths.RebuildListFilePath, cancellationToken);
+            if (rebuildlist.Count > 0)
+            {
+                if (!rebuildlist.TryGetValue(set.Id, out var seriesId) || seriesId != set.SeriesId)
+                {
+                    Log.Information($"{set.Id}\tSkipping rebuild as set is not in rebuild list or series ID does not match");
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"{set.Id}\tFailed to handle saved card data");
+            throw;
+        }
+    }
+
+    private static async Task UpdateSetMetadataAsync(CardSet set, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
 
         var jsonlPath = ConfigurationProvider.Instance.Config.Paths.SetMetadataOverrideFilePath;
-        var setMetadataOverride = FileOperations.FindMetadataLineBySetId<CardSetBasicMetadata>(jsonlPath, set.Id);
+        var setMetadataOverride =
+            await JsonFileReader.FindMetadataLineBySetIdAsync<CardSetBasicMetadata>(jsonlPath, set.Id, cancellationToken);
         if (setMetadataOverride is not null)
         {
             set.DisplayName = setMetadataOverride?.DisplayName ?? set.DisplayName;
@@ -57,95 +116,50 @@ public class RebuildMasterMetadata : ICardSetHandler
             // Add to the jsonl if the set isn't there for convenience
             var basicMetadata = set.GetBasicMetadata();
             basicMetadata.DefaultKeywords = ConfigurationProvider.Instance.Config.General.DefaultMiscItemKeywords;
-            FileOperations.AppendDataToFile<CardSetBasicMetadata>(basicMetadata, jsonlPath);
+            await JsonFileWriter.AppendDataToFileAsync(basicMetadata, jsonlPath, cancellationToken);
         }
+    }
 
-        var imageFilePathsAtDestination = CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
-        Log.Information($"{set.Id}\tFound {imageFilePathsAtDestination.Count} DDS images at destination path");
+    private void HandleCard(MasterMetadataRebuildData data, Card card, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
 
-        var imageFilePathsAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath)
-            .OrderBy(file => Path.GetFileNameWithoutExtension(file)).ToHashSet();
-        var cardsFromSource = CardFactory.CreateCardsFromImagesAtFolderPath(set, imageFilePathsAtSource, true);
-        Log.Information($"{set.Id}\tCreated {cardsFromSource.Count} cards from source images");
-
-        var validUniqueIdentifiersDeterminedFromSource = cardsFromSource.Select(card => card.Id).ToHashSet();
-        Log.Information($"{set.Id}\tFound {validUniqueIdentifiersDeterminedFromSource.Count} unique identifiers from source images");
-
-        var uniqueIdentifiersAtDestination =
-            imageFilePathsAtDestination.Select(Path.GetFileNameWithoutExtension).ToHashSet();
-
-        Log.Information($"{set.Id}\tFound {uniqueIdentifiersAtDestination.Count} unique identifiers from destination images");
-
-        var validIdentifiersAtDestination = uniqueIdentifiersAtDestination
-            .Intersect(validUniqueIdentifiersDeterminedFromSource).ToHashSet();
-
-        Log.Information($"{set.Id}\tFound {validIdentifiersAtDestination.Count} valid unique identifiers at destination");
-
-        Log.Information($"{set.Id}\tUpdating card metadata to be saved to '{savedJsonFilePath}'");
-
-        var displayedIndex = 1;
-        var maxDisplayNameLength = 0;
-        foreach (var cardWithIndex in cardsFromSource.OrderBy(card => card.Id).Select((card, index) => (card, index)))
+        if (card.SourceAbsoluteFilePath != null)
         {
-            if (cardWithIndex.card.SourceAbsoluteFilePath != null)
-            {
-                cardWithIndex.card.Shape ??=
-                    ImageHelper.DetermineOptimalShape(cardWithIndex.card.SourceAbsoluteFilePath);
-            }
-
-            if (validIdentifiersAtDestination.Contains(cardWithIndex.card.Id))
-            {
-                cardWithIndex.card.DestinationAbsoluteFilePath = imageFilePathsAtDestination.FirstOrDefault(file =>
-                    Path.GetFileNameWithoutExtension(file) == cardWithIndex.card.Id);
-                cardWithIndex.card.DestinationRelativeFilePath =
-                    FilePathHelper.GetRelativePath(cardWithIndex.card.DestinationAbsoluteFilePath, set.Tier);
-                cardWithIndex.card.DisplayedIndex = (uint)displayedIndex;
-                cardWithIndex.card.DisplayedTotalCount = (uint)validIdentifiersAtDestination.Count;
-                cardWithIndex.card.TrueTotalCount = (uint)validUniqueIdentifiersDeterminedFromSource.Count;
-                cardWithIndex.card.SetGenericDisplayName();
-                displayedIndex++;
-
-                if (maxDisplayNameLength < cardWithIndex.card.DisplayName?.Length)
-                    maxDisplayNameLength = cardWithIndex.card.DisplayName?.Length ?? 0;
-            }
-            else
-            {
-                cardWithIndex.card.DisplayName = null;
-                cardWithIndex.card.DestinationAbsoluteFilePath = null;
-                cardWithIndex.card.DestinationRelativeFilePath = null;
-                cardWithIndex.card.DisplayedIndex = 0;
-                cardWithIndex.card.DisplayedTotalCount = 0;
-            }
-
-            Log.Verbose($"{set.Id}\tRefreshed metadata for Card '{cardWithIndex.card.Id}' -> " +
-                        $"Shape: '{cardWithIndex.card.Shape}'{new string(' ', NameHelper.MaxCardShapeTextLength - (cardWithIndex.card.Shape?.ToString().Length ?? 0))}\t" +
-                        $"SourceAbsoluteFilePath: '{cardWithIndex.card.SourceAbsoluteFilePath}'\t" +
-                        $"DisplayName: '{cardWithIndex.card.DisplayName}'{new string(' ', maxDisplayNameLength - (cardWithIndex.card.DisplayName?.Length ?? 0))}\t" +
-                        $"DestinationRelativeFilePath: '{cardWithIndex.card.DestinationRelativeFilePath}'\t");
+            card.Shape ??= ImageHelper.DetermineOptimalShape(card.SourceAbsoluteFilePath);
         }
 
-        foreach (var card in cardsFromSource.OrderBy(card => card.Id))
+        if (data.ValidIdentifiersAtDestination.Contains(card.Id))
         {
-            FileOperations.AppendDataToFile(card, savedJsonFilePath);
-        }
+            card.DestinationAbsoluteFilePath = data.ImageFilePathsAtDestination.FirstOrDefault(file =>
+                Path.GetFileNameWithoutExtension(file) == card.Id);
+            card.DestinationRelativeFilePath =
+                FilePathHelper.GetRelativePath(card.DestinationAbsoluteFilePath, card.Tier);
+            card.DisplayedIndex = (uint)_displayedIndex;
+            card.DisplayedTotalCount = (uint)data.ValidIdentifiersAtDestination.Count;
+            card.TrueTotalCount = (uint)data.ValidUniqueIdentifiersDeterminedFromSource.Count;
+            card.SetGenericDisplayName();
+            _displayedIndex++;
 
-        if (cardsFromSource.All(card => card.DestinationAbsoluteFilePath == null))
+            if (_maxDisplayNameLength < card.DisplayName?.Length)
+                _maxDisplayNameLength = card.DisplayName?.Length ?? 0;
+        }
+        else
         {
-            Log.Error($"{set.Id}\tThere were no cards saved to the metadata file having destination file paths.");
+            card.DisplayName = null;
+            card.DestinationAbsoluteFilePath = null;
+            card.DestinationRelativeFilePath = null;
+            card.DisplayedIndex = 0;
+            card.DisplayedTotalCount = 0;
         }
 
-        var destinationSetMetadataFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "set_metadata.json");
-        var serializedJson = JsonSerializer.Serialize(set, JsonSettings.Options);
-        File.WriteAllText(destinationSetMetadataFilePath, serializedJson);
-        Log.Information($"{set.Id}\tUpdated metadata written to {destinationSetMetadataFilePath}");
-
-        var cardSetMetadata = handler.Metadata.Series?.SelectMany(series => series.Sets ?? [])
-            .FirstOrDefault(s => s.Id == set.Id);
-
-        if (cardSetMetadata == null) return;
-
-        cardSetMetadata.Cards = cardsFromSource;
-
-        handler.WriteMetadataToFile();
+        if (Log.IsEnabled(Serilog.Events.LogEventLevel.Information))
+        {
+            Log.Information($"{card.SetId}\tRefreshed metadata for Card '{card.Id}' -> " +
+                            $"Shape: '{card.Shape}'{NameHelper.PadString(card.Shape?.ToString(), NameHelper.MaxCardShapeTextLength)}\t" +
+                            $"SourceAbsoluteFilePath: '{card.SourceAbsoluteFilePath}'\t" +
+                            $"DisplayName: '{card.DisplayName}'{NameHelper.PadString(card.DisplayName, _maxDisplayNameLength)}\t" +
+                            $"DestinationRelativeFilePath: '{card.DestinationRelativeFilePath}'\t");
+        }
     }
 }

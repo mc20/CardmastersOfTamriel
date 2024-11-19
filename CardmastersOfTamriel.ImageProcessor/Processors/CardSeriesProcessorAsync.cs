@@ -24,7 +24,7 @@ public static class CardSeriesProcessorAsync
     }
 
     public static async Task ProcessSeriesFolderAsync(CardTier tier, string seriesSourceFolderPath,
-        string tierDestinationFolderPath, IAsyncCardSetHandler asyncCardSetHandler,
+        string tierDestinationFolderPath, ICardSetHandler asyncCardSetHandler,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

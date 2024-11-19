@@ -6,7 +6,7 @@ using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
-public class CardSetImageConversionHandlerAsync : IAsyncCardSetHandler
+public class CardSetImageConversionHandlerAsync : ICardSetHandler
 {
     public event EventHandler<ProgressEventArgs>? ProgressUpdated;
 
