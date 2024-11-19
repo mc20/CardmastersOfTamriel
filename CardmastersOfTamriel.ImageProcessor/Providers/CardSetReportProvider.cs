@@ -5,36 +5,47 @@ namespace CardmastersOfTamriel.ImageProcessor.Providers;
 
 public class CardSetReportProvider
 {
-    private static readonly Lazy<CardSetReportProvider> _instance = new();
+    private static readonly Lazy<Task<CardSetReportProvider>> _instance = new(() => CreateAsync(CancellationToken.None));
     private readonly string _filePath;
 
-    public CardSetReportProvider()
+    private CardSetReportProvider(string filePath)
+    {
+        _filePath = filePath;
+    }
+
+    private static async Task<CardSetReportProvider> CreateAsync(CancellationToken cancellationToken = default)
     {
         var config = ConfigurationProvider.Instance.Config;
 
         var fileName = "CardMastersOfTamriel_Report_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".csv";
-        _filePath = Path.Combine(config.Paths.OutputFolderPath, fileName);
+        var filePath = Path.Combine(config.Paths.OutputFolderPath, fileName);
 
-        if (File.Exists(_filePath)) return;
-        using var writer = new StreamWriter(_filePath, false, Encoding.UTF8);
-        writer.WriteLine(
-            "Tier,SeriesId,SetId,SavedCardsCount,SavedCardsWithDestinationsCount,ConvertedImages,TotalSetImagesAtSource,SetSourceFolderPath,SetDestinationFolderPath");
+        var instance = new CardSetReportProvider(filePath);
+
+        if (!File.Exists(filePath))
+        {
+            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+            await writer.WriteLineAsync(
+                "Tier,SeriesId,SetId,SavedCardsCount,SavedCardsWithDestinationsCount,ConvertedImages,TotalSetImagesAtSource,SetSourceFolderPath,SetDestinationFolderPath");
+        }
+
+        return instance;
     }
 
-    public static CardSetReportProvider Instance => _instance.Value;
+    public static Task<CardSetReportProvider> InstanceAsync(CancellationToken cancellationToken = default) => _instance.Value;
 
-    public void UpdateWithSetInfo(CardSet set, List<Card> savedCards, int convertedImageCount,
+    public async Task UpdateWithSetInfoAsync(CardSet set, List<Card> savedCards, int convertedImageCount,
         int totalSetImagesAtSource)
     {
         var cardsWithDestinationFilePaths =
             savedCards.Where(card => !string.IsNullOrEmpty(card.DestinationAbsoluteFilePath)).ToList();
-        WriteToCsv(
-            $"{set.Tier},{set.SeriesId},{set.Id},{savedCards.Count},{cardsWithDestinationFilePaths.Count},{convertedImageCount},{totalSetImagesAtSource},{set.SourceAbsoluteFolderPath},{set.DestinationAbsoluteFolderPath}");
+        await WriteToCsvAsync(
+                  $"{set.Tier},{set.SeriesId},{set.Id},{savedCards.Count},{cardsWithDestinationFilePaths.Count},{convertedImageCount},{totalSetImagesAtSource},{set.SourceAbsoluteFolderPath},{set.DestinationAbsoluteFolderPath}");
     }
 
-    private void WriteToCsv(string message)
+    private async Task WriteToCsvAsync(string message)
     {
         using var writer = new StreamWriter(_filePath, true, Encoding.UTF8);
-        writer.WriteLine(message);
+        await writer.WriteLineAsync(message);
     }
 }

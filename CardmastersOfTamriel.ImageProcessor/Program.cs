@@ -65,31 +65,11 @@ public class Program
 
     private static async Task ExecuteCommand(CommandMode mode)
     {
-        // ICardSetHandler? command = null;
-
-        IAsyncCardSetHandler? asyncCommand = mode switch
+        ICardSetHandler? asyncCommand = mode switch
         {
-            CommandMode.ConvertAsync => new CardSetImageConversionHandlerAsync(),
-            CommandMode.RebuildAsync => new RebuildMasterMetadataAsync(),
-            // case CommandMode.Convert:
-            //     command = new CardSetImageConversionHandler();
-            //     break;
-            // case CommandMode.Report:
-            //     command = new CardSetReportHandler();
-            //     break;
-            // case CommandMode.Update:
-            //     // Update metadata logic
-            //     break;
-            // case CommandMode.Rebuild:
-            //     command = new RebuildMasterMetadata();
-            //     break;
-            // case CommandMode.Replicate:
-            //     // Replicate folders logic
-            //     //MapSourceFoldersToDestinationSets.BeginProcessing();
-            //     break;
-            // case CommandMode.OverrideSetData:
-            //     command = new OverrideSetMetadataHandler();
-            //     break;
+            CommandMode.Convert => new CardSetImageConversionHandler(),
+            CommandMode.Rebuild => new RebuildMasterMetadataHandler(),
+            CommandMode.OverrideSetData => new OverrideSetMetadataHandler(),
             _ => null,
         };
 

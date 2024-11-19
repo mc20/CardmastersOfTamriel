@@ -7,25 +7,7 @@ namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
 public static class CardTierProcessor
 {
-
-    [Obsolete("Use ProcessTierFolderAsync instead", false)]
-    public static void ProcessTierFolder(string tierSourceFolderPath, string tierDestinationFolderPath, ICardSetHandler cardSetHandler)
-    {
-        Log.Information($"Processing Source Tier folder: '{tierSourceFolderPath}'");
-
-        FileOperations.EnsureDirectoryExists(tierDestinationFolderPath);
-
-        var processor = new CardSeriesProcessor();
-
-        var cardTier = Enum.Parse<CardTier>(Path.GetFileName(tierSourceFolderPath));
-
-        foreach (var seriesSourceFolderPath in Directory.EnumerateDirectories(tierSourceFolderPath).Order())
-        {
-            processor.ProcessSeriesFolder(cardTier, seriesSourceFolderPath, tierDestinationFolderPath, cardSetHandler);
-        }
-    }
-
-    public static async Task ProcessTierFolderAsync(string tierSourceFolderPath, string tierDestinationFolderPath, IAsyncCardSetHandler asyncCardSetHandler, CancellationToken cancellationToken)
+    public static async Task ProcessTierFolderAsync(string tierSourceFolderPath, string tierDestinationFolderPath, ICardSetHandler asyncCardSetHandler, CancellationToken cancellationToken)
     {
         Log.Information($"Processing Source Tier folder: '{tierSourceFolderPath}'");
 
@@ -43,7 +25,7 @@ public static class CardTierProcessor
         {
             try
             {
-                await CardSeriesProcessorAsync.ProcessSeriesFolderAsync(cardTier, seriesSourceFolderPath, tierDestinationFolderPath, asyncCardSetHandler, cancellationToken);
+                await CardSeriesProcessor.ProcessSeriesFolderAsync(cardTier, seriesSourceFolderPath, tierDestinationFolderPath, asyncCardSetHandler, cancellationToken);
             }
             catch (Exception ex)
             {

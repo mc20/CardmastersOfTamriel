@@ -1,5 +1,4 @@
 using CardmastersOfTamriel.ImageProcessor.Providers;
-using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
@@ -8,11 +7,11 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class OverrideSetMetadataHandler : ICardSetHandler
 {
-    public void ProcessCardSet(CardSet set)
+    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
     {
-        var handler = MasterMetadataProvider.Instance.MetadataHandler;
+        var provider = await MasterMetadataProvider.InstanceAsync(cancellationToken);
 
-        var cardSetMetadata = handler.Metadata.Series?.SelectMany(series => series.Sets ?? [])
+        var cardSetMetadata = provider.MetadataHandler.Metadata.Series?.SelectMany(series => series.Sets ?? [])
             .FirstOrDefault(s => s.Id == set.Id);
 
         if (cardSetMetadata == null)
@@ -22,8 +21,7 @@ public class OverrideSetMetadataHandler : ICardSetHandler
         }
 
         var setOverrideJsonPath = ConfigurationProvider.Instance.Config.Paths.SetMetadataOverrideFilePath;
-        var setMetadataOverride =
-            FileOperations.FindMetadataLineBySetId<CardSetBasicMetadata>(setOverrideJsonPath, set.Id);
+        var setMetadataOverride = await JsonFileReader.FindMetadataLineBySetIdAsync<CardSetBasicMetadata>(setOverrideJsonPath, set.Id, cancellationToken);
         if (setMetadataOverride is not null)
         {
             Log.Information($"{set.Id}\t'{set.DisplayName}':\tRefreshing data from set override file");
@@ -37,19 +35,17 @@ public class OverrideSetMetadataHandler : ICardSetHandler
             // Add to the jsonl if the set isn't there for convenience
             var basicMetadata = cardSetMetadata.GetBasicMetadata();
             basicMetadata.DefaultKeywords = ConfigurationProvider.Instance.Config.General.DefaultMiscItemKeywords;
-            FileOperations.AppendDataToFile<CardSetBasicMetadata>(basicMetadata, setOverrideJsonPath);
-            Log.Verbose(
-                $"{set.Id}\t'{set.DisplayName}':\tAdded missing Card Set metadatda to override file at {setOverrideJsonPath}");
+            await JsonFileWriter.AppendDataToFileAsync(basicMetadata, setOverrideJsonPath, cancellationToken);
+            Log.Verbose($"{set.Id}\t'{set.DisplayName}':\tAdded missing Card Set metadatda to override file at {setOverrideJsonPath}");
         }
 
         var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
         if (File.Exists(savedJsonFilePath))
         {
-            var cardsFromMasterMetadata = JsonFileReader.LoadAllFromJsonLineFile<Card>(savedJsonFilePath)
-                .Where(card => card != null).Select(card => card!).ToHashSet();
-            cardSetMetadata.Cards ??= cardsFromMasterMetadata;
+            var cardsFromMasterMetadata = await JsonFileReader.LoadAllFromJsonLineFileAsync<Card>(savedJsonFilePath, cancellationToken);
+            cardSetMetadata.Cards ??= cardsFromMasterMetadata.Where(card => card != null).Select(card => card!).ToHashSet();
         }
 
-        handler.WriteMetadataToFile();
+        await provider.MetadataHandler.WriteMetadataToFileAsync(cancellationToken);
     }
 }

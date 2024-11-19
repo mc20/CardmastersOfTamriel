@@ -6,18 +6,18 @@ using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
-public class CardSetConversionData
+public class CardSetImageConversionData
 {
     public readonly HashSet<Card> CardsAtDestination;
     public readonly List<Card> FinalCards;
 
-    private CardSetConversionData(HashSet<Card> cardsAtDestination, List<Card> finalCards)
+    private CardSetImageConversionData(HashSet<Card> cardsAtDestination, List<Card> finalCards)
     {
         CardsAtDestination = cardsAtDestination;
         FinalCards = finalCards;
     }
 
-    public static CardSetConversionData Load(CardSet set, HashSet<Card> cardsFromMetadataFile, CancellationToken cancellationToken)
+    public static CardSetImageConversionData Load(CardSet set, HashSet<Card> cardsFromMetadataFile, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         
@@ -36,6 +36,6 @@ public class CardSetConversionData
         var cardsAtDestination = CardFactory.CreateCardsFromImagesAtFolderPath(set, [.. imageFilePathsAtDestination], false);
         var finalCards = updatedCards.ConsolidateCardsWith(cardsAtDestination).ToList();
         
-        return new CardSetConversionData(cardsAtDestination, finalCards);
+        return new CardSetImageConversionData(cardsAtDestination, finalCards);
     }
 }

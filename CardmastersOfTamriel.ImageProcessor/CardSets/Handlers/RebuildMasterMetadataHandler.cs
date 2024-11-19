@@ -6,7 +6,7 @@ using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
-public class RebuildMasterMetadataAsync : IAsyncCardSetHandler
+public class RebuildMasterMetadataHandler : ICardSetHandler
 {
     private int _displayedIndex = 1;
     private int _maxDisplayNameLength = 0;
@@ -24,7 +24,7 @@ public class RebuildMasterMetadataAsync : IAsyncCardSetHandler
         var savedJsonFilePath = GetSavedJsonFilePath(set);
         Log.Information($"{set.Id}\tUpdating card metadata to be saved to '{savedJsonFilePath}'");
 
-        var data = MasterMetadataRebuildData.Load(set, cancellationToken);
+        var data = RebuildMasterMetadataData.Load(set, cancellationToken);
         data.LogInformation();
 
         _displayedIndex = 1;
@@ -120,7 +120,7 @@ public class RebuildMasterMetadataAsync : IAsyncCardSetHandler
         }
     }
 
-    private void HandleCard(MasterMetadataRebuildData data, Card card, CancellationToken cancellationToken)
+    private void HandleCard(RebuildMasterMetadataData data, Card card, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

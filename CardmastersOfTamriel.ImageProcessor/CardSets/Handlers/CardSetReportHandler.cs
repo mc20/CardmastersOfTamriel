@@ -9,7 +9,7 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class CardSetReportHandler : ICardSetHandler
 {
-    public void ProcessCardSet(CardSet set)
+    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
     {
         var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
         var savedCards = LoadCardsFromJsonFile(savedJsonFilePath);
@@ -18,8 +18,9 @@ public class CardSetReportHandler : ICardSetHandler
         var imagesAtDestination =
             CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
 
-        CardSetReportProvider.Instance.UpdateWithSetInfo(set, savedCards, imagesAtDestination.Count,
-            imagesAtSource.Count);
+        var provider = await CardSetReportProvider.InstanceAsync(cancellationToken);
+
+        await provider.UpdateWithSetInfoAsync(set, savedCards, imagesAtDestination.Count, imagesAtSource.Count);
     }
 
     private static List<Card> LoadCardsFromJsonFile(string savedJsonFilePath)

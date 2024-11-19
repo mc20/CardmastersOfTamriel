@@ -60,7 +60,7 @@ public static class CardSetImageConversionHelper
     {
         var imageDestinationFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, imageFileName);
 
-        var helper = new AsyncImageConverter();
+        var helper = new ImageConverter();
         var imageShape = await helper.ConvertImageAndSaveToDestinationAsync(set.Tier, sourceImageFilePath,
             imageDestinationFilePath, cancellationToken);
 

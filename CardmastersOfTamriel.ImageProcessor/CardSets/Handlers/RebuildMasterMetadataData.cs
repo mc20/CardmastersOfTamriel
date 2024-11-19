@@ -5,7 +5,7 @@ using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
-public class MasterMetadataRebuildData
+public class RebuildMasterMetadataData
 {
     private string _setId;
 
@@ -15,7 +15,7 @@ public class MasterMetadataRebuildData
     public HashSet<string?> UniqueIdentifiersAtDestination;
     public HashSet<string?> ValidIdentifiersAtDestination;
 
-    private MasterMetadataRebuildData(string setId,
+    private RebuildMasterMetadataData(string setId,
         HashSet<string> imageFilePathsAtDestination,
         HashSet<Card> cardsFromSource,
         HashSet<string> validUniqueIdentifiersDeterminedFromSource,
@@ -30,7 +30,7 @@ public class MasterMetadataRebuildData
         ValidIdentifiersAtDestination = validIdentifiersAtDestination;
     }
 
-    public static MasterMetadataRebuildData Load(CardSet set, CancellationToken cancellationToken)
+    public static RebuildMasterMetadataData Load(CardSet set, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -41,7 +41,7 @@ public class MasterMetadataRebuildData
         var uniqueIdentifiersAtDestination = imageFilePathsAtDestination.Select(Path.GetFileNameWithoutExtension).ToHashSet();
         var validIdentifiersAtDestination = uniqueIdentifiersAtDestination.Intersect(validUniqueIdentifiersDeterminedFromSource).ToHashSet();
 
-        return new MasterMetadataRebuildData(
+        return new RebuildMasterMetadataData(
             set.Id,
             imageFilePathsAtDestination,
             cardsFromSource,
