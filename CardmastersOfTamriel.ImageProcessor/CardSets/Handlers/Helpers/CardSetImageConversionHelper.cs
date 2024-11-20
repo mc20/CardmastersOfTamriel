@@ -4,7 +4,7 @@ using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
+namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Helpers;
 
 public static class CardSetImageConversionHelper
 {
@@ -30,9 +30,7 @@ public static class CardSetImageConversionHelper
     public static void UpdateUnconvertedCard(Card card, uint index, uint totalTrueCount)
     {
         Log.Verbose($"Card {card.Id} was not converted and will be skipped");
-        card.Shape =
-            ImageHelper.DetermineOptimalShape(card
-                .SourceAbsoluteFilePath!); // Keep track of the shape for future reference
+        card.Shape = CardShapeHelper.DetermineOptimalShape(card.SourceAbsoluteFilePath!); // Keep track of the shape for future reference
         card.DisplayName = null;
         card.DestinationAbsoluteFilePath = null;
         card.DestinationRelativeFilePath = null;

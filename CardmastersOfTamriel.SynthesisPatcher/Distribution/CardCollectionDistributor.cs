@@ -1,8 +1,9 @@
 using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.SynthesisPatcher.Collectors.Configuration.Factory;
+using CardmastersOfTamriel.SynthesisPatcher.Collectors.Configuration.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Configuration;
 using CardmastersOfTamriel.SynthesisPatcher.Distribution.Strategies;
 using CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
+using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
 using Noggog;
@@ -40,8 +41,8 @@ public class CardCollectionDistributor
         _strategies = InitializeStrategies();
     }
 
-    private IDictionary<Type, ICardDistributionStrategy> InitializeStrategies() => new Dictionary<Type, ICardDistributionStrategy>
-        {
+    private Dictionary<Type, ICardDistributionStrategy> InitializeStrategies() => new()
+    {
             {
                 typeof(LeveledItem),
                 new LeveledItemDistributionStrategy(
@@ -65,7 +66,7 @@ public class CardCollectionDistributor
             }
         };
 
-    public void DistributeToCollectorsInWorld<T>()
+    public async Task DistributeToCollectorsInWorldAsync<T>(CancellationToken cancellationToken) 
     {
         Log.Information($"Distributing cards to {typeof(T).Name} collectors in world..");
 
@@ -77,7 +78,7 @@ public class CardCollectionDistributor
                 $"Distribution strategy for type {typeof(T).Name} is not implemented");
         }
 
-        DistributeCardsViaStrategy(strategy);
+        await DistributeCardsViaStrategyAsync(strategy, cancellationToken);
     }
 
     private void DebugExistingLoadOrder()
@@ -95,11 +96,11 @@ public class CardCollectionDistributor
                                       .ForEach(l => Log.Debug("Npc: {0}", l.EditorID));
     }
 
-    private void DistributeCardsViaStrategy(ICardDistributionStrategy strategy)
+    private async Task DistributeCardsViaStrategyAsync(ICardDistributionStrategy strategy, CancellationToken cancellationToken)
     {
         Log.Information("Setting up entries for LeveledItems..");
 
-        var configuration = CollectorConfigFactory.RetrieveCollectorConfiguration(strategy.Configuration.DistributionFilePath);
+        var configuration =  await JsonFileReader.ReadFromJsonAsync<CollectorTypeConfiguration>(strategy.Configuration.DistributionFilePath, cancellationToken);
         Log.Information($"Loaded Configuration for: {configuration.Category} from '{strategy.Configuration.DistributionFilePath}'");
 
         var collectorLeveledListMapping = _probabilityLeveledListBuilder.CreateCollectorTypeMapping(configuration);

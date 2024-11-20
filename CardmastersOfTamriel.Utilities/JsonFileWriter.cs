@@ -6,16 +6,6 @@ namespace CardmastersOfTamriel.Utilities;
 
 public static class JsonFileWriter
 {
-    [Obsolete("Use WriteToJsonAsync instead", false)]
-    public static void WriteToJson<T>(T data, string relativeFilePath)
-    {
-        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        var filePath = Path.Combine(baseDirectory, relativeFilePath);
-
-        var jsonString = JsonSerializer.Serialize(data, JsonSettings.Options);
-        File.WriteAllText(filePath, jsonString);
-    }
-
     public static async Task WriteToJsonAsync<T>(T data, string relativeFilePath, CancellationToken cancellationToken)
     {
         var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
@@ -23,16 +13,6 @@ public static class JsonFileWriter
 
         var jsonString = JsonSerializer.Serialize(data, JsonSettings.Options);
         await File.WriteAllTextAsync(filePath, jsonString, cancellationToken);
-    }
-
-    [Obsolete("Use WriteToJsonLineFileAsync instead", false)]
-    public static void WriteToJsonLineFile<T>(IEnumerable<T> data, string relativeFilePath)
-    {
-        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        var filePath = Path.Combine(baseDirectory, relativeFilePath);
-
-        var jsonLines = data.Select(item => JsonSerializer.Serialize(item, JsonSettings.Options));
-        File.WriteAllLines(filePath, jsonLines);
     }
 
     public static async Task WriteToJsonLineFileAsync<T>(IEnumerable<T> data, string relativeFilePath, CancellationToken cancellationToken)
@@ -80,5 +60,10 @@ public static class JsonFileWriter
             Log.Error(ex, $"Failed to write to file: '{filePath}'");
             throw;
         }
+    }
+
+    public static async Task CreateEmptyJsonFileIfMissing(CancellationToken cancellationToken)
+    {
+
     }
 }

@@ -1,20 +1,25 @@
+using System.Diagnostics;
+using CardmastersOfTamriel.ImageProcessor.Events;
 using CardmastersOfTamriel.ImageProcessor.Factories;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessor.CardSets;
+namespace CardmastersOfTamriel.ImageProcessor.Setup;
 
-public class CardSetReplicatorAsync
+public class CardSetReplicator
 {
+    // public event EventHandler<SetProgressEventArgs>? ProgressUpdated;
+
     private readonly CardSeries _series;
 
-    public CardSetReplicatorAsync(CardSeries series)
+    public CardSetReplicator(CardSeries series)
     {
         _series = series;
     }
 
-    public async Task HandleDestinationSetCreationAsync(Dictionary<string, List<string>> groupedFolders, CancellationToken cancellationToken)
+    public async Task HandleDestinationSetCreationAsync(Dictionary<string, List<string>> groupedFolders,
+        CancellationToken cancellationToken)
     {
         foreach (var (setFolderName, sourceSetPaths) in groupedFolders)
         {
@@ -31,12 +36,14 @@ public class CardSetReplicatorAsync
             {
                 Log.Verbose($"Creating single set folder for {setFolderName}");
                 var destinationSetFolderPath = Path.Combine(_series.DestinationFolderPath, setFolderName);
-                await SaveNewSetAndCreateAtDestinationAsync(setFolderName, destinationSetFolderPath, sourceSetPaths[0], cancellationToken);
+                await SaveNewSetAndCreateAtDestinationAsync(setFolderName, destinationSetFolderPath, sourceSetPaths[0],
+                    cancellationToken);
             }
         }
     }
 
-    private async Task CreateMultipleFoldersAsync(string uniqueSetFolderName, List<string> sourceSetFolderPaths, CancellationToken cancellationToken)
+    private async Task CreateMultipleFoldersAsync(string uniqueSetFolderName, List<string> sourceSetFolderPaths,
+        CancellationToken cancellationToken)
     {
         // Multiple folders: rename with incremented suffixes
         for (var index = 0; index < sourceSetFolderPaths.Count; index++)
@@ -63,13 +70,15 @@ public class CardSetReplicatorAsync
 
         if (!File.Exists(destinationSetMetadataFilePath))
         {
-            Log.Verbose("No existing Series Metadata file found at Destination Path: " + destinationSetMetadataFilePath);
+            Log.Verbose("No existing Series Metadata file found at Destination Path: " +
+                        destinationSetMetadataFilePath);
         }
         else
         {
             try
             {
-                newCardSetMetadata = await JsonFileReader.ReadFromJsonAsync<CardSet?>(destinationSetMetadataFilePath, cancellationToken);
+                newCardSetMetadata =
+                    await JsonFileReader.ReadFromJsonAsync<CardSet?>(destinationSetMetadataFilePath, cancellationToken);
                 Log.Verbose(
                     $"Found existing Series Metadata file at Destination Path: '{destinationSetMetadataFilePath}'");
             }
@@ -96,6 +105,8 @@ public class CardSetReplicatorAsync
         _series.Sets.Add(newCardSetMetadata);
 
         await JsonFileWriter.WriteToJsonAsync(newCardSetMetadata, destinationSetMetadataFilePath, cancellationToken);
+
+        EventBroker.PublishSetProgress(this, new SetProgressEventArgs(newCardSetMetadata.Id));
 
         Log.Verbose($"New serialized Card Set metadata written to {destinationSetMetadataFilePath}");
         Log.Verbose(

@@ -1,5 +1,6 @@
 using CardmastersOfTamriel.ImageProcessor.CardSets;
 using CardmastersOfTamriel.ImageProcessor.Providers;
+using CardmastersOfTamriel.ImageProcessor.Setup;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
@@ -7,22 +8,9 @@ using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.Processors;
 
-public static class CardSeriesProcessorAsync
+
+public static class CardSeriesProcessorDeprecated
 {
-
-    private static Dictionary<string, List<string>> DetermineFolderGrouping(string seriesSourceFolderPath, CancellationToken cancellationToken = default)
-    {
-        var groupedFolders = new Dictionary<string, List<string>>();
-
-        foreach (var setSourceFolderPath in Directory.EnumerateDirectories(seriesSourceFolderPath))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            CardSetHelper.GroupAndNormalizeFolderNames(setSourceFolderPath, groupedFolders);
-        }
-
-        return groupedFolders;
-    }
-
     public static async Task ProcessSeriesFolderAsync(CardTier tier, string seriesSourceFolderPath,
         string tierDestinationFolderPath, ICardSetHandler asyncCardSetHandler,
         CancellationToken cancellationToken)
@@ -51,7 +39,7 @@ public static class CardSeriesProcessorAsync
 
         var seriesMetadata = await AddNewSeriesToMetadataAsync(seriesId, tier, seriesDestinationMetadataFilePath, seriesSourceFolderPath, seriesDestinationFolderPath, cancellationToken);
 
-        var replicator = new CardSetReplicatorAsync(seriesMetadata);
+        var replicator = new CardSetReplicator(seriesMetadata);
         await replicator.HandleDestinationSetCreationAsync(groupedFolders, cancellationToken);
 
         if (seriesMetadata.Sets is null || seriesMetadata.Sets.Count == 0)
@@ -78,6 +66,19 @@ public static class CardSeriesProcessorAsync
                 Log.Error(ex, $"{cardSet.Id}\tFailed to process card set");
             }
         });
+    }
+
+    private static Dictionary<string, List<string>> DetermineFolderGrouping(string seriesSourceFolderPath, CancellationToken cancellationToken = default)
+    {
+        var groupedFolders = new Dictionary<string, List<string>>();
+
+        foreach (var setSourceFolderPath in Directory.EnumerateDirectories(seriesSourceFolderPath))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            CardSetHelper.GroupAndNormalizeFolderNames(setSourceFolderPath, groupedFolders);
+        }
+
+        return groupedFolders;
     }
 
     private static async Task<Dictionary<string, string>> GetRebuildListFileAsync(CancellationToken cancellationToken)

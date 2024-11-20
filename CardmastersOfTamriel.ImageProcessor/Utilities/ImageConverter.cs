@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.Models;
 using Serilog;
@@ -17,13 +19,16 @@ public class ImageConverter
         RegisterCleanupHandlers();
     }
 
-    private static readonly List<string> TempFiles = [];
+    private static readonly ConcurrentBag<string> TempFiles = [];
 
-    public async Task<CardShape> ConvertImageAndSaveToDestinationAsync(CardTier cardTier, string srcImagePath, string destImagePath, CancellationToken cancellationToken)
+    public async Task<CardShape> ConvertImageAndSaveToDestinationAsync(CardTier cardTier,
+        string srcImagePath,
+        string destImagePath,
+        CancellationToken cancellationToken)
 
     {
         Log.Verbose($"Converting image from '{srcImagePath}' to DDS format at '{destImagePath}'");
-        var imageShape = ImageHelper.DetermineOptimalShape(srcImagePath);
+        var imageShape = CardShapeHelper.DetermineOptimalShape(srcImagePath);
 
         using var image = await Task.Run(() => Image.Load<Rgba32>(srcImagePath), cancellationToken);
         TransformImage(image, imageShape);
@@ -33,7 +38,7 @@ public class ImageConverter
 
         SuperimposeImageOntoTemplate(image, templateCopy);
 
-        ImageHelper.ResizeImageToHeight(templateCopy, _config.ImageProperties.MaximumTextureHeight);
+        ImageResizer.ResizeImageToHeight(templateCopy, _config.ImageProperties.MaximumTextureHeight);
 
         var tempOutputPath = await SaveAsTemporaryPngAsync(templateCopy, cancellationToken);
         TempFiles.Add(tempOutputPath);
@@ -115,7 +120,7 @@ public class ImageConverter
 
     private static async Task ConvertPngToDdsAsync(string tempOutputPath, string destImagePath, CancellationToken cancellationToken)
     {
-        await Task.Run(() => FileOperations.ConvertToDdsAsync(tempOutputPath, destImagePath, cancellationToken), cancellationToken);
+        await Task.Run(() => ConvertToDdsAsync(tempOutputPath, destImagePath, cancellationToken), cancellationToken);
 
         var outputDirectory = Path.GetDirectoryName(destImagePath) ?? Directory.GetCurrentDirectory();
         var generatedDdsPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(tempOutputPath) + ".dds");
@@ -123,6 +128,50 @@ public class ImageConverter
 
         await Task.Run(() => File.Move(generatedDdsPath, destImagePath, overwrite: true), cancellationToken);
         Log.Verbose($"Moved generated DDS file to '{destImagePath}'");
+    }
+
+    private static async Task ConvertToDdsAsync(string inputPath, string outputPath, CancellationToken cancellationToken)
+    {
+        await Task.Run(() =>
+        {
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "texconv.exe"),
+                    Arguments = $"-o \"{Path.GetDirectoryName(outputPath)}\" -ft DDS -f DXT5 -srgb \"{inputPath}\"",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+
+            Log.Verbose($"Converting '{Path.GetFileName(inputPath)}' to dds file: '{Path.GetFileName(outputPath)}'");
+
+            process.OutputDataReceived += (sender, args) =>
+            {
+                if (!string.IsNullOrEmpty(args.Data))
+                    Log.Information(args.Data);
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.WaitForExit();
+
+            if (!cancellationToken.IsCancellationRequested) return;
+            
+            try
+            {
+                process.Kill();
+                Log.Warning($"Conversion process for '{Path.GetFileName(inputPath)}' was cancelled");
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Failed to kill conversion process");
+            }
+
+            throw new OperationCanceledException("Process was cancelled", cancellationToken);
+        }, cancellationToken);
     }
 
     private static async Task CleanupTemporaryFileAsync(string tempOutputPath)

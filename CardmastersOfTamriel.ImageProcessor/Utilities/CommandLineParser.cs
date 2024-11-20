@@ -6,27 +6,25 @@ public static class CommandLineParser
     {
         ["--rebuild"] = CommandMode.Rebuild,
         ["--convert"] = CommandMode.Convert,
-        ["--overridesets"] = CommandMode.OverrideSetData
+        ["--overridesets"] = CommandMode.OverrideSetData,
+        ["--recompile"] = CommandMode.RecompileMasterMetadata
     };
 
     private static readonly Dictionary<CommandMode, string> CommandHelp = new()
     {
         [CommandMode.Convert] = "Convert images to DDS format",
         [CommandMode.Rebuild] = "Rebuild all metadata",
-        [CommandMode.OverrideSetData] = "Refresh card sets"
+        [CommandMode.OverrideSetData] = "Refresh card sets",
+        [CommandMode.RecompileMasterMetadata] = "Recompile master metadata"
     };
 
     public static bool TryParseCommand(string[] args, out CommandMode mode)
     {
         mode = default;
 
-        if (args.Length == 0)
-        {
-            PrintHelp();
-            return false;
-        }
-
-        return CommandMap.TryGetValue(args[0], out mode);
+        if (args.Length != 0) return CommandMap.TryGetValue(args[0], out mode);
+        PrintHelp();
+        return false;
     }
 
     private static void PrintHelp()

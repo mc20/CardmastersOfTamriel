@@ -3,11 +3,11 @@ using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
+namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Models;
 
 public class RebuildMasterMetadataData
 {
-    private string _setId;
+    private readonly string _setId;
 
     public HashSet<string> ImageFilePathsAtDestination;
     public HashSet<Card> CardsFromSource;
@@ -34,8 +34,8 @@ public class RebuildMasterMetadataData
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var imageFilePathsAtDestination = CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
-        var imageFilePathsAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath).OrderBy(Path.GetFileNameWithoutExtension).ToHashSet();
+        var imageFilePathsAtDestination = ImageFilePathUtility.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
+        var imageFilePathsAtSource = ImageFilePathUtility.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath).OrderBy(Path.GetFileNameWithoutExtension).ToHashSet();
         var cardsFromSource = CardFactory.CreateCardsFromImagesAtFolderPath(set, imageFilePathsAtSource, true);
         var validUniqueIdentifiersDeterminedFromSource = cardsFromSource.Select(card => card.Id).ToHashSet();
         var uniqueIdentifiersAtDestination = imageFilePathsAtDestination.Select(Path.GetFileNameWithoutExtension).ToHashSet();

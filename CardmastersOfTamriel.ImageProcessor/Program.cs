@@ -1,10 +1,7 @@
-﻿using System.Collections.Concurrent;
-using CardmastersOfTamriel.ImageProcessor.CardSets;
+﻿using CardmastersOfTamriel.ImageProcessor.CardSets;
 using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
-using CardmastersOfTamriel.ImageProcessor.Processors;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
-using CardmastersOfTamriel.Models;
 using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor;
@@ -56,59 +53,34 @@ public class Program
         var logFilePath = Path.Combine(config.Paths.OutputFolderPath, "Logs", $"CardMastersOfTamriel_{timestamp}.log");
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Debug()
             .WriteTo.File(logFilePath)
-            .WriteTo.Console()
             .WriteTo.Debug()
             .CreateLogger();
     }
 
     private static async Task ExecuteCommand(CommandMode mode)
     {
-        ICardSetHandler? asyncCommand = mode switch
+        ICardSetHandler? handler = mode switch
         {
             CommandMode.Convert => new CardSetImageConversionHandler(),
             CommandMode.Rebuild => new RebuildMasterMetadataHandler(),
             CommandMode.OverrideSetData => new OverrideSetMetadataHandler(),
+            CommandMode.RecompileMasterMetadata => new CompileMasterMetadataHandler(),
             _ => null,
         };
 
-        if (asyncCommand is not null)
+        if (handler is not null)
         {
             var cts = new CancellationTokenSource();
-            await ImageProcessingCoordinator.BeginProcessingAsync(asyncCommand, cts.Token);
+
+            var coordinator = new ImageProcessingCoordinator();
+
+            await coordinator.PerformProcessingUsingHandlerAsync(handler, cts.Token);
         }
         else
         {
             Log.Error("Invalid command");
-        }
-    }
-}
-
-public class ProgressEventArgs : EventArgs
-{
-    public CardTier Tier { get; }
-    public string SetId { get; }
-
-    public ProgressEventArgs(CardTier tier, string setId)
-    {
-        Tier = tier;
-        SetId = setId;
-    }
-}
-
-public class ProgressManager
-{
-    private readonly ConcurrentDictionary<CardTier, int> _progress = new();
-
-    public void OnProgressUpdated(object sender, ProgressEventArgs e)
-    {
-        _progress[e.Tier]++;
-
-        lock (_progress)
-        {
-            Console.SetCursorPosition(0, Array.IndexOf(_progress.Keys.ToArray(), e.Tier));
-            Console.WriteLine($"{e.Tier}: {_progress[e.Tier]}");
         }
     }
 }

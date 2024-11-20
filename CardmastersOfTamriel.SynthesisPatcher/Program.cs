@@ -76,10 +76,11 @@ public class Program
             return;
         }
 
+        var cancellationSource = new CancellationTokenSource();
 
         Log.Information("Loading metadata..");
         var metadataHandler = new MasterMetadataHandler(patcherConfig.MasterMetadataFilePath);
-        metadataHandler.LoadFromFile();
+        await metadataHandler.LoadFromFileAsync(cancellationSource.Token);
 
         if (metadataHandler.Metadata.Series?.Count == 0)
         {
@@ -97,9 +98,9 @@ public class Program
         var mappingService = new CollectorProbabilityMappingService(customMod, cardTierToLeveledItemMapping);
 
         var distributor = new CardCollectionDistributor(state, customMod, mappingService, patcherConfig);
-        distributor.DistributeToCollectorsInWorld<LeveledItem>();
-        distributor.DistributeToCollectorsInWorld<Container>();
-        distributor.DistributeToCollectorsInWorld<Npc>();
+        await distributor.DistributeToCollectorsInWorldAsync<LeveledItem>(cancellationSource.Token);
+        await distributor.DistributeToCollectorsInWorldAsync<Container>(cancellationSource.Token);
+        await distributor.DistributeToCollectorsInWorldAsync<Npc>(cancellationSource.Token);
 
         ValidateBeforeWrite(customMod);
 
@@ -123,7 +124,7 @@ public class Program
         File.Delete(appConfig.LogOutputFilePath);
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Debug()
             .WriteTo.File(appConfig.LogOutputFilePath)
             .WriteTo.Console()
             .WriteTo.Debug()

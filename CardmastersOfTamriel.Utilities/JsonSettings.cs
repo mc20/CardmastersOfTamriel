@@ -8,7 +8,7 @@ public static class JsonSettings
     public static readonly JsonSerializerOptions Options = new()
     {
         PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
         WriteIndented = true,
         Converters =
         {
@@ -20,7 +20,7 @@ public static class JsonSettings
     public static readonly JsonSerializerOptions OptionsJsonl = new()
     {
         PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
         WriteIndented = false,
         Converters =
         {

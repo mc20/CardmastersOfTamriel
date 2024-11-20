@@ -1,5 +1,4 @@
 using CardmastersOfTamriel.ImageProcessor.Providers;
-using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 
@@ -10,7 +9,7 @@ public static class CardSetFactory
     public static CardSet CreateNewSet(string setId, CardSeries series)
     {
         var config = ConfigurationProvider.Instance.Config;
-        
+
         return new CardSet(setId, series.Id)
         {
             DisplayName = NameHelper.FormatDisplayNameFromId(setId),

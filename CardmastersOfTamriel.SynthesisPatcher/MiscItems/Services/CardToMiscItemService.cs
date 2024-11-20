@@ -28,6 +28,8 @@ public class CardToMiscItemService
     {
         var miscItems = new Dictionary<Card, MiscItem>();
 
+        Log.Debug($"Inserting {cards.Count} cards as MiscItems..");
+
         foreach (var card in cards)
         {
             var miscItem = InsertAsMiscItem(card);

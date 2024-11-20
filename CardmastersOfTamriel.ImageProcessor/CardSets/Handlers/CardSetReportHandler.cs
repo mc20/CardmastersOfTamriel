@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using CardmastersOfTamriel.ImageProcessor.Events;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
@@ -9,18 +10,24 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class CardSetReportHandler : ICardSetHandler
 {
+    public event EventHandler<SetProgressEventArgs>? ProgressUpdated;
+
     public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
     {
         var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
         var savedCards = LoadCardsFromJsonFile(savedJsonFilePath);
 
-        var imagesAtSource = CardSetImageHelper.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath);
-        var imagesAtDestination =
-            CardSetImageHelper.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
+        var imagesAtSource = ImageFilePathUtility.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath);
+        var imagesAtDestination = ImageFilePathUtility.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
 
         var provider = await CardSetReportProvider.InstanceAsync(cancellationToken);
 
         await provider.UpdateWithSetInfoAsync(set, savedCards, imagesAtDestination.Count, imagesAtSource.Count);
+
+        foreach (var card in savedCards)
+        {
+            ProgressUpdated?.Invoke(this, new SetProgressEventArgs(card.SetId));
+        }
     }
 
     private static List<Card> LoadCardsFromJsonFile(string savedJsonFilePath)

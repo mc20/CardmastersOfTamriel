@@ -56,4 +56,20 @@ public static partial class NameHelper
         var length = value?.Length ?? 0;
         return new string(' ', maxLength - length);
     }
+
+    public static string FormatDuration(long milliseconds)
+    {
+        var timeSpan = TimeSpan.FromMilliseconds(milliseconds);
+        var parts = new List<string>();
+
+        if (timeSpan.Hours > 0)
+            parts.Add($"{timeSpan.Hours} hr");
+        if (timeSpan.Minutes > 0)
+            parts.Add($"{timeSpan.Minutes} min");
+        if (timeSpan.Seconds > 0 || timeSpan.TotalSeconds < 60) // Show seconds if total time < 1 minute
+            parts.Add($"{timeSpan.Seconds} sec");
+
+        return string.Join(", ", parts);
+    }
+
 }

@@ -4,5 +4,6 @@ public enum CommandMode
 {
     Rebuild,
     Convert,
-    OverrideSetData
+    OverrideSetData,
+    RecompileMasterMetadata,
 }

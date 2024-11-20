@@ -1,3 +1,6 @@
+using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Helpers;
+using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Models;
+using CardmastersOfTamriel.ImageProcessor.Events;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
@@ -8,12 +11,7 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class CardSetImageConversionHandler : ICardSetHandler
 {
-    public event EventHandler<ProgressEventArgs>? ProgressUpdated;
-
-    protected virtual void OnProgressUpdated(ProgressEventArgs e)
-    {
-        ProgressUpdated?.Invoke(this, e);
-    }
+    public event EventHandler<SetProgressEventArgs>? ProgressUpdated;
 
     private readonly Config _config = ConfigurationProvider.Instance.Config;
 
@@ -80,7 +78,7 @@ public class CardSetImageConversionHandler : ICardSetHandler
             $"Maximum Number of Cards: {maximumNumberOfCards} while there are {cardsAtDestination.Count} cards at destination. Need more random cards? {needMoreRandomCards}");
 
         var randomCards = needMoreRandomCards
-            ? CardSetImageHelper.SelectRandomImageFilePaths(maximumNumberOfCards - cardsAtDestination.Count,
+            ? ImageFilePathUtility.SelectRandomImageFilePaths(maximumNumberOfCards - cardsAtDestination.Count,
                 eligibleFilePathsForConversion)
             : [];
 
@@ -102,8 +100,6 @@ public class CardSetImageConversionHandler : ICardSetHandler
                 Log.Information($"Processing Card {Path.GetFileName(info.card.SourceAbsoluteFilePath)} for conversion");
                 await CardSetImageConversionHelper.ProcessAndUpdateCardForConversion(set, info.card, info.index,
                     finalCards.Count, cancellationToken);
-
-                // OnProgressUpdated(new ProgressEventArgs(set.Tier, )));
             }
             else
             {
@@ -120,6 +116,8 @@ public class CardSetImageConversionHandler : ICardSetHandler
                         FilePathHelper.GetRelativePath(info.card.DestinationAbsoluteFilePath, set.Tier);
                 }
             }
+
+            ProgressUpdated?.Invoke(this, new SetProgressEventArgs(info.card.SetId));
         }
     }
 }
