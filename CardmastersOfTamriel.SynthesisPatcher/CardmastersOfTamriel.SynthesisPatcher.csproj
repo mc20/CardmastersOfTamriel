@@ -50,4 +50,8 @@
     <Compile Remove="LeveledItems\CollectorLeveledItemCreator.cs" />
     <Compile Remove="Utilities\LeveledItemExtensionMethods.cs" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Metadata\" />
+  </ItemGroup>
 </Project>

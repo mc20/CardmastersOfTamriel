@@ -1,32 +1,31 @@
 using CardmastersOfTamriel.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Configuration;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Skyrim;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
 using CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
-using CardmastersOfTamriel.SynthesisPatcher.Metadata;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.MiscItems.Services;
 
 public class CardLeveledItemService
 {
-    private readonly MasterMetadataHandler _metadataHandler;
+    private readonly PatcherConfiguration _patcherConfig;
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _customMod;
 
-    public CardLeveledItemService(MasterMetadataHandler metadataHandler, IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
+    public CardLeveledItemService(PatcherConfiguration patcherConfig, IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
     {
-        _metadataHandler = metadataHandler;
+        _patcherConfig = patcherConfig;
         _state = state;
         _customMod = customMod;
     }
 
-    public Dictionary<CardTier, LeveledItem> CreateCardTierToLeveledItemMapping()
+    public async Task<Dictionary<CardTier, LeveledItem>> CreateCardTierToLeveledItemMappingAsync(CancellationToken cancellationToken)
     {
         Log.Information("Creating CardTier to LeveledItem mapping..");
 
-        var helper = new MetadataHelper(_metadataHandler);
-        var cardList = helper.GetCards().ToHashSet();
+        var cardList = await GetCards(cancellationToken);
 
         var miscService = new CardToMiscItemService(_state, _customMod);
         var mappedMiscItems = miscService.InsertAndMapCardsToMiscItems(cardList);
@@ -34,5 +33,16 @@ public class CardLeveledItemService
         // Get all cards grouped by CardTier
         var cardTierItemCreator = new TieredCardLeveledItemAssembler(_state, _customMod);
         return cardTierItemCreator.CreateCardTierLeveledItems(mappedMiscItems);
+    }
+    
+    private async Task<HashSet<Card>> GetCards(CancellationToken cancellationToken)
+    {
+        Log.Information("Getting cards from metadata.");
+        var metadataFilePath = _patcherConfig.MasterMetadataFilePath = _state.RetrieveInternalFile(_patcherConfig.MasterMetadataFilePath);
+        var data = await JsonFileReader.ReadFromJsonAsync<Dictionary<CardTier, HashSet<CardSeries>>>(metadataFilePath, cancellationToken);
+        var allSeriesData = data.Values.SelectMany(series => series).ToHashSet();
+        var allSetsData = allSeriesData.SelectMany(set => set.Sets ?? []).ToHashSet();
+        var allCardsData = allSetsData.SelectMany(set => set.Cards ?? []).ToHashSet();
+        return allCardsData.Where(card => !string.IsNullOrWhiteSpace(card.DestinationRelativeFilePath)).ToHashSet();
     }
 }

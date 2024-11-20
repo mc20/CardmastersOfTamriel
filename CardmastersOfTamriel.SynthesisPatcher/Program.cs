@@ -4,7 +4,6 @@ using Mutagen.Bethesda;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Skyrim;
 using Microsoft.Extensions.Configuration;
-using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda.Plugins;
 using Serilog;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
@@ -78,22 +77,12 @@ public class Program
 
         var cancellationSource = new CancellationTokenSource();
 
-        Log.Information("Loading metadata..");
-        var metadataHandler = new MasterMetadataHandler(patcherConfig.MasterMetadataFilePath);
-        await metadataHandler.LoadFromFileAsync(cancellationSource.Token);
-
-        if (metadataHandler.Metadata.Series?.Count == 0)
-        {
-            Log.Error("Metadata is missing");
-            return;
-        }
-
         KeywordHelper.AddKeywords(customMod);
 
         // Creating card to leveled item mapping
         Log.Information("Creating card to leveled item mapping..");
-        var cardService = new CardLeveledItemService(metadataHandler, state, customMod);
-        var cardTierToLeveledItemMapping = cardService.CreateCardTierToLeveledItemMapping();
+        var cardService = new CardLeveledItemService(patcherConfig, state, customMod);
+        var cardTierToLeveledItemMapping = await cardService.CreateCardTierToLeveledItemMappingAsync(cancellationSource.Token);
 
         var mappingService = new CollectorProbabilityMappingService(customMod, cardTierToLeveledItemMapping);
 
@@ -131,7 +120,7 @@ public class Program
             .CreateLogger();
     }
 
-    public static void ValidateBeforeWrite(ISkyrimMod mod)
+    private static void ValidateBeforeWrite(ISkyrimMod mod)
     {
         Log.Information("Validating mod before writing..");
 

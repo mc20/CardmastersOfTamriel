@@ -62,7 +62,7 @@ public class CardSetImageConversionHandler : ICardSetHandler
     private async Task ProcessEligibleImagesAsync(CardSet set, List<Card> finalCards, HashSet<Card> cardsAtDestination,
         CancellationToken cancellationToken)
     {
-        var eligibleFilePathsForConversion = finalCards.Select(card => card?.SourceAbsoluteFilePath ?? string.Empty)
+        var eligibleFilePathsForConversion = finalCards.Select(card => card.SourceAbsoluteFilePath ?? string.Empty)
             .Where(filePath => !string.IsNullOrWhiteSpace(filePath)).ToHashSet();
 
         Log.Debug(

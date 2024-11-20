@@ -14,8 +14,8 @@ public class ImageProcessingCoordinator
 {
     private ProgressBar? _progressBarForCardSetHandlers;
     private ProgressBar? _progressBarForFolderPreparer;
-    private ProgressTracker _progressTrackerForOverallCardSetHandlers;
-    private ProgressTracker _progressTrackerForFolderPreparer;
+    private readonly ProgressTracker _progressTrackerForOverallCardSetHandlers;
+    private readonly ProgressTracker _progressTrackerForFolderPreparer;
 
     public ImageProcessingCoordinator()
     {
@@ -210,13 +210,6 @@ public class ImageProcessingCoordinator
 
     private static int GetAbsoluteTotalNumberOfCards(HashSet<CardSet> allCardSets)
     {
-        var absoluteTotalNumberOfCards = 0;
-        foreach (var set in allCardSets)
-        {
-            var totalNumberOfCards = ImageFilePathUtility.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath).Count;
-            absoluteTotalNumberOfCards += totalNumberOfCards;
-        }
-
-        return absoluteTotalNumberOfCards;
+        return allCardSets.Sum(set => ImageFilePathUtility.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath).Count);
     }
 }

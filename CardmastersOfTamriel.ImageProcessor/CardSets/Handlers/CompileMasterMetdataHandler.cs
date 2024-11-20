@@ -11,21 +11,29 @@ public class CompileMasterMetadataHandler : ICardSetHandler
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var setMetadataFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "set_metadata.json");
-        if (File.Exists(setMetadataFilePath))
+        var setmetadatajson = Path.Combine(set.DestinationAbsoluteFolderPath, "set_metadata.json");
+        if (File.Exists(setmetadatajson))
         {
-            var cardSet = await JsonFileReader.ReadFromJsonAsync<CardSet>(setMetadataFilePath, cancellationToken);
-            if (cardSet.Cards is not null)
+            var cardSet = await JsonFileReader.ReadFromJsonAsync<CardSet>(setmetadatajson, cancellationToken);
+
+            var cardsjsonl = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
+            if (File.Exists(cardsjsonl))
             {
-                foreach (var card in cardSet.Cards)
+                var cards = await JsonFileReader.LoadAllFromJsonLineFileAsync<Card>(cardsjsonl, cancellationToken);
+                foreach (var card in cards)
                 {
+                    cardSet.Cards ??= [];
+                    cardSet.Cards.Add(card);
+
                     EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card.SetId));
                 }
+                
+                await JsonFileWriter.WriteToJsonAsync(cardSet, setmetadatajson, cancellationToken);
             }
         }
         else
         {
-            Log.Error($"{set.Id}\tNo set metadata file found at {setMetadataFilePath}");
+            Log.Error($"{set.Id}\tNo set metadata file found at {setmetadatajson}");
         }
     }
 }
