@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using CardmastersOfTamriel.ImageProcessor.Events;
+using CardmastersOfTamriel.ImageProcessor.ProgressTracking;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
@@ -10,8 +10,6 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class CardSetReportHandler : ICardSetHandler
 {
-    public event EventHandler<SetProgressEventArgs>? ProgressUpdated;
-
     public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
     {
         var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
@@ -26,7 +24,7 @@ public class CardSetReportHandler : ICardSetHandler
 
         foreach (var card in savedCards)
         {
-            ProgressUpdated?.Invoke(this, new SetProgressEventArgs(card.SetId));
+            EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card.SetId));
         }
     }
 

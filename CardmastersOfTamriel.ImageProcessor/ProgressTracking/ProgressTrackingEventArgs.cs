@@ -1,6 +1,6 @@
 namespace CardmastersOfTamriel.ImageProcessor.ProgressTracking;
 
-public class SetProgressEventArgs(string setId) : EventArgs
+public class ProgressTrackingEventArgs(string setId) : EventArgs
 {
     public string SetId { get; } = setId;
 }

@@ -1,6 +1,6 @@
 using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Helpers;
 using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Models;
-using CardmastersOfTamriel.ImageProcessor.Events;
+using CardmastersOfTamriel.ImageProcessor.ProgressTracking;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
@@ -11,8 +11,6 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class CardSetImageConversionHandler : ICardSetHandler
 {
-    public event EventHandler<SetProgressEventArgs>? ProgressUpdated;
-
     private readonly Config _config = ConfigurationProvider.Instance.Config;
 
     public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
@@ -117,7 +115,7 @@ public class CardSetImageConversionHandler : ICardSetHandler
                 }
             }
 
-            ProgressUpdated?.Invoke(this, new SetProgressEventArgs(info.card.SetId));
+            EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(info.card.SetId));
         }
     }
 }

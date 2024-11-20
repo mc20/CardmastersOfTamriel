@@ -5,6 +5,5 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets;
 
 public interface ICardSetHandler
 {
-    event EventHandler<SetProgressEventArgs>? ProgressUpdated;
     Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken);
 }

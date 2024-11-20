@@ -10,7 +10,6 @@ using ShellProgressBar;
 
 namespace CardmastersOfTamriel.ImageProcessor;
 
-
 public class ImageProcessingCoordinator
 {
     private ProgressBar? _progressBarForCardSetHandlers;
@@ -36,7 +35,7 @@ public class ImageProcessingCoordinator
 
             using (_progressBarForFolderPreparer = new ProgressBar(_progressTrackerForFolderPreparer.Total, "Folder Preparation (setCount)"))
             {
-                EventBroker.ProgressUpdated += OnFolderPreparerProgressUpdated;
+                EventBroker.FolderPreparationProgressUpdated += OnFolderPreparerProgressUpdated;
                 var allCardSeries = await DestinationFolderPreparer.SetupDestinationFoldersAsync(cancellationToken);
                 allCardSets = allCardSeries.SelectMany(series => series.Sets ?? []).ToHashSet();
                 _progressTrackerForOverallCardSetHandlers.Total = GetAbsoluteTotalNumberOfCards(allCardSets);
@@ -44,7 +43,7 @@ public class ImageProcessingCoordinator
 
             using (_progressBarForCardSetHandlers = new ProgressBar(_progressTrackerForOverallCardSetHandlers.Total, "Overall Progress"))
             {
-                handler.ProgressUpdated += OnCardSetHandlerProgressUpdated;
+                EventBroker.SetHandlingProgressUpdated += OnCardSetHandlerProgressUpdated;
 
                 await Parallel.ForEachAsync(allCardSets, new ParallelOptions
                 {
@@ -71,8 +70,9 @@ public class ImageProcessingCoordinator
         }
         finally
         {
-            handler.ProgressUpdated -= OnCardSetHandlerProgressUpdated;
-            EventBroker.ProgressUpdated -= OnFolderPreparerProgressUpdated;
+            // handler.ProgressUpdated -= OnCardSetHandlerProgressUpdated;
+            EventBroker.SetHandlingProgressUpdated -= OnCardSetHandlerProgressUpdated;
+            EventBroker.FolderPreparationProgressUpdated -= OnFolderPreparerProgressUpdated;
         }
 
         await CompileSeriesMetadataAsync(cancellationToken);
@@ -85,19 +85,28 @@ public class ImageProcessingCoordinator
 
         try
         {
-            var completeMetadata = new HashSet<CardSeries>();
+            var completeMetadata = new Dictionary<CardTier, HashSet<CardSeries>>();
 
             var outputFolderPath = ConfigurationProvider.Instance.Config.Paths.OutputFolderPath;
             foreach (var seriesFolder in Directory.EnumerateDirectories(outputFolderPath, "*", SearchOption.AllDirectories))
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var seriesMetadataFile = Path.Combine(seriesFolder, "series_metadata.json");
                 if (!File.Exists(seriesMetadataFile)) continue;
 
                 var series = await JsonFileReader.ReadFromJsonAsync<CardSeries>(seriesMetadataFile, cancellationToken);
-                completeMetadata.Add(series);
+
+                if (!completeMetadata.TryGetValue(series.Tier, out var cardSeries))
+                {
+                    completeMetadata[series.Tier] = [];
+                }
+                completeMetadata[series.Tier].Add(series);
 
                 foreach (var setFolder in Directory.EnumerateDirectories(seriesFolder, "*", SearchOption.TopDirectoryOnly))
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     var setMetadataFile = Path.Combine(setFolder, "set_metadata.json");
                     if (!File.Exists(setMetadataFile)) continue;
 
@@ -155,7 +164,7 @@ public class ImageProcessingCoordinator
         }
     }
 
-    private void OnCardSetHandlerProgressUpdated(object? sender, SetProgressEventArgs? e)
+    private void OnCardSetHandlerProgressUpdated(object? sender, ProgressTrackingEventArgs? e)
     {
         if (e == null) return;
 
@@ -177,7 +186,7 @@ public class ImageProcessingCoordinator
             _progressTrackerForOverallCardSetHandlers.ProgressStopwatch.Stop();
     }
 
-    private void OnFolderPreparerProgressUpdated(object? sender, SetProgressEventArgs? e)
+    private void OnFolderPreparerProgressUpdated(object? sender, ProgressTrackingEventArgs? e)
     {
         if (e == null) return;
 
@@ -191,7 +200,7 @@ public class ImageProcessingCoordinator
 
         // Update the progress bar with the corrected ETA
         _progressBarForFolderPreparer?.Tick(
-            $"Processing all cards: {_progressTrackerForFolderPreparer.Current}/{_progressTrackerForFolderPreparer.Total} [ETA: {NameHelper.FormatDuration((long)estimatedTimeLeft)}]"
+            $"Processing all set folders: {_progressTrackerForFolderPreparer.Current}/{_progressTrackerForFolderPreparer.Total} [ETA: {NameHelper.FormatDuration((long)estimatedTimeLeft)}]"
         );
 
         // Stop the stopwatch if processing is complete

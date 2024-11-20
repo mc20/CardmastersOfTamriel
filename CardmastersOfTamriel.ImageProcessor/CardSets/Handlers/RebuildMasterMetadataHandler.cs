@@ -1,5 +1,5 @@
 using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Models;
-using CardmastersOfTamriel.ImageProcessor.Events;
+using CardmastersOfTamriel.ImageProcessor.ProgressTracking;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
@@ -14,7 +14,6 @@ public class RebuildMasterMetadataHandler : ICardSetHandler
     private int _displayedIndex = 1;
     private int _maxDisplayNameLength = 0;
 
-    public event EventHandler<SetProgressEventArgs>? ProgressUpdated;
 
     public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
     {
@@ -171,7 +170,7 @@ public class RebuildMasterMetadataHandler : ICardSetHandler
             card.DisplayedTotalCount = 0;
         }
 
-        ProgressUpdated?.Invoke(this, new SetProgressEventArgs(card.SetId));
+        EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card.SetId));
 
         if (Log.IsEnabled(Serilog.Events.LogEventLevel.Debug))
         {

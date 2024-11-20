@@ -6,10 +6,10 @@ namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 
 public static class CollectorLoader
 {
-    public static Dictionary<CollectorType, SortedSet<string>> GetCollectorIds(string configFilePath)
+    public static async Task<Dictionary<CollectorType, SortedSet<string>>> GetCollectorIdsAsync(string configFilePath, CancellationToken cancellationToken)
     {
         if (File.Exists(configFilePath))
-            return JsonFileReader.ReadFromJson<Dictionary<CollectorType, SortedSet<string>>>(configFilePath);
+            return await JsonFileReader.ReadFromJsonAsync<Dictionary<CollectorType, SortedSet<string>>>(configFilePath, cancellationToken);
         else
         {
             Log.Error($"Collector config file not found at: {configFilePath}");
@@ -17,12 +17,12 @@ public static class CollectorLoader
         }
     }
 
-    public static Dictionary<CollectorType, SortedSet<string>> GetCollectorIds(HashSet<string> configFilePaths)
+    public static async Task<Dictionary<CollectorType, SortedSet<string>>> GetCollectorIdsAsync(HashSet<string> configFilePaths, CancellationToken cancellationToken)
     {
         var combined = new Dictionary<CollectorType, SortedSet<string>>();
         foreach (var filePath in configFilePaths)
         {
-            var config = GetCollectorIds(filePath);
+            var config = await GetCollectorIdsAsync(filePath, cancellationToken);
             if (File.Exists(filePath))
             {
                 foreach (var kvp in config)

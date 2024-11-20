@@ -66,7 +66,7 @@ public class CardCollectionDistributor
             }
         };
 
-    public async Task DistributeToCollectorsInWorldAsync<T>(CancellationToken cancellationToken) 
+    public async Task DistributeToCollectorsInWorldAsync<T>(CancellationToken cancellationToken)
     {
         Log.Information($"Distributing cards to {typeof(T).Name} collectors in world..");
 
@@ -100,13 +100,14 @@ public class CardCollectionDistributor
     {
         Log.Information("Setting up entries for LeveledItems..");
 
-        var configuration =  await JsonFileReader.ReadFromJsonAsync<CollectorTypeConfiguration>(strategy.Configuration.DistributionFilePath, cancellationToken);
+        var configuration = await JsonFileReader.ReadFromJsonAsync<CollectorTypeConfiguration>(strategy.Configuration.DistributionFilePath, cancellationToken);
         Log.Information($"Loaded Configuration for: {configuration.Category} from '{strategy.Configuration.DistributionFilePath}'");
 
         var collectorLeveledListMapping = _probabilityLeveledListBuilder.CreateCollectorTypeMapping(configuration);
         Log.Information($"Mapped {collectorLeveledListMapping.Count} CollectorTypes with LeveledItems.");
 
-        var collectorTypeMappings = CollectorLoader.GetCollectorIds(strategy.Configuration.CollectorConfigFilePaths).OrderBy(
+        var mappings = await CollectorLoader.GetCollectorIdsAsync(strategy.Configuration.CollectorConfigFilePaths, cancellationToken);
+        var collectorTypeMappings = mappings.OrderBy(
             kvp => new[]
                 {
                     CollectorType.Tier1, CollectorType.Tier2, CollectorType.Tier3, CollectorType.Tier4,

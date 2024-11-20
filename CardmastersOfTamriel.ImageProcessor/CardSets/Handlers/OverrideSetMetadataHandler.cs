@@ -1,4 +1,4 @@
-using CardmastersOfTamriel.ImageProcessor.Events;
+using CardmastersOfTamriel.ImageProcessor.ProgressTracking;
 using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
@@ -8,8 +8,6 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class OverrideSetMetadataHandler : ICardSetHandler
 {
-    public event EventHandler<SetProgressEventArgs>? ProgressUpdated;
-
     public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
     {
         var destinationCardSetJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "set_metadata.json");
@@ -53,7 +51,7 @@ public class OverrideSetMetadataHandler : ICardSetHandler
 
             foreach (var card in cardsFromMasterMetadata)
             {
-                ProgressUpdated?.Invoke(this, new SetProgressEventArgs(card.SetId));
+                EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card.SetId));
             }
         }
     }

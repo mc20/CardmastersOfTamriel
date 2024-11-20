@@ -1,6 +1,5 @@
-using System.Diagnostics;
-using CardmastersOfTamriel.ImageProcessor.Events;
 using CardmastersOfTamriel.ImageProcessor.Factories;
+using CardmastersOfTamriel.ImageProcessor.ProgressTracking;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
@@ -9,8 +8,6 @@ namespace CardmastersOfTamriel.ImageProcessor.Setup;
 
 public class CardSetReplicator
 {
-    // public event EventHandler<SetProgressEventArgs>? ProgressUpdated;
-
     private readonly CardSeries _series;
 
     public CardSetReplicator(CardSeries series)
@@ -106,7 +103,7 @@ public class CardSetReplicator
 
         await JsonFileWriter.WriteToJsonAsync(newCardSetMetadata, destinationSetMetadataFilePath, cancellationToken);
 
-        EventBroker.PublishSetProgress(this, new SetProgressEventArgs(newCardSetMetadata.Id));
+        EventBroker.PublishFolderPreparationProgress(this, new ProgressTrackingEventArgs(newCardSetMetadata.Id));
 
         Log.Verbose($"New serialized Card Set metadata written to {destinationSetMetadataFilePath}");
         Log.Verbose(

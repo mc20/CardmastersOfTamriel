@@ -22,8 +22,20 @@ public static class JsonFileReader
 
         await using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
         {
-            var data = await JsonSerializer.DeserializeAsync<T>(fileStream, JsonSettings.Options, cancellationToken);
-            if (data is not null) return data;
+            try
+            {
+                await JsonDocument.ParseAsync(fileStream, cancellationToken: cancellationToken);
+                fileStream.Position = 0;
+
+                var data = await JsonSerializer.DeserializeAsync<T>(fileStream, JsonSettings.Options, cancellationToken);
+                if (data is not null) return data;
+            }
+            catch (JsonException jsonEx)
+            {
+                var invalidJsonException = new InvalidOperationException($"Invalid JSON structure in {filePath}", jsonEx);
+                Log.Error(invalidJsonException, "JSON validation failed for '{FilePath}': {Message}", filePath, jsonEx.Message);
+                throw invalidJsonException;
+            }
         }
 
         var invalidOperationException = new InvalidOperationException($"Failed to deserialize JSON from {filePath}");
@@ -36,10 +48,11 @@ public static class JsonFileReader
         if (!File.Exists(jsonlFilePath))
         {
             Log.Error($"No file found at path: '{jsonlFilePath}'");
-            return [];
+            return new List<T>();
         }
 
         var result = new List<T>();
+        var lineNumber = 0;
 
         try
         {
@@ -48,17 +61,30 @@ public static class JsonFileReader
 
             while (await reader.ReadLineAsync(cancellationToken) is { } line)
             {
+                lineNumber++;
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
                 try
                 {
+                    // Validate JSON structure first
+                    using var document = JsonDocument.Parse(line);
+
+                    // If valid, deserialize
                     var item = JsonSerializer.Deserialize<T>(line, JsonSettings.Options);
-                    if (item is not null) result.Add(item);
+                    if (item is not null)
+                    {
+                        result.Add(item);
+                    }
+                }
+                catch (JsonException je)
+                {
+                    Log.Error(je, $"Invalid JSON at line {lineNumber} in '{jsonlFilePath}': {je.Message}");
+                    throw new InvalidOperationException($"Invalid JSON at line {lineNumber} in '{jsonlFilePath}'", je);
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, $"Failed to parse line from '{jsonlFilePath}'");
-                    throw;
+                    Log.Error(e, $"Failed to process line {lineNumber} from '{jsonlFilePath}'");
+                    throw new InvalidOperationException($"Failed to process line {lineNumber} from '{jsonlFilePath}'", e);
                 }
             }
         }
@@ -93,7 +119,11 @@ public static class JsonFileReader
 
                 try
                 {
-                    var item = JsonSerializer.Deserialize<T>(line);
+                    // Validate JSON structure first
+                    using var document = JsonDocument.Parse(line);
+
+                    // If valid, deserialize
+                    var item = JsonSerializer.Deserialize<T>(line, JsonSettings.Options);
                     if (item is IIdentifiable identifiable && identifiable.Id == targetId)
                     {
                         return item;
@@ -102,7 +132,7 @@ public static class JsonFileReader
                 catch (JsonException ex)
                 {
                     Log.Error(ex, $"Failed to parse line from {jsonlPath}");
-                    throw;
+                    throw new InvalidOperationException($"Invalid JSON at line in '{jsonlPath}'", ex);
                 }
             }
         }

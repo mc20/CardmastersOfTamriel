@@ -1,4 +1,4 @@
-﻿using CardmastersOfTamriel.ImageProcessor.Events;
+﻿using CardmastersOfTamriel.ImageProcessor.ProgressTracking;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
@@ -7,25 +7,25 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class CompileMasterMetadataHandler : ICardSetHandler
 {
-    public event EventHandler<SetProgressEventArgs>? ProgressUpdated;
-
     public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var destinationCardSetJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "set_metadata.json");
-        if (File.Exists(destinationCardSetJsonFilePath))
+        var setMetadataFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "set_metadata.json");
+        if (File.Exists(setMetadataFilePath))
         {
-            var cards = await JsonFileReader.LoadAllFromJsonLineFileAsync<Card>(destinationCardSetJsonFilePath,
-                cancellationToken);
-            foreach (var card in cards)
+            var cardSet = await JsonFileReader.ReadFromJsonAsync<CardSet>(setMetadataFilePath, cancellationToken);
+            if (cardSet.Cards is not null)
             {
-                EventBroker.PublishSetProgress(this, new SetProgressEventArgs(card.SetId));
+                foreach (var card in cardSet.Cards)
+                {
+                    EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card.SetId));
+                }
             }
         }
         else
         {
-            Log.Error($"{set.Id}\tNo set metadata file found at {destinationCardSetJsonFilePath}");
+            Log.Error($"{set.Id}\tNo set metadata file found at {setMetadataFilePath}");
         }
     }
 }
