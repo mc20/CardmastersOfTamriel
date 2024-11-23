@@ -1,4 +1,4 @@
-using CardmastersOfTamriel.SynthesisPatcher.Distribution.Configuration;
+using CardmastersOfTamriel.SynthesisPatcher.Common.Distribution.Configuration;
 using CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;

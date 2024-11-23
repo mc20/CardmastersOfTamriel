@@ -1,6 +1,6 @@
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Collectors.Configuration.Models;
-using CardmastersOfTamriel.SynthesisPatcher.Configuration;
+using CardmastersOfTamriel.SynthesisPatcher.Common.Configuration;
 using CardmastersOfTamriel.SynthesisPatcher.Distribution.Strategies;
 using CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 using CardmastersOfTamriel.Utilities;

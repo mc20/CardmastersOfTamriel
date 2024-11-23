@@ -14,7 +14,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageReference Include="Mutagen.Bethesda.Skyrim" Version="0.47.2" />
-    <PackageReference Include="Mutagen.Bethesda.Synthesis" Version="0.30.6" />
+    <PackageReference Include="Mutagen.Bethesda.Synthesis" Version="0.30.7" />
     <PackageReference Include="Nifly" Version="0.1.0" />
     <PackageReference Include="Serilog" Version="4.1.1-dev-02318" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.1-dev-10398" />
@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CardmastersOfTamriel.Models\CardmastersOfTamriel.Models.csproj" />
     <ProjectReference Include="..\CardmastersOfTamriel.Utilities\CardmastersOfTamriel.Utilities.csproj" />
+    <ProjectReference Include="..\CardmastersOfTamriel.SynthesisPatcher.Common\CardmastersOfTamriel.SynthesisPatcher.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,6 +53,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Distribution\Configuration\" />
     <Folder Include="Metadata\" />
   </ItemGroup>
 </Project>

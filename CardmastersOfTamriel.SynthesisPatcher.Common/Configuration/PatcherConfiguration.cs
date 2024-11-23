@@ -1,9 +1,10 @@
-using CardmastersOfTamriel.SynthesisPatcher.Distribution.Configuration;
+using CardmastersOfTamriel.SynthesisPatcher.Common.Distribution.Configuration;
 using Mutagen.Bethesda.Skyrim;
+using Mutagen.Bethesda.Starfield;
 using Mutagen.Bethesda.Synthesis;
 using Serilog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Configuration;
+namespace CardmastersOfTamriel.SynthesisPatcher.Common.Configuration;
 
 public class PatcherConfiguration
 {
@@ -11,6 +12,11 @@ public class PatcherConfiguration
     public required string LogOutputFilePath { get; set; }
     public required HashSet<DistributionConfiguration> DistributionConfigurations { get; set; }
 
+    public void ApplyInternalFilePaths(IPatcherState<IStarfieldMod, IStarfieldModGetter> state)
+    {
+        
+    }
+    
     public void ApplyInternalFilePaths(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
     {
 

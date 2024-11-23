@@ -11,7 +11,8 @@ using Mutagen.Bethesda.Environments;
 using Mutagen.Bethesda.Plugins.Binary.Parameters;
 using CardmastersOfTamriel.SynthesisPatcher.Distribution;
 using System.Text.Json;
-using CardmastersOfTamriel.SynthesisPatcher.Configuration;
+using CardmastersOfTamriel.SynthesisPatcher.Common.Configuration;
+using Mutagen.Bethesda.Plugins.Records;
 
 namespace CardmastersOfTamriel.SynthesisPatcher;
 

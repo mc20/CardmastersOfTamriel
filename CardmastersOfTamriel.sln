@@ -68,5 +68,23 @@ Global
 		{CA3D17B3-1DAE-4DAF-BA72-B8FCC8CD4AA9}.Release|x64.Build.0 = Release|Any CPU
 		{CA3D17B3-1DAE-4DAF-BA72-B8FCC8CD4AA9}.Release|x86.ActiveCfg = Release|Any CPU
 		{CA3D17B3-1DAE-4DAF-BA72-B8FCC8CD4AA9}.Release|x86.Build.0 = Release|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Debug|x64.Build.0 = Debug|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Debug|x86.Build.0 = Debug|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Release|x64.ActiveCfg = Release|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Release|x64.Build.0 = Release|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Release|x86.ActiveCfg = Release|Any CPU
+		{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}.Release|x86.Build.0 = Release|Any CPU
+		{8BA2E1B7-DD65-42B6-A780-17E4037A3C1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BA2E1B7-DD65-42B6-A780-17E4037A3C1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 EndGlobal
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardmastersOfTheStars.SynthesisPatcher", "CardmastersOfTheStars.SynthesisPatcher\CardmastersOfTheStars.SynthesisPatcher.csproj", "{8BA2E1B7-DD65-42B6-A780-17E4037A3C1B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardmastersOfTamriel.SynthesisPatcher.Common", "CardmastersOfTamriel.SynthesisPatcher.Common\CardmastersOfTamriel.SynthesisPatcher.Common.csproj", "{DD826E00-E0C9-4D4D-9CD8-ACCEB58946AF}"
+EndProject

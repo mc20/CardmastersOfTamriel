@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Configuration;
+namespace CardmastersOfTamriel.SynthesisPatcher.Common.Configuration;
 
 // Helper class to load the configuration
 public static class ConfigurationLoader

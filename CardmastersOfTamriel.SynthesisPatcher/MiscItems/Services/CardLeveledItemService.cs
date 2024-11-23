@@ -1,5 +1,5 @@
 using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.SynthesisPatcher.Configuration;
+using CardmastersOfTamriel.SynthesisPatcher.Common.Configuration;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Skyrim;
 using CardmastersOfTamriel.Utilities;

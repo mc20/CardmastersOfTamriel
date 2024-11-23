@@ -1,4 +1,4 @@
-using CardmastersOfTamriel.SynthesisPatcher.Distribution.Configuration;
+using CardmastersOfTamriel.SynthesisPatcher.Common.Distribution.Configuration;
 using Mutagen.Bethesda.Skyrim;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Distribution.Strategies;

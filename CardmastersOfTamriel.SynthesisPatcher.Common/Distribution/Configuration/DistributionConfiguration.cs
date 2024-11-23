@@ -1,6 +1,6 @@
 using Serilog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Distribution.Configuration;
+namespace CardmastersOfTamriel.SynthesisPatcher.Common.Distribution.Configuration;
 
 public class DistributionConfiguration
 {
