@@ -1,4 +1,5 @@
-﻿using CardmastersOfTamriel.SynthesisPatcher.Utilities;
+﻿using CardmastersOfTamriel.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 

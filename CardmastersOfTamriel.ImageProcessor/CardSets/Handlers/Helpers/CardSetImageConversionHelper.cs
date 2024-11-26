@@ -8,11 +8,11 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Helpers;
 
 public static class CardSetImageConversionHelper
 {
-    public static async Task ProcessAndUpdateCardForConversion(CardSet set, Card card, int index, int trueTotalCount,
+    public static async Task ProcessAndUpdateCardForConversion(Config config, CardSet set, Card card, int index, int trueTotalCount,
         CancellationToken cancellationToken)
     {
-        var result = await ConvertAndSaveImageAsync(set, card.SourceAbsoluteFilePath ?? string.Empty,
-            NameHelper.CreateImageFileName(set, (uint)index + 1), cancellationToken);
+        var result = await ConvertAndSaveImageAsync(config, set, card.SourceAbsoluteFilePath ?? string.Empty,
+            NamingHelper.CreateImageFileName(set, (uint)index + 1), cancellationToken);
 
         card.ConversionDate = DateTime.UtcNow;
         card.Shape = result.Shape;
@@ -27,10 +27,10 @@ public static class CardSetImageConversionHelper
         card.SetGenericDisplayName();
     }
 
-    public static void UpdateUnconvertedCard(Card card, uint index, uint totalTrueCount)
+    public static void UpdateUnconvertedCard(Config config, Card card, uint index, uint totalTrueCount)
     {
         Log.Verbose($"Card {card.Id} was not converted and will be skipped");
-        card.Shape = CardShapeHelper.DetermineOptimalShape(card.SourceAbsoluteFilePath!); // Keep track of the shape for future reference
+        card.Shape = CardShapeHelper.DetermineOptimalShape(config, card.SourceAbsoluteFilePath!); // Keep track of the shape for future reference
         card.DisplayName = null;
         card.DestinationAbsoluteFilePath = null;
         card.DestinationRelativeFilePath = null;
@@ -53,12 +53,12 @@ public static class CardSetImageConversionHelper
         }
     }
 
-    private static async Task<ConversionResult> ConvertAndSaveImageAsync(CardSet set, string sourceImageFilePath,
+    private static async Task<ConversionResult> ConvertAndSaveImageAsync(Config config, CardSet set, string sourceImageFilePath,
         string imageFileName, CancellationToken cancellationToken)
     {
         var imageDestinationFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, imageFileName);
 
-        var helper = new ImageConverter();
+        var helper = new ImageConverter(config);
         var imageShape = await helper.ConvertImageAndSaveToDestinationAsync(set.Tier, sourceImageFilePath,
             imageDestinationFilePath, cancellationToken);
 

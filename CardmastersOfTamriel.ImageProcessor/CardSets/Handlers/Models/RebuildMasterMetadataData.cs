@@ -54,7 +54,7 @@ public class RebuildMasterMetadataData
     {
         Log.Information($"{_setId}\tFound {ImageFilePathsAtDestination.Count} DDS images at destination path");
         Log.Information($"{_setId}\tCreated {CardsFromSource.Count} cards from source images");
-        Log.Information($"{_setId}\tFound {ValidIdentifiersAtDestination.Count} unique identifiers from source images");
+        Log.Information($"{_setId}\tFound {ValidUniqueIdentifiersDeterminedFromSource.Count} unique identifiers from source images");
         Log.Information($"{_setId}\tFound {UniqueIdentifiersAtDestination.Count} unique identifiers from destination images");
         Log.Information($"{_setId}\tFound {ValidIdentifiersAtDestination.Count} valid unique identifiers at destination");
     }

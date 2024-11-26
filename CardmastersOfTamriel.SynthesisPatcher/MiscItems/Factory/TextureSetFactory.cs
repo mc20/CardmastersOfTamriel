@@ -1,4 +1,5 @@
-﻿using CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
+﻿using CardmastersOfTamriel.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda.Skyrim;
 using Serilog;

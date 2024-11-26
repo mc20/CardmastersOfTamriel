@@ -1,5 +1,5 @@
 using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.SynthesisPatcher.Collectors.Configuration.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Collectors.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Common.Configuration;
 using CardmastersOfTamriel.SynthesisPatcher.Distribution.Strategies;
 using CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
@@ -31,14 +31,17 @@ public class CardCollectionDistributor
     private readonly PatcherConfiguration _configuration;
     private readonly IDictionary<Type, ICardDistributionStrategy> _strategies;
 
+    private readonly CancellationToken _cancellationToken;
+
     public CardCollectionDistributor(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod,
-         CollectorProbabilityMappingService probabilityLeveledListBuilder, PatcherConfiguration config)
+         CollectorProbabilityMappingService probabilityLeveledListBuilder, PatcherConfiguration config, CancellationToken cancellationToken)
     {
         _state = state;
         _customMod = customMod;
         _probabilityLeveledListBuilder = probabilityLeveledListBuilder;
         _configuration = config;
         _strategies = InitializeStrategies();
+        _cancellationToken = cancellationToken;
     }
 
     private Dictionary<Type, ICardDistributionStrategy> InitializeStrategies() => new()
@@ -66,7 +69,7 @@ public class CardCollectionDistributor
             }
         };
 
-    public async Task DistributeToCollectorsInWorldAsync<T>(CancellationToken cancellationToken)
+    public async Task DistributeToCollectorsInWorldAsync<T>()
     {
         Log.Information($"Distributing cards to {typeof(T).Name} collectors in world..");
 
@@ -78,7 +81,7 @@ public class CardCollectionDistributor
                 $"Distribution strategy for type {typeof(T).Name} is not implemented");
         }
 
-        await DistributeCardsViaStrategyAsync(strategy, cancellationToken);
+        await DistributeCardsViaStrategyAsync(strategy);
     }
 
     private void DebugExistingLoadOrder()
@@ -96,17 +99,17 @@ public class CardCollectionDistributor
                                       .ForEach(l => Log.Debug("Npc: {0}", l.EditorID));
     }
 
-    private async Task DistributeCardsViaStrategyAsync(ICardDistributionStrategy strategy, CancellationToken cancellationToken)
+    private async Task DistributeCardsViaStrategyAsync(ICardDistributionStrategy strategy)
     {
         Log.Information("Setting up entries for LeveledItems..");
 
-        var configuration = await JsonFileReader.ReadFromJsonAsync<CollectorTypeConfiguration>(strategy.Configuration.DistributionFilePath, cancellationToken);
+        var configuration = await JsonFileReader.ReadFromJsonAsync<CollectorTypeConfiguration>(strategy.Configuration.DistributionFilePath, _cancellationToken);
         Log.Information($"Loaded Configuration for: {configuration.Category} from '{strategy.Configuration.DistributionFilePath}'");
 
         var collectorLeveledListMapping = _probabilityLeveledListBuilder.CreateCollectorTypeMapping(configuration);
         Log.Information($"Mapped {collectorLeveledListMapping.Count} CollectorTypes with LeveledItems.");
 
-        var mappings = await CollectorLoader.GetCollectorIdsAsync(strategy.Configuration.CollectorConfigFilePaths, cancellationToken);
+        var mappings = await CollectorLoader.GetCollectorIdsAsync(strategy.Configuration.CollectorConfigFilePaths, _cancellationToken);
         var collectorTypeMappings = mappings.OrderBy(
             kvp => new[]
                 {

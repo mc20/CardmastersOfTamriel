@@ -1,7 +1,4 @@
 ﻿using System.Text.Json;
-using CardmastersOfTamriel.ImageProcessor.ProgressTracking;
-using CardmastersOfTamriel.ImageProcessor.Providers;
-using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
@@ -10,22 +7,24 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class CardSetReportHandler : ICardSetHandler
 {
-    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
+    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken, CardSetBasicMetadata? setOverride = null)
     {
-        var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
-        var savedCards = LoadCardsFromJsonFile(savedJsonFilePath);
+        throw new NotImplementedException();
 
-        var imagesAtSource = ImageFilePathUtility.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath);
-        var imagesAtDestination = ImageFilePathUtility.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
+        // var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForCardsJsonl);
+        // var savedCards = LoadCardsFromJsonFile(savedJsonFilePath);
 
-        var provider = await CardSetReportProvider.InstanceAsync(cancellationToken);
+        // var imagesAtSource = ImageFilePathUtility.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath);
+        // var imagesAtDestination = ImageFilePathUtility.GetImageFilePathsFromFolder(set.DestinationAbsoluteFolderPath, ["*.dds"]);
 
-        await provider.UpdateWithSetInfoAsync(set, savedCards, imagesAtDestination.Count, imagesAtSource.Count);
+        // // var provider = await CardSetReportProvider.InstanceAsync(cancellationToken);
 
-        foreach (var card in savedCards)
-        {
-            EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card.SetId));
-        }
+        // // await provider.UpdateWithSetInfoAsync(set, savedCards, imagesAtDestination.Count, imagesAtSource.Count);
+
+        // foreach (var card in savedCards)
+        // {
+        //     EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card.SetId));
+        // }
     }
 
     private static List<Card> LoadCardsFromJsonFile(string savedJsonFilePath)

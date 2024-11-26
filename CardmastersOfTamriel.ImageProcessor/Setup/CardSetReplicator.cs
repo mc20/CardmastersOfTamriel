@@ -9,10 +9,12 @@ namespace CardmastersOfTamriel.ImageProcessor.Setup;
 public class CardSetReplicator
 {
     private readonly CardSeries _series;
+    private readonly Config _config;
 
-    public CardSetReplicator(CardSeries series)
+    public CardSetReplicator(CardSeries series, Config config)
     {
         _series = series;
+        _config = config;
     }
 
     public async Task HandleDestinationSetCreationAsync(Dictionary<string, List<string>> groupedFolders,
@@ -63,38 +65,37 @@ public class CardSetReplicator
 
         CardSet? newCardSetMetadata = null;
 
-        var destinationSetMetadataFilePath = Path.Combine(destinationSetFolderPath, "set_metadata.json");
+        var destinationSetMetadataFilePath = Path.Combine(destinationSetFolderPath, PathSettings.DefaultFilenameForSetMetadataJson);
 
         if (!File.Exists(destinationSetMetadataFilePath))
         {
-            Log.Verbose("No existing Series Metadata file found at Destination Path: " +
-                        destinationSetMetadataFilePath);
+            Log.Verbose($"No existing Series Metadata file found at Destination Path: {destinationSetMetadataFilePath}");
         }
         else
         {
             try
             {
-                newCardSetMetadata =
-                    await JsonFileReader.ReadFromJsonAsync<CardSet?>(destinationSetMetadataFilePath, cancellationToken);
-                Log.Verbose(
-                    $"Found existing Series Metadata file at Destination Path: '{destinationSetMetadataFilePath}'");
+                newCardSetMetadata = await JsonFileReader.ReadFromJsonAsync<CardSet>(destinationSetMetadataFilePath, cancellationToken);
+                Log.Verbose($"Found existing Series Metadata file at Destination Path: '{destinationSetMetadataFilePath}'");
             }
             catch (Exception e)
             {
-                Log.Error(e,
-                    $"Could not convert the the Destination Metadata file at '{destinationSetMetadataFilePath}' to a CardSet");
+                Log.Error(e, $"Could not convert the the Destination Metadata file at '{destinationSetMetadataFilePath}' to a CardSet");
             }
         }
 
         if (newCardSetMetadata is null)
         {
-            newCardSetMetadata = CardSetFactory.CreateNewSet(setFolderName, _series);
+            var newSetId = $"{setFolderName}-{Guid.NewGuid()}";
+            newCardSetMetadata = CardSetFactory.CreateNewSet(newSetId, setFolderName, _series, _config.General.DefaultMiscItemKeywords);
             newCardSetMetadata.Tier = _series.Tier;
+            newCardSetMetadata.DefaultKeywords = _series.DefaultKeywords;
         }
 
         // Ensure there's a properly formatted Set DisplayName
-        newCardSetMetadata.DisplayName = NameHelper.FormatDisplayNameFromId(newCardSetMetadata.Id);
+        newCardSetMetadata.DisplayName = NamingHelper.FormatDisplayNameFromFolderName(setFolderName);
         newCardSetMetadata.SourceAbsoluteFolderPath = sourceSetPath;
+        newCardSetMetadata.DestinationRelativeFolderPath = FilePathHelper.GetRelativePath(destinationSetFolderPath, newCardSetMetadata.Tier);
         newCardSetMetadata.DestinationAbsoluteFolderPath = destinationSetFolderPath;
 
         _series.Sets ??= [];
@@ -103,10 +104,9 @@ public class CardSetReplicator
 
         await JsonFileWriter.WriteToJsonAsync(newCardSetMetadata, destinationSetMetadataFilePath, cancellationToken);
 
-        EventBroker.PublishFolderPreparationProgress(this, new ProgressTrackingEventArgs(newCardSetMetadata.Id));
+        EventBroker.PublishFolderPreparationProgress(this, new ProgressTrackingEventArgs(newCardSetMetadata));
 
         Log.Verbose($"New serialized Card Set metadata written to {destinationSetMetadataFilePath}");
-        Log.Verbose(
-            $"New Set: '{newCardSetMetadata.Id}' saved to path: '{newCardSetMetadata.DestinationAbsoluteFolderPath}'");
+        Log.Verbose($"New Set: '{newCardSetMetadata.Id}' saved to path: '{newCardSetMetadata.DestinationAbsoluteFolderPath}'");
     }
 }

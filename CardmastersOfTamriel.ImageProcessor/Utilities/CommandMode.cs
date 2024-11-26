@@ -6,4 +6,5 @@ public enum CommandMode
     Convert,
     OverrideSetData,
     RecompileMasterMetadata,
+    UpdateCardSetCount
 }

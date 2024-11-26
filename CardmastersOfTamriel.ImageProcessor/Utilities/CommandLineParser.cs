@@ -7,7 +7,8 @@ public static class CommandLineParser
         ["--rebuild"] = CommandMode.Rebuild,
         ["--convert"] = CommandMode.Convert,
         ["--overridesets"] = CommandMode.OverrideSetData,
-        ["--recompile"] = CommandMode.RecompileMasterMetadata
+        ["--recompile"] = CommandMode.RecompileMasterMetadata,
+        ["--updatecounts"] = CommandMode.UpdateCardSetCount
     };
 
     private static readonly Dictionary<CommandMode, string> CommandHelp = new()
@@ -15,7 +16,8 @@ public static class CommandLineParser
         [CommandMode.Convert] = "Convert images to DDS format",
         [CommandMode.Rebuild] = "Rebuild all metadata",
         [CommandMode.OverrideSetData] = "Refresh card sets",
-        [CommandMode.RecompileMasterMetadata] = "Recompile master metadata"
+        [CommandMode.RecompileMasterMetadata] = "Recompile master metadata",
+        [CommandMode.UpdateCardSetCount] = "Updates metadata to reflect change in card set sample size"
     };
 
     public static bool TryParseCommand(string[] args, out CommandMode mode)

@@ -1,9 +1,8 @@
-﻿using CardmastersOfTamriel.ImageProcessor.ProgressTracking;
-using CardmastersOfTamriel.Models;
+﻿using CardmastersOfTamriel.Models;
 
 namespace CardmastersOfTamriel.ImageProcessor.CardSets;
 
 public interface ICardSetHandler
 {
-    Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken);
+    Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken, CardSetBasicMetadata? setOverride = null);
 }

@@ -1,15 +1,12 @@
-﻿using CardmastersOfTamriel.ImageProcessor.Providers;
-using CardmastersOfTamriel.Models;
+﻿using CardmastersOfTamriel.Models;
 using SixLabors.ImageSharp;
 
 namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public static class CardShapeHelper
 {
-    public static CardShape DetermineOptimalShape(string imagePath)
+    public static CardShape DetermineOptimalShape(Config config, string imagePath)
     {
-        var config = ConfigurationProvider.Instance.Config;
-
         using var image = Image.Load(imagePath);
         var width = image.Width;
         var height = image.Height;

@@ -1,4 +1,4 @@
-using CardmastersOfTamriel.Models;
+namespace CardmastersOfTamriel.Models;
 
 public class Card : IEquatable<Card>, IIdentifiable
 {
@@ -33,7 +33,10 @@ public class Card : IEquatable<Card>, IIdentifiable
 
     public void SetGenericDisplayName()
     {
-        DisplayName = $"{SetDisplayName ?? DisplayName ?? Id} - Card #{DisplayedIndex} of {DisplayedTotalCount}";
+        // var indexFormat = new string('0', DisplayedTotalCount.ToString().Length);
+        // DisplayName = $"{SetDisplayName ?? DisplayName ?? Id} - Card #{DisplayedIndex.ToString(indexFormat)} of {DisplayedTotalCount}";
+
+        DisplayName = $"{SetDisplayName ?? DisplayName ?? Id} - Card #{DisplayedIndex}";
     }
 
     public override int GetHashCode()

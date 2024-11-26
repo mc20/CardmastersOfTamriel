@@ -1,15 +1,5 @@
 namespace CardmastersOfTamriel.Models;
 
-public class CardSetBasicMetadata : IIdentifiable
-{
-    public required string Id { get; init; }
-    public required string SeriesId { get; init; }
-    public string? DisplayName { get; set; }
-    public uint DefaultValue { get; set; }
-    public float DefaultWeight { get; set; }
-    public HashSet<string>? DefaultKeywords { get; set; }
-}
-
 public class CardSet : IEquatable<CardSet>, IIdentifiable
 {
     public CardSet(string id, string seriesId)
@@ -33,19 +23,6 @@ public class CardSet : IEquatable<CardSet>, IIdentifiable
     public uint DefaultValue { get; set; }
     public float DefaultWeight { get; set; }
     public HashSet<string>? DefaultKeywords { get; set; }
-
-    public CardSetBasicMetadata GetBasicMetadata()
-    {
-        return new CardSetBasicMetadata()
-        {
-            Id = Id,
-            SeriesId = SeriesId,
-            DisplayName = DisplayName,
-            DefaultValue = DefaultValue,
-            DefaultWeight = DefaultWeight,
-            DefaultKeywords = DefaultKeywords
-        };
-    }
 
     public override int GetHashCode()
     {

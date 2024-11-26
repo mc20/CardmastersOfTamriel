@@ -13,23 +13,22 @@ public class CardSetReportProvider
         _filePath = filePath;
     }
 
-    private static async Task<CardSetReportProvider> CreateAsync(CancellationToken cancellationToken = default)
+    private static async Task<CardSetReportProvider> CreateAsync(CancellationToken cancellationToken)
     {
-        var config = ConfigurationProvider.Instance.Config;
+        throw new NotImplementedException();
+        // var fileName = "CardMastersOfTamriel_Report_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".csv";
+        // var filePath = Path.Combine(config.Paths.OutputFolderPath, fileName);
 
-        var fileName = "CardMastersOfTamriel_Report_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".csv";
-        var filePath = Path.Combine(config.Paths.OutputFolderPath, fileName);
+        // var instance = new CardSetReportProvider(filePath);
 
-        var instance = new CardSetReportProvider(filePath);
+        // if (!File.Exists(filePath))
+        // {
+        //     using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+        //     await writer.WriteLineAsync(
+        //         "Tier,SeriesId,SetId,SavedCardsCount,SavedCardsWithDestinationsCount,ConvertedImages,TotalSetImagesAtSource,SetSourceFolderPath,SetDestinationFolderPath");
+        // }
 
-        if (!File.Exists(filePath))
-        {
-            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
-            await writer.WriteLineAsync(
-                "Tier,SeriesId,SetId,SavedCardsCount,SavedCardsWithDestinationsCount,ConvertedImages,TotalSetImagesAtSource,SetSourceFolderPath,SetDestinationFolderPath");
-        }
-
-        return instance;
+        // return instance;
     }
 
     public static Task<CardSetReportProvider> InstanceAsync(CancellationToken cancellationToken = default) => _instance.Value;
@@ -37,6 +36,7 @@ public class CardSetReportProvider
     public async Task UpdateWithSetInfoAsync(CardSet set, List<Card> savedCards, int convertedImageCount,
         int totalSetImagesAtSource)
     {
+        // TODO: make sure we're reporting correct cards (absolute vs relative destination paths)
         var cardsWithDestinationFilePaths =
             savedCards.Where(card => !string.IsNullOrEmpty(card.DestinationAbsoluteFilePath)).ToList();
         await WriteToCsvAsync(

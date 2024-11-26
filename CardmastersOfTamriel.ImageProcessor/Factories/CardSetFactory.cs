@@ -1,4 +1,3 @@
-using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 
@@ -6,13 +5,11 @@ namespace CardmastersOfTamriel.ImageProcessor.Factories;
 
 public static class CardSetFactory
 {
-    public static CardSet CreateNewSet(string setId, CardSeries series)
+    public static CardSet CreateNewSet(string setId, string folderName, CardSeries series, HashSet<string> defaultKeywords)
     {
-        var config = ConfigurationProvider.Instance.Config;
-
         return new CardSet(setId, series.Id)
         {
-            DisplayName = NameHelper.FormatDisplayNameFromId(setId),
+            DisplayName = NamingHelper.FormatDisplayNameFromFolderName(folderName),
             Tier = series.Tier,
             Description = "",
             Cards = [],
@@ -20,7 +17,7 @@ public static class CardSetFactory
             DestinationAbsoluteFolderPath = "",
             DefaultValue = 0,
             DefaultWeight = 0,
-            DefaultKeywords = config.General.DefaultMiscItemKeywords,
+            DefaultKeywords = defaultKeywords,
             DestinationRelativeFolderPath = string.Empty,
         };
     }

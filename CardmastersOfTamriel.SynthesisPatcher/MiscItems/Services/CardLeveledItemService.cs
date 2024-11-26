@@ -31,7 +31,7 @@ public class CardLeveledItemService
         var mappedMiscItems = miscService.InsertAndMapCardsToMiscItems(cardList);
 
         // Get all cards grouped by CardTier
-        var cardTierItemCreator = new TieredCardLeveledItemAssembler(_state, _customMod);
+        var cardTierItemCreator = new TieredCardLeveledItemAssembler(_customMod);
         return cardTierItemCreator.CreateCardTierLeveledItems(mappedMiscItems);
     }
     

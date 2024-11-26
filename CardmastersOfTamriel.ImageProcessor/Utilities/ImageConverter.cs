@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.Models;
 using Serilog;
 using SixLabors.ImageSharp;
@@ -12,11 +11,12 @@ namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public class ImageConverter
 {
-    private readonly Config _config = ConfigurationProvider.Instance.Config;
+    private readonly Config _config;
 
-    public ImageConverter()
+    public ImageConverter(Config config)
     {
         RegisterCleanupHandlers();
+        _config = config;
     }
 
     private static readonly ConcurrentBag<string> TempFiles = [];
@@ -28,7 +28,7 @@ public class ImageConverter
 
     {
         Log.Verbose($"Converting image from '{srcImagePath}' to DDS format at '{destImagePath}'");
-        var imageShape = CardShapeHelper.DetermineOptimalShape(srcImagePath);
+        var imageShape = CardShapeHelper.DetermineOptimalShape(_config, srcImagePath);
 
         using var image = await Task.Run(() => Image.Load<Rgba32>(srcImagePath), cancellationToken);
         TransformImage(image, imageShape);
@@ -159,7 +159,7 @@ public class ImageConverter
             process.WaitForExit();
 
             if (!cancellationToken.IsCancellationRequested) return;
-            
+
             try
             {
                 process.Kill();

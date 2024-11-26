@@ -1,6 +1,24 @@
+using CardmastersOfTamriel.Models;
+
 namespace CardmastersOfTamriel.ImageProcessor.ProgressTracking;
 
-public class ProgressTrackingEventArgs(string setId) : EventArgs
+public class ProgressTrackingEventArgs : EventArgs
 {
-    public string SetId { get; } = setId;
+    public string? SeriesId { get; }
+    public string? SetId { get; }
+    public string? CardId { get; }
+
+    public ProgressTrackingEventArgs(Card card)
+    {
+        SeriesId = card.SeriesId;
+        SetId = card.SetId;
+        CardId = card.Id;
+    }
+
+    public ProgressTrackingEventArgs(CardSet set)
+    {
+        SeriesId = set.SeriesId;
+        SetId = set.Id;
+        CardId = null;
+    }
 }

@@ -1,6 +1,6 @@
 using CardmastersOfTamriel.Models;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Collectors.Configuration.Models;
+namespace CardmastersOfTamriel.SynthesisPatcher.Collectors.Models;
 
 public class CollectorTypeConfiguration
 {

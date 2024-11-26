@@ -1,5 +1,5 @@
 ﻿using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.SynthesisPatcher.Collectors.Configuration.Models;
+using CardmastersOfTamriel.SynthesisPatcher.Collectors.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda.Skyrim;
 using Noggog;

@@ -9,12 +9,17 @@ public class Config
 
 public class GeneralSettings
 {
-    public required int MaxSampleSize { get; set; }
+    public required double ImageSelectionPercentageForSet { get; set; }
     public required HashSet<string> DefaultMiscItemKeywords { get; set; }
 }
 
 public class PathSettings
 {
+    public const string DefaultFilenameForSeriesMetadataJson = "series_metadata.json";
+    public const string DefaultFilenameForSetMetadataJson = "set_metadata.json";
+    public const string DefaultFilenameForCardsJsonl = "cards.jsonl";
+    public const string DefaultFilenameForCardsJsonlBackup = "cards.jsonl.backup";
+
     public required string SourceImagesFolderPath { get; set; }
     public required string OutputFolderPath { get; set; }
     public required string MasterMetadataFilePath { get; set; }

@@ -28,13 +28,10 @@ public class DistributionConfiguration
             return false;
         }
 
-        foreach (var configFilePath in CollectorConfigFilePaths)
+        foreach (var configFilePath in CollectorConfigFilePaths.Where(configFilePath => !File.Exists(configFilePath)))
         {
-            if (!File.Exists(configFilePath))
-            {
-                Log.Error($"Collector config file not found for {TargetName} at: {configFilePath}");
-                return false;
-            }
+            Log.Error($"Collector config file not found for {TargetName} at: {configFilePath}");
+            return false;
         }
 
         return true;

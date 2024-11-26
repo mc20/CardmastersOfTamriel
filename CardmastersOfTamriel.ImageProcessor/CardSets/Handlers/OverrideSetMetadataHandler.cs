@@ -1,5 +1,4 @@
 using CardmastersOfTamriel.ImageProcessor.ProgressTracking;
-using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Serilog;
@@ -8,9 +7,9 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class OverrideSetMetadataHandler : ICardSetHandler
 {
-    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
+    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken, CardSetBasicMetadata? setOverride = null)
     {
-        var destinationCardSetJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "set_metadata.json");
+        var destinationCardSetJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForSetMetadataJson);
         if (!File.Exists(destinationCardSetJsonFilePath))
         {
             Log.Error($"{set.Id}\tNo set metadata file found at {destinationCardSetJsonFilePath}");
@@ -19,31 +18,13 @@ public class OverrideSetMetadataHandler : ICardSetHandler
 
         var cardSetMetadata = await JsonFileReader.ReadFromJsonAsync<CardSet>(destinationCardSetJsonFilePath, cancellationToken);
 
-        CardSetBasicMetadata? setMetadataOverride = null;
-        var setOverrideJsonPath = ConfigurationProvider.Instance.Config.Paths.SetMetadataOverrideFilePath;
-        if (!File.Exists(setOverrideJsonPath))
-        {
-            setMetadataOverride = await JsonFileReader.FindMetadataLineBySetIdAsync<CardSetBasicMetadata>(setOverrideJsonPath, set.Id, cancellationToken);
-        }
-
-        if (setMetadataOverride is not null)
+        if (setOverride is not null)
         {
             Log.Information($"{set.Id}\t'{set.DisplayName}':\tRefreshing data from set override file");
-            cardSetMetadata.DisplayName = setMetadataOverride?.DisplayName ?? cardSetMetadata.DisplayName;
-            cardSetMetadata.DefaultValue = setMetadataOverride?.DefaultValue ?? cardSetMetadata.DefaultValue;
-            cardSetMetadata.DefaultWeight = setMetadataOverride?.DefaultWeight ?? cardSetMetadata.DefaultWeight;
-            cardSetMetadata.DefaultKeywords = setMetadataOverride?.DefaultKeywords ?? cardSetMetadata.DefaultKeywords;
-        }
-        else
-        {
-            // Add to the jsonl if the set isn't there for convenience
-            var basicMetadata = cardSetMetadata.GetBasicMetadata();
-            basicMetadata.DefaultKeywords = ConfigurationProvider.Instance.Config.General.DefaultMiscItemKeywords;
-            await JsonFileWriter.AppendDataToFileAsync(basicMetadata, setOverrideJsonPath, cancellationToken);
-            Log.Verbose($"{set.Id}\t'{set.DisplayName}':\tAdded missing Card Set metadatda to override file at {setOverrideJsonPath}");
+            cardSetMetadata.OverrideWith(setOverride);
         }
 
-        var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
+        var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForCardsJsonl);
         if (File.Exists(savedJsonFilePath))
         {
             var cardsFromMasterMetadata = await JsonFileReader.LoadAllFromJsonLineFileAsync<Card>(savedJsonFilePath, cancellationToken);
@@ -51,7 +32,7 @@ public class OverrideSetMetadataHandler : ICardSetHandler
 
             foreach (var card in cardsFromMasterMetadata)
             {
-                EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card.SetId));
+                EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card));
             }
         }
     }

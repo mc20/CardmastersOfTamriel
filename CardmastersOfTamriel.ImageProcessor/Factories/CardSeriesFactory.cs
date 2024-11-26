@@ -9,7 +9,7 @@ public static class CardSeriesFactory
     {
         return new CardSeries(seriesId)
         {
-            DisplayName = NameHelper.FormatDisplayNameFromId(seriesId),
+            DisplayName = NamingHelper.FormatDisplayNameFromFolderName(seriesId),
             Tier = tier,
             Description = string.Empty,
             Sets = sets ?? [],

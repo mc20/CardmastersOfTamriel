@@ -12,7 +12,6 @@ using Mutagen.Bethesda.Plugins.Binary.Parameters;
 using CardmastersOfTamriel.SynthesisPatcher.Distribution;
 using System.Text.Json;
 using CardmastersOfTamriel.SynthesisPatcher.Common.Configuration;
-using Mutagen.Bethesda.Plugins.Records;
 
 namespace CardmastersOfTamriel.SynthesisPatcher;
 
@@ -78,7 +77,8 @@ public class Program
 
         var cancellationSource = new CancellationTokenSource();
 
-        KeywordHelper.AddKeywords(customMod);
+        KeywordHelper.AddStandardKeywords(customMod);
+        await KeywordHelper.AddUniqueSeriesNamesAsKeywordsAsync(patcherConfig, state, customMod, cancellationSource.Token);
 
         // Creating card to leveled item mapping
         Log.Information("Creating card to leveled item mapping..");
@@ -87,10 +87,10 @@ public class Program
 
         var mappingService = new CollectorProbabilityMappingService(customMod, cardTierToLeveledItemMapping);
 
-        var distributor = new CardCollectionDistributor(state, customMod, mappingService, patcherConfig);
-        await distributor.DistributeToCollectorsInWorldAsync<LeveledItem>(cancellationSource.Token);
-        await distributor.DistributeToCollectorsInWorldAsync<Container>(cancellationSource.Token);
-        await distributor.DistributeToCollectorsInWorldAsync<Npc>(cancellationSource.Token);
+        var distributor = new CardCollectionDistributor(state, customMod, mappingService, patcherConfig, cancellationSource.Token);
+        await distributor.DistributeToCollectorsInWorldAsync<LeveledItem>();
+        await distributor.DistributeToCollectorsInWorldAsync<Container>();
+        await distributor.DistributeToCollectorsInWorldAsync<Npc>();
 
         ValidateBeforeWrite(customMod);
 
@@ -137,15 +137,14 @@ public class Program
             }
         }
 
-        if (duplicates.Count != 0)
+        if (duplicates.Count == 0) return;
+        
+        Log.Error("Duplicate FormKeys found:");
+        foreach (var dup in duplicates)
         {
-            Log.Error("Duplicate FormKeys found:");
-            foreach (var dup in duplicates)
-            {
-                Log.Error($"Group: {dup.GroupName}, FormKey: {dup.FormKey}");
-            }
-
-            throw new Exception($"Found {duplicates.Count} duplicate FormKeys");
+            Log.Error($"Group: {dup.GroupName}, FormKey: {dup.FormKey}");
         }
+
+        throw new Exception($"Found {duplicates.Count} duplicate FormKeys");
     }
 }

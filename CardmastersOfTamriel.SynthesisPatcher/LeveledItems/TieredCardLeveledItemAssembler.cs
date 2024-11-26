@@ -3,7 +3,6 @@ using CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
-using Mutagen.Bethesda.Synthesis;
 using Noggog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
@@ -11,12 +10,10 @@ namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 public class TieredCardLeveledItemAssembler
 {
     private const int MaxEntriesPerLeveledList = 100;
-    private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _skyrimMod;
 
-    public TieredCardLeveledItemAssembler(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod skyrimMod)
+    public TieredCardLeveledItemAssembler(ISkyrimMod skyrimMod)
     {
-        _state = state;
         _skyrimMod = skyrimMod;
     }
 

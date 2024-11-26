@@ -9,13 +9,13 @@ public static class EventBroker
 
     public static void PublishSetHandlingProgress(object? sender, ProgressTrackingEventArgs e)
     {
-        Log.Information($"PublishSetProgress updated for {e.SetId}");
+        Log.Information($"[EVENT] Updated card: Series '{e.SeriesId}' Set '{e.SetId}' Card '{e.CardId}'");
         SetHandlingProgressUpdated?.Invoke(sender, e);
     }
 
     public static void PublishFolderPreparationProgress(object? sender, ProgressTrackingEventArgs e)
     {
-        Log.Information($"PublishFolderPreparationProgress updated for {e.SetId}");
+        Log.Information($"[EVENT] Updated series folder: Series '{e.SeriesId}' Set '{e.SetId}'");
         FolderPreparationProgressUpdated?.Invoke(sender, e);
     }
 }

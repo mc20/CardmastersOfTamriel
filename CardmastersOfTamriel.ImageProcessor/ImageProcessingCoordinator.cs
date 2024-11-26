@@ -1,6 +1,6 @@
+using System.Collections.Concurrent;
 using CardmastersOfTamriel.ImageProcessor.CardSets;
 using CardmastersOfTamriel.ImageProcessor.ProgressTracking;
-using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Setup;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
@@ -12,31 +12,40 @@ namespace CardmastersOfTamriel.ImageProcessor;
 
 public class ImageProcessingCoordinator
 {
+    private readonly Config _config;
+    private readonly CancellationToken _cancellationToken;
+    private readonly ConcurrentDictionary<string, CardSeriesBasicMetadata>? _cardSeriesOverrides;
+
     private ProgressBar? _progressBarForCardSetHandlers;
     private ProgressBar? _progressBarForFolderPreparer;
     private readonly ProgressTracker _progressTrackerForOverallCardSetHandlers;
     private readonly ProgressTracker _progressTrackerForFolderPreparer;
 
-    public ImageProcessingCoordinator()
+    public ImageProcessingCoordinator(Config config, CancellationToken cancellationToken, ConcurrentDictionary<string, CardSeriesBasicMetadata>? cardSeriesOverrides = null)
     {
+        _cancellationToken = cancellationToken;
         _progressTrackerForOverallCardSetHandlers = new ProgressTracker();
         _progressTrackerForFolderPreparer = new ProgressTracker();
+        _config = config;
+        _cardSeriesOverrides = cardSeriesOverrides;
     }
 
-    public async Task PerformProcessingUsingHandlerAsync(ICardSetHandler handler, CancellationToken cancellationToken)
+    public async Task PerformProcessingUsingHandlerAsync(ICardSetHandler handler)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        _cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
-            _progressTrackerForFolderPreparer.Total = DestinationFolderPreparer.GetTotalFolderCountAtSource();
+            var preparer = new DestinationFolderPreparer(_config);
+
+            _progressTrackerForFolderPreparer.Total = preparer.GatherAllSourceSetFolders().Count;
 
             HashSet<CardSet> allCardSets;
 
             using (_progressBarForFolderPreparer = new ProgressBar(_progressTrackerForFolderPreparer.Total, "Folder Preparation (setCount)"))
             {
                 EventBroker.FolderPreparationProgressUpdated += OnFolderPreparerProgressUpdated;
-                var allCardSeries = await DestinationFolderPreparer.SetupDestinationFoldersAsync(cancellationToken);
+                var allCardSeries = await preparer.SetupDestinationFoldersAsync(_cardSeriesOverrides, _cancellationToken);
                 allCardSets = allCardSeries.SelectMany(series => series.Sets ?? []).ToHashSet();
                 _progressTrackerForOverallCardSetHandlers.Total = GetAbsoluteTotalNumberOfCards(allCardSets);
             }
@@ -45,15 +54,18 @@ public class ImageProcessingCoordinator
             {
                 EventBroker.SetHandlingProgressUpdated += OnCardSetHandlerProgressUpdated;
 
+                var allOverriddenSets = _cardSeriesOverrides?.SelectMany(series => series.Value.Sets ?? []).ToHashSet();
+                
                 await Parallel.ForEachAsync(allCardSets, new ParallelOptions
                 {
                     MaxDegreeOfParallelism = Environment.ProcessorCount,
-                    CancellationToken = cancellationToken
+                    CancellationToken = _cancellationToken
                 }, async (set, token) =>
                 {
                     try
                     {
-                        await handler.ProcessCardSetAsync(set, token);
+                        var setOverride = allOverriddenSets?.FirstOrDefault(s => s.Id == set.Id);
+                        await handler.ProcessCardSetAsync(set, token, setOverride);
                     }
                     catch (Exception ex)
                     {
@@ -70,32 +82,27 @@ public class ImageProcessingCoordinator
         }
         finally
         {
-            // handler.ProgressUpdated -= OnCardSetHandlerProgressUpdated;
             EventBroker.SetHandlingProgressUpdated -= OnCardSetHandlerProgressUpdated;
             EventBroker.FolderPreparationProgressUpdated -= OnFolderPreparerProgressUpdated;
         }
-
-        await CompileSeriesMetadataAsync(cancellationToken);
-        await CleanupNonTrackedFilesAtDestination(cancellationToken);
     }
 
-    private static async Task CompileSeriesMetadataAsync(CancellationToken cancellationToken)
+    public async Task CompileSeriesMetadataAsync()
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        _cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
             var completeMetadata = new Dictionary<CardTier, HashSet<CardSeries>>();
 
-            var outputFolderPath = ConfigurationProvider.Instance.Config.Paths.OutputFolderPath;
-            foreach (var seriesFolder in Directory.EnumerateDirectories(outputFolderPath, "*", SearchOption.AllDirectories))
+            foreach (var seriesFolder in Directory.EnumerateDirectories(_config.Paths.OutputFolderPath, "*", SearchOption.AllDirectories))
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                _cancellationToken.ThrowIfCancellationRequested();
 
-                var seriesMetadataFile = Path.Combine(seriesFolder, "series_metadata.json");
+                var seriesMetadataFile = Path.Combine(seriesFolder, PathSettings.DefaultFilenameForSeriesMetadataJson);
                 if (!File.Exists(seriesMetadataFile)) continue;
 
-                var series = await JsonFileReader.ReadFromJsonAsync<CardSeries>(seriesMetadataFile, cancellationToken);
+                var series = await JsonFileReader.ReadFromJsonAsync<CardSeries>(seriesMetadataFile, _cancellationToken);
 
                 if (!completeMetadata.TryGetValue(series.Tier, out var cardSeries))
                 {
@@ -105,19 +112,18 @@ public class ImageProcessingCoordinator
 
                 foreach (var setFolder in Directory.EnumerateDirectories(seriesFolder, "*", SearchOption.TopDirectoryOnly))
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    _cancellationToken.ThrowIfCancellationRequested();
 
-                    var setMetadataFile = Path.Combine(setFolder, "set_metadata.json");
+                    var setMetadataFile = Path.Combine(setFolder, PathSettings.DefaultFilenameForSetMetadataJson);
                     if (!File.Exists(setMetadataFile)) continue;
 
-                    var set = await JsonFileReader.ReadFromJsonAsync<CardSet>(setMetadataFile, cancellationToken);
+                    var set = await JsonFileReader.ReadFromJsonAsync<CardSet>(setMetadataFile, _cancellationToken);
                     series.Sets ??= [];
                     series.Sets.Add(set);
                 }
             }
 
-            await JsonFileWriter.WriteToJsonAsync(completeMetadata,
-                ConfigurationProvider.Instance.Config.Paths.MasterMetadataFilePath, cancellationToken);
+            await JsonFileWriter.WriteToJsonAsync(completeMetadata, _config.Paths.MasterMetadataFilePath, _cancellationToken);
         }
         catch (Exception ex)
         {
@@ -126,22 +132,20 @@ public class ImageProcessingCoordinator
         }
     }
 
-    private static async Task CleanupNonTrackedFilesAtDestination(CancellationToken cancellationToken)
+    public async Task CleanupNonTrackedFilesAtDestination()
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        _cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
-            var outputFolderPath = ConfigurationProvider.Instance.Config.Paths.OutputFolderPath;
-
-            foreach (var seriesFolder in Directory.EnumerateDirectories(outputFolderPath, "*", SearchOption.AllDirectories))
+            foreach (var seriesFolder in Directory.EnumerateDirectories(_config.Paths.OutputFolderPath, "*", SearchOption.AllDirectories))
             {
                 foreach (var setFolder in Directory.EnumerateDirectories(seriesFolder, "*", SearchOption.TopDirectoryOnly))
                 {
-                    var setMetadataFile = Path.Combine(setFolder, "cards.jsonl");
+                    var setMetadataFile = Path.Combine(setFolder, PathSettings.DefaultFilenameForCardsJsonl);
                     if (!File.Exists(setMetadataFile)) continue;
 
-                    var cards = await JsonFileReader.LoadAllFromJsonLineFileAsync<Card>(setMetadataFile, cancellationToken);
+                    var cards = await JsonFileReader.LoadAllFromJsonLineFileAsync<Card>(setMetadataFile, _cancellationToken);
 
                     var destinations = cards.Select(card => card.DestinationAbsoluteFilePath).ToHashSet();
                     var imagePathsInFolder = ImageFilePathUtility.GetImageFilePathsFromFolder(setFolder, ["*.png", "*.jpg", "*.jpeg", "*.dds"]);
@@ -159,8 +163,7 @@ public class ImageProcessingCoordinator
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            throw;
+            Log.Error(e, "An error occurred while cleaning up non-tracked files at destination");
         }
     }
 
@@ -178,7 +181,7 @@ public class ImageProcessingCoordinator
 
         // Update the progress bar with the corrected ETA
         _progressBarForCardSetHandlers?.Tick(
-            $"Processing all cards: {_progressTrackerForOverallCardSetHandlers.Current}/{_progressTrackerForOverallCardSetHandlers.Total} [ETA: {NameHelper.FormatDuration((long)estimatedTimeLeft)}]"
+            $"Processing all cards: {_progressTrackerForOverallCardSetHandlers.Current}/{_progressTrackerForOverallCardSetHandlers.Total} [ETA: {TextFormattingHelper.FormatDuration((long)estimatedTimeLeft)}]"
         );
 
         // Stop the stopwatch if processing is complete
@@ -200,7 +203,7 @@ public class ImageProcessingCoordinator
 
         // Update the progress bar with the corrected ETA
         _progressBarForFolderPreparer?.Tick(
-            $"Processing all set folders: {_progressTrackerForFolderPreparer.Current}/{_progressTrackerForFolderPreparer.Total} [ETA: {NameHelper.FormatDuration((long)estimatedTimeLeft)}]"
+            $"Processing all set folders: {_progressTrackerForFolderPreparer.Current}/{_progressTrackerForFolderPreparer.Total} [ETA: {TextFormattingHelper.FormatDuration((long)estimatedTimeLeft)}]"
         );
 
         // Stop the stopwatch if processing is complete
@@ -211,5 +214,11 @@ public class ImageProcessingCoordinator
     private static int GetAbsoluteTotalNumberOfCards(HashSet<CardSet> allCardSets)
     {
         return allCardSets.Sum(set => ImageFilePathUtility.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath).Count);
+    }
+
+    public static int GetMaximumNumberOfCardsToProcess(CardTier tier, int numberOfEligibleCards, Config config)
+    {
+        if (numberOfEligibleCards < 0) return 0;
+        return tier == CardTier.Tier4 ? numberOfEligibleCards : (int)Math.Ceiling(numberOfEligibleCards * config.General.ImageSelectionPercentageForSet);
     }
 }

@@ -1,7 +1,6 @@
 using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Helpers;
 using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Models;
 using CardmastersOfTamriel.ImageProcessor.ProgressTracking;
-using CardmastersOfTamriel.ImageProcessor.Providers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
@@ -11,17 +10,28 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class CardSetImageConversionHandler : ICardSetHandler
 {
-    private readonly Config _config = ConfigurationProvider.Instance.Config;
+    private readonly Config _config;
 
-    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken)
+    public CardSetImageConversionHandler(Config config)
+    {
+        _config = config;
+    }
+
+    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken, CardSetBasicMetadata? setOverride = null)
     {
         Log.Information($"Processing Set from Source Path: '{set.SourceAbsoluteFolderPath}'");
 
         set.Cards ??= [];
         set.Cards.Clear();
 
-        var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl");
-        var savedJsonBackupFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, "cards.jsonl.backup");
+        if (setOverride is not null)
+        {
+            Log.Information($"{set.Id}\t'{set.DisplayName}':\tRefreshing data from set override file");
+            set.OverrideWith(setOverride);
+        }
+
+        var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForCardsJsonl);
+        var savedJsonBackupFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForCardsJsonlBackup);
 
         var cardsFromMetadataFile =
             await LoadCardsFromJsonFileAsync(savedJsonFilePath, savedJsonBackupFilePath, cancellationToken);
@@ -65,15 +75,12 @@ public class CardSetImageConversionHandler : ICardSetHandler
         var eligibleFilePathsForConversion = finalCards.Select(card => card.SourceAbsoluteFilePath ?? string.Empty)
             .Where(filePath => !string.IsNullOrWhiteSpace(filePath)).ToHashSet();
 
-        Log.Debug(
-            $"Found {eligibleFilePathsForConversion.Count} eligible images for conversion (no destination specified)");
-        Log.Debug($"MaxSampleSize is {_config.General.MaxSampleSize} and Available Card Count is {finalCards.Count}");
+        Log.Debug($"Found {eligibleFilePathsForConversion.Count} eligible images for conversion (no destination specified) from {finalCards.Count} cards");
 
-        var maximumNumberOfCards = Math.Min(_config.General.MaxSampleSize, finalCards.Count);
+        var maximumNumberOfCards = ImageProcessingCoordinator.GetMaximumNumberOfCardsToProcess(set.Tier, eligibleFilePathsForConversion.Count, _config);
 
         var needMoreRandomCards = cardsAtDestination.Count < maximumNumberOfCards;
-        Log.Debug(
-            $"Maximum Number of Cards: {maximumNumberOfCards} while there are {cardsAtDestination.Count} cards at destination. Need more random cards? {needMoreRandomCards}");
+        Log.Debug($"Maximum Number of Cards: {maximumNumberOfCards} while there are {cardsAtDestination.Count} cards at destination. Need more random cards? {needMoreRandomCards}");
 
         var randomCards = needMoreRandomCards
             ? ImageFilePathUtility.SelectRandomImageFilePaths(maximumNumberOfCards - cardsAtDestination.Count,
@@ -96,7 +103,7 @@ public class CardSetImageConversionHandler : ICardSetHandler
                 randomCards.Contains(info.card.SourceAbsoluteFilePath))
             {
                 Log.Information($"Processing Card {Path.GetFileName(info.card.SourceAbsoluteFilePath)} for conversion");
-                await CardSetImageConversionHelper.ProcessAndUpdateCardForConversion(set, info.card, info.index,
+                await CardSetImageConversionHelper.ProcessAndUpdateCardForConversion(_config, set, info.card, info.index,
                     finalCards.Count, cancellationToken);
             }
             else
@@ -104,7 +111,7 @@ public class CardSetImageConversionHandler : ICardSetHandler
                 if (string.IsNullOrEmpty(info.card.DestinationAbsoluteFilePath))
                 {
                     Log.Verbose($"Card {info.card.Id} was not converted and will be skipped");
-                    CardSetImageConversionHelper.UpdateUnconvertedCard(info.card, (uint)info.index,
+                    CardSetImageConversionHelper.UpdateUnconvertedCard(_config, info.card, (uint)info.index,
                         (uint)finalCards.Count);
                 }
                 else
@@ -115,7 +122,7 @@ public class CardSetImageConversionHandler : ICardSetHandler
                 }
             }
 
-            EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(info.card.SetId));
+            EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(info.card));
         }
     }
 }

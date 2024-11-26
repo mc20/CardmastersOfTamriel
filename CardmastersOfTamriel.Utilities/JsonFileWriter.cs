@@ -40,7 +40,7 @@ public static class JsonFileWriter
         }
     }
 
-    public static async Task AppendDataToFileAsync<T>(T item, string filePath, CancellationToken cancellationToken)
+    public static async Task AppendDataToJsonLineFileAsync<T>(T item, string filePath, CancellationToken cancellationToken)
     {
         try
         {
@@ -60,10 +60,5 @@ public static class JsonFileWriter
             Log.Error(ex, $"Failed to write to file: '{filePath}'");
             throw;
         }
-    }
-
-    public static async Task CreateEmptyJsonFileIfMissing(CancellationToken cancellationToken)
-    {
-
     }
 }

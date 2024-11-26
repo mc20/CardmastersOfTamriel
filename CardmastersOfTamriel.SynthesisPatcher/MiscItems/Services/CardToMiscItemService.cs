@@ -1,3 +1,4 @@
+using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.MiscItems.Factory;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda;
@@ -54,6 +55,11 @@ public class CardToMiscItemService
 
         var kw = card.Tier.ToString().ToUpper().AddModNamePrefix();
         card.Keywords.Add(kw);
+
+        if (card.SeriesId is not null)
+        {
+            card.Keywords.Add(card.SeriesId.ToUpper().AddModNamePrefix());
+        }
 
         if (card.Keywords is not null)
         {

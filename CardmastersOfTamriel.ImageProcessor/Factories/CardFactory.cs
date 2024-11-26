@@ -13,7 +13,7 @@ public static class CardFactory
         {
             var imageIndex = imageInfo.index + 1;
 
-            var newCardId = Path.GetFileNameWithoutExtension(NameHelper.CreateImageFileName(set, (uint)imageIndex));
+            var newCardId = Path.GetFileNameWithoutExtension(NamingHelper.CreateImageFileName(set, (uint)imageIndex));
             var newCard = new Card(newCardId, set.Id)
             {
                 SetDisplayName = set.DisplayName,

@@ -1,6 +1,7 @@
+using System.Runtime.Versioning;
 using CardmastersOfTamriel.SynthesisPatcher.Common.Distribution.Configuration;
+using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Skyrim;
-using Mutagen.Bethesda.Starfield;
 using Mutagen.Bethesda.Synthesis;
 using Serilog;
 
@@ -12,14 +13,24 @@ public class PatcherConfiguration
     public required string LogOutputFilePath { get; set; }
     public required HashSet<DistributionConfiguration> DistributionConfigurations { get; set; }
 
-    public void ApplyInternalFilePaths(IPatcherState<IStarfieldMod, IStarfieldModGetter> state)
+    [SupportedOSPlatform("windows7.0")]
+    public void ApplyInternalFilePaths<TMod, TModGetter>(IPatcherState<TMod, TModGetter> state)
+            where TMod : class, TModGetter, IMod
+            where TModGetter : class, IModGetter
     {
-        
+        MasterMetadataFilePath = state.RetrieveInternalFile(MasterMetadataFilePath);
+        LogOutputFilePath = state.RetrieveInternalFile(LogOutputFilePath);
+
+        foreach (var config in DistributionConfigurations)
+        {
+            config.DistributionFilePath = state.RetrieveInternalFile(config.DistributionFilePath);
+            config.CollectorConfigFilePaths = [.. config.CollectorConfigFilePaths.Select(state.RetrieveInternalFile)];
+        }
     }
-    
+
+    [SupportedOSPlatform("windows7.0")]
     public void ApplyInternalFilePaths(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
     {
-
         MasterMetadataFilePath = state.RetrieveInternalFile(MasterMetadataFilePath);
         LogOutputFilePath = state.RetrieveInternalFile(LogOutputFilePath);
 
@@ -53,7 +64,7 @@ public class PatcherConfiguration
             .Select(g => g.Key)
             .ToList();
 
-        if (duplicateTargets.Any())
+        if (duplicateTargets.Count != 0)
         {
             throw new InvalidOperationException(
                 $"Duplicate TargetNames found: {string.Join(", ", duplicateTargets)}");

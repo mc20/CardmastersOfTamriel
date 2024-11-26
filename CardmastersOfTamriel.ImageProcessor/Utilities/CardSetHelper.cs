@@ -6,15 +6,21 @@ namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public static partial class CardSetHelper
 {
-    public static void GroupAndNormalizeFolderNames(string setSourceFolderPath,
+    public static HashSet<string> GroupAndNormalizeFolderNames(string setSourceFolderPath,
         Dictionary<string, List<string>> groupedFolders)
     {
+        var anomalies = new HashSet<string>();
+
         var originalFolderName = Path.GetFileName(setSourceFolderPath);
         var folderPattern = MyRegex();
         var match = folderPattern.Match(originalFolderName);
 
-        if (!match.Success) return;
-        var uniqueFolderName = NameHelper.NormalizeName(match.Groups[1].Value);
+        if (!match.Success)
+        {
+            anomalies.Add(setSourceFolderPath);
+        };
+
+        var uniqueFolderName = NamingHelper.NormalizeName(match.Groups[1].Value);
 
         Log.Verbose($"Normalized name of '{setSourceFolderPath}' determined to be '{uniqueFolderName}'");
 
@@ -26,6 +32,8 @@ public static partial class CardSetHelper
         {
             groupedFolders[uniqueFolderName] = [setSourceFolderPath];
         }
+
+        return anomalies;
     }
 
     [GeneratedRegex(@"^([a-zA-Z]+(?:[ _][a-zA-Z]+)*)", RegexOptions.IgnoreCase, "en-CA")]

@@ -1,7 +1,7 @@
 using CardmastersOfTamriel.Models;
 using Noggog;
 
-namespace CardmastersOfTamriel.SynthesisPatcher.Collectors.Configuration.Models;
+namespace CardmastersOfTamriel.SynthesisPatcher.Collectors.Models;
 
 public interface ICollectorConfig
 {
