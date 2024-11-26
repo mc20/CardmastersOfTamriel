@@ -9,7 +9,8 @@ public class Config
 
 public class GeneralSettings
 {
-    public required double ImageSelectionPercentageForSet { get; set; }
+    public required double MaximumImageSelectionPercentageForSet { get; set; }
+    public required int MinimumImageSelectionCountForSet { get; set; }
     public required HashSet<string> DefaultMiscItemKeywords { get; set; }
 }
 

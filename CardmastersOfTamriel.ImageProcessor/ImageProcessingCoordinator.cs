@@ -216,9 +216,13 @@ public class ImageProcessingCoordinator
         return allCardSets.Sum(set => ImageFilePathUtility.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath).Count);
     }
 
-    public static int GetMaximumNumberOfCardsToProcess(CardTier tier, int numberOfEligibleCards, Config config)
+    public static int GetMaximumNumberOfCardsToInclude(CardTier tier, int totalNumberOfCards, Config config)
     {
-        if (numberOfEligibleCards < 0) return 0;
-        return tier == CardTier.Tier4 ? numberOfEligibleCards : (int)Math.Ceiling(numberOfEligibleCards * config.General.ImageSelectionPercentageForSet);
+        if (totalNumberOfCards < 0) return 0;
+        
+        var calculatedMaximumNumberOfCards = (int)Math.Ceiling(totalNumberOfCards * config.General.MaximumImageSelectionPercentageForSet);
+        if (calculatedMaximumNumberOfCards <= config.General.MinimumImageSelectionCountForSet) return config.General.MinimumImageSelectionCountForSet;
+        
+        return tier == CardTier.Tier4 ? totalNumberOfCards : calculatedMaximumNumberOfCards;
     }
 }

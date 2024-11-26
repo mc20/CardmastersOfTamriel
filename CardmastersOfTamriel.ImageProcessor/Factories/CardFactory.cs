@@ -19,7 +19,7 @@ public static class CardFactory
                 SetDisplayName = set.DisplayName,
                 SeriesId = set.SeriesId,
                 Shape = null,
-                ConversionDate = DateTime.UtcNow,
+                ConversionDate = DateTime.Now,
                 DisplayName = null,
                 DisplayedIndex = 0,
                 DisplayedTotalCount = 0,

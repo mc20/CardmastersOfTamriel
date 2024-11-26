@@ -11,7 +11,7 @@ public static class CommandLineParser
         ["--updatecounts"] = CommandMode.UpdateCardSetCount
     };
 
-    private static readonly Dictionary<CommandMode, string> CommandHelp = new()
+    public static readonly Dictionary<CommandMode, string> CommandHelp = new()
     {
         [CommandMode.Convert] = "Convert images to DDS format",
         [CommandMode.Rebuild] = "Rebuild all metadata",

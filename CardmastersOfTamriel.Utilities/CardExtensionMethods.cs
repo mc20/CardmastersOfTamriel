@@ -7,16 +7,18 @@ public static class CardExtensionMethods
     public static HashSet<Card> ConsolidateCardsWith(this IEnumerable<Card> list1, IEnumerable<Card> list2)
     {
         var cardMap = new Dictionary<string, Card>();
+
         foreach (var card in list1)
         {
             cardMap[card.Id] = card;
         }
-
+        
         foreach (var card in list2)
         {
-            if (cardMap.TryGetValue(card.Id, out var value))
+            if (cardMap.TryGetValue(card.Id, out var existingCard))
             {
-                if (string.IsNullOrEmpty(value.DestinationAbsoluteFilePath))
+                // Update only if DestinationAbsoluteFilePath is empty or null in the existing card.
+                if (string.IsNullOrEmpty(existingCard.DestinationAbsoluteFilePath))
                 {
                     cardMap[card.Id] = card;
                 }
@@ -27,7 +29,7 @@ public static class CardExtensionMethods
             }
         }
 
-        return [.. cardMap.Values];
+        return cardMap.Values.ToHashSet();
     }
 }
 

@@ -19,9 +19,9 @@ public class Program
 
             var config = GetConfiguration();
 
-            if (!Directory.Exists(config?.Paths?.OutputFolderPath))
+            if (!Directory.Exists(config.Paths.OutputFolderPath))
             {
-                var ex = new InvalidOperationException($"Output folder does not exist: '{config?.Paths?.OutputFolderPath}'");
+                var ex = new InvalidOperationException($"Output folder does not exist: '{config.Paths.OutputFolderPath}'");
                 Console.WriteLine(ex.ToString());
                 Log.Fatal(ex, "Exiting");
                 throw ex;
@@ -30,7 +30,7 @@ public class Program
             // Relies on OutputFolderPath being set
             SetupLogging(config);
 
-            Log.Verbose($"User entered arguments {string.Join(", ", args)}");
+            Log.Information($"User entered arguments {string.Join(", ", args)}");
 
             if (!CommandLineParser.TryParseCommand(args, out var mode))
             {
@@ -48,7 +48,7 @@ public class Program
                 Log.Warning("Invalid JSON files:");
                 foreach (var (filePath, message) in JsonFileReader.InvalidJsonFilesDictionary)
                 {
-                    Log.Warning($"  {filePath}: {message}");
+                    Log.Warning($"{filePath}: {message}");
                 }
             }
         }
@@ -101,6 +101,9 @@ public class Program
 
         if (handler is not null)
         {
+            Log.Information($"User selected command: {mode} - {CommandLineParser.CommandHelp[mode]}");
+            Log.Information($"Date: {DateTime.Now}");
+            
             var cts = new CancellationTokenSource();
 
             var overrides = await LoadOverridesAsync(config.Paths.SetMetadataOverrideFilePath, cts.Token);

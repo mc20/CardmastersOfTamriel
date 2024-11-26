@@ -8,13 +8,13 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Models;
 
 public class CardSetImageConversionData
 {
-    public readonly HashSet<Card> CardsAtDestination;
-    public readonly List<Card> FinalCards;
+    public readonly HashSet<Card> CardsOnlyAtDestination;
+    public readonly List<Card> ConsolidatedCardsFromDestinationAndSource;
 
-    private CardSetImageConversionData(HashSet<Card> cardsAtDestination, List<Card> finalCards)
+    private CardSetImageConversionData(HashSet<Card> cardsOnlyAtDestination, List<Card> consolidatedCardsFromDestinationAndSource)
     {
-        CardsAtDestination = cardsAtDestination;
-        FinalCards = finalCards;
+        CardsOnlyAtDestination = cardsOnlyAtDestination;
+        ConsolidatedCardsFromDestinationAndSource = consolidatedCardsFromDestinationAndSource;
     }
 
     public static CardSetImageConversionData Load(CardSet set, HashSet<Card> cardsFromMetadataFile, CancellationToken cancellationToken)

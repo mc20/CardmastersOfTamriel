@@ -10,7 +10,7 @@ public static class TextureSetFactory
 {
     public static TextureSet CreateTextureSet(ISkyrimMod skyrimMod, Card card)
     {
-        var editorId = $"TextureSet_SERIES_{card.SeriesId}_CARD_{card.Id}".AddModNamePrefix();
+        var editorId = $"TextureSet_{card.Id}".AddModNamePrefix();
         var textureSet = skyrimMod.TextureSets.AddNewWithId(editorId);
         textureSet.Diffuse = @$"CardmastersOfTamriel\{card.DestinationRelativeFilePath}";
         textureSet.NormalOrGloss = card.GetNormalOrGloss();

@@ -60,7 +60,7 @@ public static partial class NamingHelper
 
         return name;
     }
-
+    
     public static string? CreateKeyword(CardSeries cardSeries)
     {
         return cardSeries.DisplayName is null ? null : NormalizeName(cardSeries.DisplayName).AddModNamePrefix();

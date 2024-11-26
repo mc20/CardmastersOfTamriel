@@ -151,7 +151,7 @@ public class ImageConverter
             process.OutputDataReceived += (sender, args) =>
             {
                 if (!string.IsNullOrEmpty(args.Data))
-                    Log.Information(args.Data);
+                    Log.Verbose(args.Data);
             };
 
             process.Start();

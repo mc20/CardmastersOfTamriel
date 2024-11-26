@@ -14,7 +14,7 @@ public static class CardSetImageConversionHelper
         var result = await ConvertAndSaveImageAsync(config, set, card.SourceAbsoluteFilePath ?? string.Empty,
             NamingHelper.CreateImageFileName(set, (uint)index + 1), cancellationToken);
 
-        card.ConversionDate = DateTime.UtcNow;
+        card.ConversionDate = DateTime.Now;
         card.Shape = result.Shape;
         card.DisplayName = null;
         card.DestinationAbsoluteFilePath = result.DestinationAbsoluteFilePath;

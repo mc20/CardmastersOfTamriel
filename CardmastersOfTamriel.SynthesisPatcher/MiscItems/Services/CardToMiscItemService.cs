@@ -1,6 +1,5 @@
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.MiscItems.Factory;
-using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
@@ -12,12 +11,14 @@ public class CardToMiscItemService
 {
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _customMod;
+    private readonly Dictionary<string, string> _keywordsBySeries;
 
-
-    public CardToMiscItemService(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
+    public CardToMiscItemService(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod,
+        Dictionary<string, string> keywordsBySeries)
     {
         _state = state;
         _customMod = customMod;
+        _keywordsBySeries = keywordsBySeries;
     }
 
     /// <summary>
@@ -38,7 +39,7 @@ public class CardToMiscItemService
 
 
             miscItems.Add(card, miscItem);
-            Log.Verbose($"Inserted MiscItem: {miscItem.EditorID}");
+            Log.Debug($"Inserted MiscItem: {miscItem.EditorID}");
         }
 
         return miscItems;
@@ -53,16 +54,16 @@ public class CardToMiscItemService
 
         card.Keywords ??= [];
 
-        var kw = card.Tier.ToString().ToUpper().AddModNamePrefix();
-        card.Keywords.Add(kw);
-
-        if (card.SeriesId is not null)
+        if (_keywordsBySeries.TryGetValue(card.SetId, out var value))
         {
-            card.Keywords.Add(card.SeriesId.ToUpper().AddModNamePrefix());
+            Log.Debug($"Adding keyword {value} to MiscItem: {newMiscItem.EditorID}");
+            card.Keywords.Add(value);
         }
 
-        if (card.Keywords is not null)
+
+        if (card.Keywords.Count != 0)
         {
+            Log.Debug($"Adding {card.Keywords.Count} keywords to MiscItem: {newMiscItem.EditorID}");
             AddKeywordsToMiscItem(newMiscItem, card.Keywords);
         }
 

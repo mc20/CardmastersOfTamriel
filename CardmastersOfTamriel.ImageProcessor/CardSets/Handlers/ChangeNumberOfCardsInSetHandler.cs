@@ -74,12 +74,13 @@ public class ChangeNumberOfCardsInSetHandler : ICardSetHandler
         var cardsWithRelativePaths = cards.Where(c => !string.IsNullOrEmpty(c.DestinationRelativeFilePath)).ToHashSet();
 
         // Make sure we don't exceed the max sample size but respect unlimited card set sizes
-        var maximumNumberOfCards = set.Tier == CardTier.Tier4 ? cards.Count : (int)Math.Ceiling(cards.Count * config.General.ImageSelectionPercentageForSet);
-        Log.Debug($"{set.Id}\tChecking if the number of cards exceeds the maximum sample size of {maximumNumberOfCards}.. (current count: {cardsWithRelativePaths.Count})");
+        var maximumNumberOfCards =
+            ImageProcessingCoordinator.GetMaximumNumberOfCardsToInclude(set.Tier, cards.Count, config);
+        Log.Information($"{set.Id}\tChecking if the number of cards exceeds the maximum sample size of {maximumNumberOfCards}.. (current count: {cardsWithRelativePaths.Count})");
 
         if (cardsWithRelativePaths.Count > maximumNumberOfCards)
         {
-            Log.Warning($"{set.Id}\tPruning cards to {maximumNumberOfCards} from {cardsWithRelativePaths.Count}");
+            Log.Information($"{set.Id}\tPruning cards to {maximumNumberOfCards} from {cardsWithRelativePaths.Count}");
 
             var random = new Random();
             var newRandomCardSelections = cardsWithRelativePaths.OrderBy(c => random.Next()).Take(maximumNumberOfCards).ToHashSet();

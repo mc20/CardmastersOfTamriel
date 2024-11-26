@@ -48,7 +48,8 @@ public class Program
             return;
         }
 
-        var patcherConfigJson = JsonSerializer.Serialize(patcherConfig, new JsonSerializerOptions { WriteIndented = true });
+        var patcherConfigJson =
+            JsonSerializer.Serialize(patcherConfig, new JsonSerializerOptions { WriteIndented = true });
         Console.WriteLine("Patcher Configuration:");
         Console.WriteLine(patcherConfigJson);
 
@@ -78,16 +79,20 @@ public class Program
         var cancellationSource = new CancellationTokenSource();
 
         KeywordHelper.AddStandardKeywords(customMod);
-        await KeywordHelper.AddUniqueSeriesNamesAsKeywordsAsync(patcherConfig, state, customMod, cancellationSource.Token);
+        var keywordsBySeries =
+            await KeywordHelper.AddUniqueSeriesNamesAsKeywordsAsync(patcherConfig, state, customMod,
+                cancellationSource.Token);
 
         // Creating card to leveled item mapping
         Log.Information("Creating card to leveled item mapping..");
-        var cardService = new CardLeveledItemService(patcherConfig, state, customMod);
-        var cardTierToLeveledItemMapping = await cardService.CreateCardTierToLeveledItemMappingAsync(cancellationSource.Token);
+        var cardService = new CardLeveledItemService(patcherConfig, state, customMod, keywordsBySeries);
+        var cardTierToLeveledItemMapping =
+            await cardService.CreateCardTierToLeveledItemMappingAsync(cancellationSource.Token);
 
         var mappingService = new CollectorProbabilityMappingService(customMod, cardTierToLeveledItemMapping);
 
-        var distributor = new CardCollectionDistributor(state, customMod, mappingService, patcherConfig, cancellationSource.Token);
+        var distributor =
+            new CardCollectionDistributor(state, customMod, mappingService, patcherConfig, cancellationSource.Token);
         await distributor.DistributeToCollectorsInWorldAsync<LeveledItem>();
         await distributor.DistributeToCollectorsInWorldAsync<Container>();
         await distributor.DistributeToCollectorsInWorldAsync<Npc>();
@@ -114,7 +119,9 @@ public class Program
         File.Delete(appConfig.LogOutputFilePath);
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
+            .MinimumLevel.Information()
+            // .MinimumLevel.Verbose()
+            // .MinimumLevel.Debug()
             .WriteTo.File(appConfig.LogOutputFilePath)
             .WriteTo.Console()
             .WriteTo.Debug()
@@ -138,7 +145,7 @@ public class Program
         }
 
         if (duplicates.Count == 0) return;
-        
+
         Log.Error("Duplicate FormKeys found:");
         foreach (var dup in duplicates)
         {
