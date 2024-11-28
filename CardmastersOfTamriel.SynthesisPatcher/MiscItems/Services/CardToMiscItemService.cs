@@ -1,5 +1,6 @@
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.MiscItems.Factory;
+using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
@@ -11,14 +12,11 @@ public class CardToMiscItemService
 {
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _customMod;
-    private readonly Dictionary<string, string> _keywordsBySeries;
 
-    public CardToMiscItemService(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod,
-        Dictionary<string, string> keywordsBySeries)
+    public CardToMiscItemService(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
     {
         _state = state;
         _customMod = customMod;
-        _keywordsBySeries = keywordsBySeries;
     }
 
     /// <summary>
@@ -51,15 +49,10 @@ public class CardToMiscItemService
         var textureSetForWorldModel = TextureSetFactory.CreateTextureSet(_customMod, card);
 
         newMiscItem.Model = ModelFactory.CreateModel(card, textureSetForWorldModel);
+        
+        
 
         card.Keywords ??= [];
-
-        if (_keywordsBySeries.TryGetValue(card.SetId, out var value))
-        {
-            Log.Debug($"Adding keyword {value} to MiscItem: {newMiscItem.EditorID}");
-            card.Keywords.Add(value);
-        }
-
 
         if (card.Keywords.Count != 0)
         {

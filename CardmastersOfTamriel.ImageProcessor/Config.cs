@@ -1,8 +1,11 @@
+using CardmastersOfTamriel.Models;
+
 namespace CardmastersOfTamriel.ImageProcessor;
 
 public class Config
 {
     public required GeneralSettings General { get; init; }
+    public required DefaultValues Defaults { get; init; }
     public required PathSettings Paths { get; init; }
     public required ImageProperties ImageProperties { get; init; }
 }
@@ -11,7 +14,14 @@ public class GeneralSettings
 {
     public required double MaximumImageSelectionPercentageForSet { get; set; }
     public required int MinimumImageSelectionCountForSet { get; set; }
+}
+
+public class DefaultValues
+{
+    public bool AlwaysIncludeSeriesKeyword { get; set; }
     public required HashSet<string> DefaultMiscItemKeywords { get; set; }
+    public required Dictionary<CardTier, uint?> DefaultCardValues { get; set; }
+    public required Dictionary<CardTier, float?> DefaultCardWeights { get; set; }
 }
 
 public class PathSettings

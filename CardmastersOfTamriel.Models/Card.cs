@@ -1,6 +1,6 @@
 namespace CardmastersOfTamriel.Models;
 
-public class Card : IEquatable<Card>, IIdentifiable
+public class Card : IEquatable<Card>
 {
     // Immutable identity properties (used for hash code)
     public Card(string id, string setId)
@@ -27,9 +27,11 @@ public class Card : IEquatable<Card>, IIdentifiable
     public uint Value { get; set; }
     public float Weight { get; set; }
     public HashSet<string>? Keywords { get; set; }
-    public string? SourceAbsoluteFilePath { get; set; }
+    public required string SourceAbsoluteFilePath { get; init; }
     public string? DestinationAbsoluteFilePath { get; set; }
     public string? DestinationRelativeFilePath { get; set; }
+    
+    public string? SourceHash { get; set; }
 
     public void SetGenericDisplayName()
     {

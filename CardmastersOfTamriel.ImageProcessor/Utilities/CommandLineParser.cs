@@ -8,16 +8,18 @@ public static class CommandLineParser
         ["--convert"] = CommandMode.Convert,
         ["--overridesets"] = CommandMode.OverrideSetData,
         ["--recompile"] = CommandMode.RecompileMasterMetadata,
-        ["--updatecounts"] = CommandMode.UpdateCardSetCount
+        ["--updatecounts"] = CommandMode.UpdateCardSetCount,
+        ["--passthrough"] = CommandMode.Passthrough
     };
 
     public static readonly Dictionary<CommandMode, string> CommandHelp = new()
     {
         [CommandMode.Convert] = "Convert images to DDS format",
-        [CommandMode.Rebuild] = "Rebuild all metadata",
-        [CommandMode.OverrideSetData] = "Refresh card sets",
-        [CommandMode.RecompileMasterMetadata] = "Recompile master metadata",
-        [CommandMode.UpdateCardSetCount] = "Updates metadata to reflect change in card set sample size"
+        [CommandMode.Rebuild] = "Rebuild all metadata including seies, sets, and cards",
+        [CommandMode.OverrideSetData] = "Replaces card metadata with specific override data",
+        [CommandMode.RecompileMasterMetadata] = "Read all metadata files and recompile them into the master metadata file",
+        [CommandMode.UpdateCardSetCount] = "Updates metadata to reflect change in card set sample size",
+        [CommandMode.Passthrough] = "Starts the coordination but no processing is done on the sets",
     };
 
     public static bool TryParseCommand(string[] args, out CommandMode mode)

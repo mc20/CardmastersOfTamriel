@@ -1,13 +1,23 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text.Json;
 using CardmastersOfTamriel.Models;
+using CardmastersOfTamriel.Utilities;
 using Serilog;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using QRCoder;
 
 namespace CardmastersOfTamriel.ImageProcessor.Utilities;
+
+public class SourceImageData
+{
+    public required CardShape Shape { get; set; }
+    public required string SourceRelativeFilePath { get; set; }
+}
 
 public class ImageConverter
 {
@@ -20,7 +30,15 @@ public class ImageConverter
     }
 
     private static readonly ConcurrentBag<string> TempFiles = [];
-
+    
+    // private static string ComputeImageHash(string filePath)
+    // {
+    //     using var sha256 = SHA256.Create();
+    //     using var fileStream = File.OpenRead(filePath);
+    //     var hashBytes = sha256.ComputeHash(fileStream);
+    //     return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+    // }
+    
     public async Task<CardShape> ConvertImageAndSaveToDestinationAsync(CardTier cardTier,
         string srcImagePath,
         string destImagePath,
@@ -29,7 +47,10 @@ public class ImageConverter
     {
         Log.Verbose($"Converting image from '{srcImagePath}' to DDS format at '{destImagePath}'");
         var imageShape = CardShapeHelper.DetermineOptimalShape(_config, srcImagePath);
-
+        
+        // var imageHash = ComputeImageHash(srcImagePath);
+        // Log.Verbose($"Image hash: {imageHash}");
+        
         using var image = await Task.Run(() => Image.Load<Rgba32>(srcImagePath), cancellationToken);
         TransformImage(image, imageShape);
 
@@ -37,9 +58,17 @@ public class ImageConverter
         using var templateCopy = template.Clone();
 
         SuperimposeImageOntoTemplate(image, templateCopy);
-
+        
         ImageResizer.ResizeImageToHeight(templateCopy, _config.ImageProperties.MaximumTextureHeight);
-
+        
+        // var data = new SourceImageData
+        // {
+        //     Shape = imageShape,
+        //     SourceRelativeFilePath = FilePathHelper.GetRelativePath(srcImagePath, cardTier)
+        // };
+        //
+        // SuperimposeImageOntoTemplateAfterResize(templateCopy, data);
+        
         var tempOutputPath = await SaveAsTemporaryPngAsync(templateCopy, cancellationToken);
         TempFiles.Add(tempOutputPath);
 
@@ -105,12 +134,36 @@ public class ImageConverter
 
         return await Task.Run(() => Image.Load<Rgba32>(templateImagePath), cancellationToken);
     }
-
+    
     private void SuperimposeImageOntoTemplate(Image<Rgba32> image, Image<Rgba32> templateCopy)
     {
         templateCopy.Mutate(x => x.DrawImage(image, _config.ImageProperties.Offset.ToImageSharpPoint(), 1f));
     }
 
+    private static void SuperimposeImageOntoTemplateAfterResize(Image<Rgba32> resizedImage, SourceImageData data)
+    {
+        resizedImage.Mutate(x =>
+        {
+            var qrImage = GenerateQrCodeImage(data);
+            const int padding = 20;
+            var qrPosition = new Point(resizedImage.Width - qrImage.Width - padding, resizedImage.Height - qrImage.Height - padding);
+            x.DrawImage(qrImage, qrPosition, 1f);
+        });
+    }
+    
+    private static Image<Rgba32> GenerateQrCodeImage(SourceImageData data)
+    {
+        var payload = JsonSerializer.Serialize(data);
+        using var qrGenerator = new QRCodeGenerator();
+        using var qrCodeData = qrGenerator.CreateQrCode(payload, QRCodeGenerator.ECCLevel.Q);
+        using var qrCode = new PngByteQRCode(qrCodeData);
+
+        var qrPngBytes = qrCode.GetGraphic(3);
+            
+        using var qrBitmapStream = new MemoryStream(qrPngBytes);
+        return Image.Load<Rgba32>(qrBitmapStream);
+    }
+    
     private static async Task<string> SaveAsTemporaryPngAsync(Image<Rgba32> templateCopy, CancellationToken cancellationToken)
     {
         var tempOutputPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".png");

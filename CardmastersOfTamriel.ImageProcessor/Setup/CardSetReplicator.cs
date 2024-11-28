@@ -87,13 +87,13 @@ public class CardSetReplicator
         if (newCardSetMetadata is null)
         {
             var newSetId = $"{setFolderName}-{Guid.NewGuid()}";
-            newCardSetMetadata = CardSetFactory.CreateNewSet(newSetId, setFolderName, _series, _config.General.DefaultMiscItemKeywords);
+            newCardSetMetadata = CardSetFactory.CreateNewSet(newSetId, setFolderName, _series);
             newCardSetMetadata.Tier = _series.Tier;
-            newCardSetMetadata.DefaultKeywords = _series.DefaultKeywords;
         }
 
-        // Ensure there's a properly formatted Set DisplayName
+        // Ensure there's a properly formatted Set DisplayName and series keyword
         newCardSetMetadata.DisplayName = NamingHelper.FormatDisplayNameFromFolderName(setFolderName);
+        newCardSetMetadata.SeriesKeyword = NamingHelper.CreateKeyword(_series);
         newCardSetMetadata.SourceAbsoluteFolderPath = sourceSetPath;
         newCardSetMetadata.DestinationRelativeFolderPath = FilePathHelper.GetRelativePath(destinationSetFolderPath, newCardSetMetadata.Tier);
         newCardSetMetadata.DestinationAbsoluteFolderPath = destinationSetFolderPath;

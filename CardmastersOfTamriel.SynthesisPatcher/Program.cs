@@ -79,13 +79,12 @@ public class Program
         var cancellationSource = new CancellationTokenSource();
 
         KeywordHelper.AddStandardKeywords(customMod);
-        var keywordsBySeries =
-            await KeywordHelper.AddUniqueSeriesNamesAsKeywordsAsync(patcherConfig, state, customMod,
-                cancellationSource.Token);
+        await KeywordHelper.AddUniqueSeriesNamesAsKeywordsAsync(patcherConfig, state, customMod,
+            cancellationSource.Token);
 
         // Creating card to leveled item mapping
         Log.Information("Creating card to leveled item mapping..");
-        var cardService = new CardLeveledItemService(patcherConfig, state, customMod, keywordsBySeries);
+        var cardService = new CardLeveledItemService(patcherConfig, state, customMod);
         var cardTierToLeveledItemMapping =
             await cardService.CreateCardTierToLeveledItemMappingAsync(cancellationSource.Token);
 

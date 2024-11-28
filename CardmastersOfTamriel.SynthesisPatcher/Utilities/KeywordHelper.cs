@@ -23,13 +23,11 @@ public static class KeywordHelper
         }
     }
 
-    public static async Task<Dictionary<string, string>> AddUniqueSeriesNamesAsKeywordsAsync(
+    public static async Task AddUniqueSeriesNamesAsKeywordsAsync(
         PatcherConfiguration patcherConfig,
         IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod, CancellationToken cancellationToken)
     {
         Log.Information("Adding card series keywords to mod..");
-
-        var keywordsBySeries = new Dictionary<string, string>();
 
         var metadataFilePath = patcherConfig.MasterMetadataFilePath =
             state.RetrieveInternalFile(patcherConfig.MasterMetadataFilePath);
@@ -53,11 +51,6 @@ public static class KeywordHelper
             Log.Debug("Adding keyword: {Keyword}", keyword);
             _ = customMod.Keywords.AddNewWithId(keyword);
 
-            foreach (var set in cs.Sets ?? [])
-            {
-                keywordsBySeries[set.Id] = keyword;
-            }
-
             // Add a rule for the Inventory Injector configuration
             rules.Add(new Rule
             {
@@ -74,11 +67,6 @@ public static class KeywordHelper
             });
         }
 
-        foreach (var (key, value) in keywordsBySeries)
-        {
-            Log.Debug("Mapped CardSet {SetId} to keyword {Keyword}", key, value);
-        }
-
         // Generate the Inventory Injector configuration file
         var config = new InventoryInjectorConfig
         {
@@ -91,7 +79,5 @@ public static class KeywordHelper
         await JsonFileWriter.WriteToJsonAsync(config, jsonFilePath, cancellationToken);
 
         Log.Information("Inventory Injector configuration file saved to {FilePath}", jsonFilePath);
-
-        return keywordsBySeries;
     }
 }

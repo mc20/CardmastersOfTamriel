@@ -8,6 +8,6 @@ public struct ConversionResult
     {
     }
 
-    public CardShape? Shape { get; init; } = null;
-    public string? DestinationAbsoluteFilePath { get; init; } = string.Empty;
+    public required CardShape Shape { get; init; }
+    public required string DestinationAbsoluteFilePath { get; init; }
 }

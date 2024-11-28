@@ -12,20 +12,11 @@ public static class MiscItemFactory
         var editorId = $"MiscItem_{card.Id}".AddModNamePrefix();
         var newMiscItem = skyrimMod.MiscItems.AddNewWithId(editorId);
         newMiscItem.Name = card.DisplayName;
-        newMiscItem.Value = card.Value == 0 ? GetDefaultValue(card) : card.Value;
+        newMiscItem.Value = card.Value;
         newMiscItem.Weight = card.Weight;
 
         Log.Verbose($"Added MiscItem {newMiscItem.EditorID} with Name: '{newMiscItem.Name}'");
 
         return newMiscItem;
     }
-
-    private static uint GetDefaultValue(Card card) => card.Tier switch
-    {
-        CardTier.Tier1 => 10,
-        CardTier.Tier2 => 75,
-        CardTier.Tier3 => 150,
-        CardTier.Tier4 => 250,
-        _ => 1000
-    };
 }

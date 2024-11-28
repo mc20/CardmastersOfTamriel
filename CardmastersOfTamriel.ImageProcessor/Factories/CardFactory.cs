@@ -3,10 +3,9 @@ using CardmastersOfTamriel.Utilities;
 
 namespace CardmastersOfTamriel.ImageProcessor.Factories;
 
-public static class CardFactory
+public class CardFactory(Config config)
 {
-    public static HashSet<Card> CreateCardsFromImagesAtFolderPath(CardSet set, HashSet<string> imageFilePaths,
-        bool recordFilePathAsSource = true)
+    public HashSet<Card> CreateCardsFromImagesAtFolderPath(CardSet set, HashSet<string> imageFilePaths)
     {
         var cards = new HashSet<Card>();
         foreach (var imageInfo in imageFilePaths.Select((path, index) => new { filePath = path, index }))
@@ -25,13 +24,15 @@ public static class CardFactory
                 DisplayedTotalCount = 0,
                 Description = null,
                 Tier = set.Tier,
-                Value = set.DefaultValue,
-                Weight = set.DefaultWeight,
-                Keywords = set.DefaultKeywords,
-                SourceAbsoluteFilePath = recordFilePathAsSource ? imageInfo.filePath : null,
-                DestinationAbsoluteFilePath = recordFilePathAsSource ? null : imageInfo.filePath,
+                Value = config.Defaults.DefaultCardValues.TryGetValue(set.Tier, out var value) ? value ?? 0 : 0,
+                Weight = config.Defaults.DefaultCardWeights.GetValueOrDefault(set.Tier) ?? 0,
+                Keywords = config.Defaults.DefaultMiscItemKeywords.ToHashSet(),
+                SourceAbsoluteFilePath = imageInfo.filePath,
+                DestinationAbsoluteFilePath = null,
                 DestinationRelativeFilePath = null,
             };
+            
+            if (!string.IsNullOrEmpty(set.SeriesKeyword)) newCard.Keywords.Add(set.SeriesKeyword);
 
             cards.Add(newCard);
         }

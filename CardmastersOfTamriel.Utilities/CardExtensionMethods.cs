@@ -12,7 +12,7 @@ public static class CardExtensionMethods
         {
             cardMap[card.Id] = card;
         }
-        
+
         foreach (var card in list2)
         {
             if (cardMap.TryGetValue(card.Id, out var existingCard))
@@ -31,25 +31,37 @@ public static class CardExtensionMethods
 
         return cardMap.Values.ToHashSet();
     }
-}
 
-public static class CardSeriesExtensionMethods
-{
-    public static void OverrideWith(this CardSeries series, CardSeriesBasicMetadata seriesOverride)
+    /// <summary>
+    /// Overwrites the properties of the card with the provided override data values if override data is not null.
+    /// </summary>
+    /// <param name="card">The card to be overwritten.</param>
+    /// <param name="data">The data containing the values to overwrite the card's properties.</param>
+    public static bool OverwriteWith(this Card card, CardOverrideData data)
     {
-        series.DisplayName = seriesOverride.DisplayName;
-        series.Description = seriesOverride.Description;
-        series.DefaultKeywords = seriesOverride.DefaultKeywords;
-    }
-}
+        var isOverwritten = false;
+        if (data.ValueToOverwriteEachCardValue.HasValue && card.Value != data.ValueToOverwriteEachCardValue.Value)
+        {
+            card.Value = data.ValueToOverwriteEachCardValue.Value;
+            isOverwritten = true;
+        }
 
-public static class CardSetExtensionMethods
-{
-    public static void OverrideWith(this CardSet set, CardSetBasicMetadata setOverride)
-    {
-        set.DisplayName = setOverride.DisplayName;
-        set.DefaultValue = setOverride.DefaultValue;
-        set.DefaultWeight = setOverride.DefaultWeight;
-        set.DefaultKeywords = setOverride.DefaultKeywords;
+        if (data.ValueToOverwriteEachCardWeight.HasValue && card.Weight != data.ValueToOverwriteEachCardWeight.Value)
+        {
+            card.Weight = data.ValueToOverwriteEachCardWeight.Value;
+            isOverwritten = true;
+        }
+        
+        if (data.KeywordsToOverwriteEachCardKeywords != null && card.Keywords is not null)
+        {
+            var differences = data.KeywordsToOverwriteEachCardKeywords.Except(card.Keywords).Union(card.Keywords.Except(data.KeywordsToOverwriteEachCardKeywords));
+            if (differences.Any())
+            {
+                card.Keywords = data.KeywordsToOverwriteEachCardKeywords.ToHashSet();
+                isOverwritten = true;
+            }
+        }
+
+        return isOverwritten;
     }
 }

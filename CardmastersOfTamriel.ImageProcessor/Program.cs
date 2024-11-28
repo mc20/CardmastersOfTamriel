@@ -1,8 +1,7 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Text.Json;
 using CardmastersOfTamriel.ImageProcessor.CardSets;
 using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
-using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 using Microsoft.Extensions.Configuration;
 using Serilog;
@@ -15,13 +14,13 @@ public class Program
     {
         try
         {
-            var cts = new CancellationTokenSource();
-
             var config = GetConfiguration();
+            
 
             if (!Directory.Exists(config.Paths.OutputFolderPath))
             {
-                var ex = new InvalidOperationException($"Output folder does not exist: '{config.Paths.OutputFolderPath}'");
+                var ex = new InvalidOperationException(
+                    $"Output folder does not exist: '{config.Paths.OutputFolderPath}'");
                 Console.WriteLine(ex.ToString());
                 Log.Fatal(ex, "Exiting");
                 throw ex;
@@ -29,6 +28,8 @@ public class Program
 
             // Relies on OutputFolderPath being set
             SetupLogging(config);
+            
+            Log.Information("Loaded configuration:\n\n"+ JsonSerializer.Serialize(config, JsonSettings.Options));
 
             Log.Information($"User entered arguments {string.Join(", ", args)}");
 
@@ -96,6 +97,7 @@ public class Program
             CommandMode.OverrideSetData => new OverrideSetMetadataHandler(),
             CommandMode.RecompileMasterMetadata => new CompileMasterMetadataHandler(),
             CommandMode.UpdateCardSetCount => new ChangeNumberOfCardsInSetHandler(config),
+            CommandMode.Passthrough => new PassthroughHandler(),
             _ => null,
         };
 
@@ -103,10 +105,17 @@ public class Program
         {
             Log.Information($"User selected command: {mode} - {CommandLineParser.CommandHelp[mode]}");
             Log.Information($"Date: {DateTime.Now}");
-            
+
             var cts = new CancellationTokenSource();
 
-            var overrides = await LoadOverridesAsync(config.Paths.SetMetadataOverrideFilePath, cts.Token);
+            var helper = new CardOverrideDataHelper(config, cts.Token);
+            if (!File.Exists(config.Paths.SetMetadataOverrideFilePath))
+            {
+                await helper.CreateAndWriteNewOverrideFileToDiskAsync();
+            }
+
+            // Override data defined as dictionary of SetId to CardOverrideData
+            var overrides = await helper.LoadOverridesAsync();
 
             var coordinator = new ImageProcessingCoordinator(config, cts.Token, overrides);
             await coordinator.PerformProcessingUsingHandlerAsync(handler);
@@ -121,21 +130,4 @@ public class Program
         }
     }
 
-    private static async Task<ConcurrentDictionary<string, CardSeriesBasicMetadata>> LoadOverridesAsync(string filePath, CancellationToken cancellationToken)
-    {
-        try
-        {
-            if (File.Exists(filePath))
-            {
-                var overrides = await JsonFileReader.ReadFromJsonAsync<Dictionary<string, CardSeriesBasicMetadata>>(filePath, cancellationToken);
-                return new ConcurrentDictionary<string, CardSeriesBasicMetadata>(overrides);
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, $"Failed to load overrides from '{filePath}'");
-        }
-
-        return [];
-    }
 }

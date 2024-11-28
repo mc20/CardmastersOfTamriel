@@ -11,6 +11,7 @@ public class CardSet : IEquatable<CardSet>, IIdentifiable
     // Immutable identity properties
     public string Id { get; init; }
     public string SeriesId { get; init; }
+    public required string SeriesKeyword { get; set; }
 
     // Mutable properties
     public string? DisplayName { get; set; }
@@ -20,9 +21,6 @@ public class CardSet : IEquatable<CardSet>, IIdentifiable
     public required string SourceAbsoluteFolderPath { get; set; }
     public required string DestinationAbsoluteFolderPath { get; set; }
     public required string DestinationRelativeFolderPath { get; set; }
-    public uint DefaultValue { get; set; }
-    public float DefaultWeight { get; set; }
-    public HashSet<string>? DefaultKeywords { get; set; }
 
     public override int GetHashCode()
     {

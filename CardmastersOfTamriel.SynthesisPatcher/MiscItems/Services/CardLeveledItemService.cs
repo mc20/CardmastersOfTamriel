@@ -13,14 +13,12 @@ public class CardLeveledItemService
     private readonly PatcherConfiguration _patcherConfig;
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _customMod;
-    private readonly Dictionary<string, string> _keywordsBySeries;
 
-    public CardLeveledItemService(PatcherConfiguration patcherConfig, IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod, Dictionary<string, string> keywordsBySeries)
+    public CardLeveledItemService(PatcherConfiguration patcherConfig, IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
     {
         _patcherConfig = patcherConfig;
         _state = state;
         _customMod = customMod;
-        _keywordsBySeries = keywordsBySeries;
     }
 
     public async Task<Dictionary<CardTier, LeveledItem>> CreateCardTierToLeveledItemMappingAsync(CancellationToken cancellationToken)
@@ -29,7 +27,7 @@ public class CardLeveledItemService
 
         var cardList = await GetCards(cancellationToken);
 
-        var miscService = new CardToMiscItemService(_state, _customMod, _keywordsBySeries);
+        var miscService = new CardToMiscItemService(_state, _customMod);
         var mappedMiscItems = miscService.InsertAndMapCardsToMiscItems(cardList);
 
         // Get all cards grouped by CardTier

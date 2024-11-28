@@ -61,11 +61,16 @@ public static partial class NamingHelper
         return name;
     }
     
-    public static string? CreateKeyword(CardSeries cardSeries)
+    public static string CreateKeyword(CardSeries cardSeries)
     {
-        return cardSeries.DisplayName is null ? null : NormalizeName(cardSeries.DisplayName).AddModNamePrefix();
+        return (cardSeries.DisplayName is null ? cardSeries.Id : NormalizeName(cardSeries.DisplayName)).AddModNamePrefix();
     }
 
+    public static string CreateImageFileName(CardSet set, string originalFileName)
+    {
+        return $"{set.Id}_{originalFileName}.dds";
+    }
+    
     public static string CreateImageFileName(CardSet set, uint imageIndex)
     {
         return $"{set.Id}_{imageIndex:D3}.dds";

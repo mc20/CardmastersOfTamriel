@@ -17,8 +17,7 @@ public class CardSeries : IEquatable<CardSeries>, IIdentifiable
     public HashSet<CardSet>? Sets { get; set; }
     public required string SourceFolderPath { get; set; }
     public required string DestinationFolderPath { get; set; }
-    public HashSet<string>? DefaultKeywords { get; set; }
-
+    
     public override int GetHashCode()
     {
         // Only use immutable identity property

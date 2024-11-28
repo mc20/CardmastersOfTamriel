@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
@@ -22,7 +21,7 @@ public class DestinationFolderPreparer
         foreach (var tierSourceFolderPath in Directory.EnumerateDirectories(_config.Paths.SourceImagesFolderPath, "*",
                      SearchOption.TopDirectoryOnly))
         {
-            var cardTier = Enum.Parse<CardTier>(Path.GetFileName(tierSourceFolderPath));
+            Enum.Parse<CardTier>(Path.GetFileName(tierSourceFolderPath));
             var seriesSourceFolders = Directory.EnumerateDirectories(tierSourceFolderPath).Order();
             folders.Add(seriesSourceFolders.SelectMany(Directory.EnumerateDirectories));
         }
@@ -30,8 +29,7 @@ public class DestinationFolderPreparer
         return folders;
     }
 
-    public async Task<HashSet<CardSeries>> SetupDestinationFoldersAsync(
-        ConcurrentDictionary<string, CardSeriesBasicMetadata>? overrides, CancellationToken cancellationToken)
+    public async Task<HashSet<CardSeries>> SetupDestinationFoldersAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -80,11 +78,6 @@ public class DestinationFolderPreparer
                     var seriesMetadata = await CreateCardSeriesAndSaveToDisk(seriesId, cardTier,
                         seriesDestinationMetadataFilePath, seriesSourceFolderPath, seriesDestinationFolderPath,
                         cancellationToken);
-
-                    if (overrides?.TryGetValue(seriesId, out var overrideMetadata) ?? false)
-                    {
-                        seriesMetadata.OverrideWith(overrideMetadata);
-                    }
 
                     // With the series created, let's create the card sets
                     var replicator = new CardSetReplicator(seriesMetadata, _config);

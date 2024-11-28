@@ -7,39 +7,46 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 
 public class CompileMasterMetadataHandler : ICardSetHandler
 {
-    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken, CardSetBasicMetadata? setOverride = null)
+    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken,
+        CardOverrideData? overrideData = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var setmetadatajson = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForSetMetadataJson);
-        if (File.Exists(setmetadatajson))
+        var setmetadatajsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForSetMetadataJson);
+        if (File.Exists(setmetadatajsonFilePath))
         {
-            var cardSet = await JsonFileReader.ReadFromJsonAsync<CardSet>(setmetadatajson, cancellationToken);
+            var cardSetDataFromFile = await JsonFileReader.ReadFromJsonAsync<CardSet>(setmetadatajsonFilePath, cancellationToken);
 
-            var cardsjsonl = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForCardsJsonl);
-            if (File.Exists(cardsjsonl))
+            var cardsjsonlFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForCardsJsonl);
+            if (File.Exists(cardsjsonlFilePath))
             {
-                if (setOverride is not null)
-                {
-                    Log.Information($"{set.Id}\t'{set.DisplayName}':\tRefreshing data from set override file");
-                    cardSet.OverrideWith(setOverride);
-                }
+                set.Cards = [];
+                cardSetDataFromFile.Cards = [];
 
-                var cards = await JsonFileReader.LoadAllFromJsonLineFileAsync<Card>(cardsjsonl, cancellationToken);
-                foreach (var card in cards)
+                var cardsFromJsonLineFile = await JsonFileReader.LoadAllFromJsonLineFileAsync<Card>(cardsjsonlFilePath, cancellationToken);
+                foreach (var card in cardsFromJsonLineFile)
                 {
-                    cardSet.Cards ??= [];
-                    cardSet.Cards.Add(card);
+                    if (overrideData is not null)
+                    {
+                        var isOverwritten = card.OverwriteWith(overrideData);
+                        if (isOverwritten) Log.Information("Overwrote card {CardId} with override data", card.Id);
+                    }
+                    cardSetDataFromFile.Cards.Add(card);
+                    set.Cards.Add(card);
 
                     EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card));
                 }
 
-                await JsonFileWriter.WriteToJsonAsync(cardSet, setmetadatajson, cancellationToken);
+                await JsonFileWriter.WriteToJsonAsync(cardSetDataFromFile, setmetadatajsonFilePath, cancellationToken);
+            }
+            else
+            {
+                Log.Error($"{set.Id}\tNo Cards jsonl file found at {cardsjsonlFilePath}");
             }
         }
         else
         {
-            Log.Error($"{set.Id}\tNo set metadata file found at {setmetadatajson}");
+            Log.Error($"{set.Id}\tNo CardSet metadata file found at {setmetadatajsonFilePath}");
         }
     }
 }

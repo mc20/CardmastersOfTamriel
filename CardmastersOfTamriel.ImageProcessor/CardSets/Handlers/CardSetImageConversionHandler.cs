@@ -17,87 +17,107 @@ public class CardSetImageConversionHandler : ICardSetHandler
         _config = config;
     }
 
-    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken, CardSetBasicMetadata? setOverride = null)
+    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken, CardOverrideData? overrideData = null)
     {
-        Log.Information($"Processing Set from Source Path: '{set.SourceAbsoluteFolderPath}'");
-
-        set.Cards ??= [];
-        set.Cards.Clear();
-
-        if (setOverride is not null)
+        try
         {
-            Log.Information($"{set.Id}\t'{set.DisplayName}':\tRefreshing data from set override file");
-            set.OverrideWith(setOverride);
-        }
+            Log.Information($"Processing Set from Source Path: '{set.SourceAbsoluteFolderPath}'");
 
-        var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForCardsJsonl);
-        var savedJsonBackupFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForCardsJsonlBackup);
+            set.Cards ??= [];
+            set.Cards.Clear();
 
-        var cardsFromMetadataFile =
-            await LoadCardsFromJsonFileAsync(savedJsonFilePath, savedJsonBackupFilePath, cancellationToken);
+            var cardsFromMetadataFile = new HashSet<Card>();
 
-        var data = CardSetImageConversionData.Load(set, cardsFromMetadataFile, cancellationToken);
-        Log.Debug($"{set.Id}:\tCreated {data.CardsOnlyAtDestination.Count} cards from destination images");
-        Log.Debug($"{set.Id}:\tConsolidated {data.ConsolidatedCardsFromDestinationAndSource.Count} cards from metadata, source, and destination images");
-        
-        var maximumNumberOfCardsToInclude = ImageProcessingCoordinator.GetMaximumNumberOfCardsToInclude(set.Tier, data.ConsolidatedCardsFromDestinationAndSource.Count, _config);
-        Log.Debug($"{set.Id}:\tMaximum Number of Cards: {maximumNumberOfCardsToInclude}");
-        var imagesAlreadyBeingIncludedForGame = data.ConsolidatedCardsFromDestinationAndSource.Count(c => !string.IsNullOrEmpty(c.DestinationRelativeFilePath));
-        Log.Debug($"{set.Id}:\tThere are {imagesAlreadyBeingIncludedForGame} images already being included for the game");
-
-        if (imagesAlreadyBeingIncludedForGame >= maximumNumberOfCardsToInclude)
-        {
-            Log.Information($"{set.Id}:\tThere are {imagesAlreadyBeingIncludedForGame} images already being included for the game, which meets or exceeds the maximum number of cards required ({maximumNumberOfCardsToInclude}).");
-
-            foreach (var card in data.ConsolidatedCardsFromDestinationAndSource)
+            var savedJsonFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForCardsJsonl);
+            if (File.Exists(savedJsonFilePath))
             {
-                EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card));   
+                var cards = await JsonFileReader.LoadAllFromJsonLineFileAsync<Card>(savedJsonFilePath, cancellationToken);
+                cardsFromMetadataFile = cards.ToHashSet();
             }
-            
-            return;
+
+            BackupExistingCardJsonLineFile(set);
+
+            var data = CardSetImageConversionData.Load(_config, set, cardsFromMetadataFile, cancellationToken);
+            data.LogDataAsInformation();
+
+            if (IsCardCountSufficient(set, data, overrideData))
+            {
+                Log.Information("Card count is sufficient, skipping image conversion");
+                return;
+            }
+
+            await ProcessEligibleImagesAsync(set, data.ConsolidatedCardsFromDestinationAndSource, data.CardsOnlyAtDestination, cancellationToken);
+
+            CardSetImageConversionHelper.UpdateDisplayedInformationOnCards(data.ConsolidatedCardsFromDestinationAndSource);
+
+            await SaveCardSetDataAsync(set, data, savedJsonFilePath, cancellationToken);
         }
-
-        await ProcessEligibleImagesAsync(set, data.ConsolidatedCardsFromDestinationAndSource, data.CardsOnlyAtDestination, cancellationToken);
-
-        CardSetImageConversionHelper.UpdateDisplayCards(data.ConsolidatedCardsFromDestinationAndSource);
-
-        await JsonFileWriter.WriteToJsonLineFileAsync(data.ConsolidatedCardsFromDestinationAndSource, savedJsonFilePath, cancellationToken);
-
-        set.Cards = [.. data.ConsolidatedCardsFromDestinationAndSource];
-    }
-
-    private static async Task<HashSet<Card>> LoadCardsFromJsonFileAsync(string savedJsonFilePath,
-        string savedJsonBackupFilePath, CancellationToken cancellationToken)
-    {
-        if (!File.Exists(savedJsonFilePath)) return [];
-
-        if (File.Exists(savedJsonBackupFilePath))
+        catch (Exception ex)
         {
-            File.Delete(savedJsonBackupFilePath);
+            Log.Error(ex, $"{set.Id}\tFailed to process Card set");
+            throw;
         }
-
-        File.Copy(savedJsonFilePath, savedJsonBackupFilePath);
-
-        var cardsFromMetadataFile =
-            await JsonFileReader.LoadAllFromJsonLineFileAsync<Card>(savedJsonFilePath, cancellationToken);
-
-        File.Delete(savedJsonFilePath);
-
-        return [.. cardsFromMetadataFile];
     }
 
-    private async Task ProcessEligibleImagesAsync(CardSet set, List<Card> consolidatedCardsFromDestinationAndSource, HashSet<Card> cardsAtDestination,
+    private static void BackupExistingCardJsonLineFile(CardSet set)
+    {
+        var savedJsonLineFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForCardsJsonl);
+        var savedJsonLineBackupFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForCardsJsonlBackup);
+
+        if (!File.Exists(savedJsonLineFilePath)) return;
+
+        File.Move(savedJsonLineFilePath, savedJsonLineBackupFilePath, true);
+        File.Delete(savedJsonLineFilePath);
+        Log.Information("Backed up existing Card metadata file to '{SavedJsonLineBackupFilePath}'", savedJsonLineBackupFilePath);
+    }
+
+    private bool IsCardCountSufficient(CardSet set, CardSetImageConversionData data, CardOverrideData? overrideData)
+    {
+        var maximumNumberOfCardsToInclude =
+            ImageProcessingCoordinator.GetMaximumNumberOfCardsToInclude(set.Tier, data.ConsolidatedCardsFromDestinationAndSource.Count, _config);
+        var cardsAlreadyBeingIncludedForGame = data.ConsolidatedCardsFromDestinationAndSource.Count(c => !string.IsNullOrEmpty(c.DestinationRelativeFilePath));
+
+        Log.Information($"{set.Id}:\tMaximum Number of Cards: {maximumNumberOfCardsToInclude}");
+        Log.Information(
+            $"{set.Id}:\tThere are {cardsAlreadyBeingIncludedForGame} Cards already being included for the game based on the Card DestinationRelativeFilePath value");
+
+        if (cardsAlreadyBeingIncludedForGame < maximumNumberOfCardsToInclude) return false;
+
+        Log.Information(
+            $"{set.Id}:\tThere are {cardsAlreadyBeingIncludedForGame} Images already being included for the game, which meets or exceeds the maximum number of Cards required ({maximumNumberOfCardsToInclude}).");
+
+        foreach (var card in data.ConsolidatedCardsFromDestinationAndSource)
+        {
+            if (overrideData is not null)
+            {
+                var isOverwritten = card.OverwriteWith(overrideData);
+                if (isOverwritten) Log.Information("Overwrote card {CardId} with override data", card.Id);
+            }
+
+            EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(card));
+        }
+
+        return true;
+    }
+
+    private async Task ProcessEligibleImagesAsync(CardSet set,
+        List<Card> consolidatedCardsFromDestinationAndSource,
+        HashSet<Card> cardsAtDestination,
         CancellationToken cancellationToken)
     {
-        var eligibleFilePathsForConversion = consolidatedCardsFromDestinationAndSource.Select(card => card.SourceAbsoluteFilePath ?? string.Empty)
+        var eligibleFilePathsForConversion = consolidatedCardsFromDestinationAndSource
+            .Select(card => card.SourceAbsoluteFilePath)
             .Where(filePath => !string.IsNullOrWhiteSpace(filePath)).ToHashSet();
 
-        Log.Debug($"{set.Id}:\tFound {eligibleFilePathsForConversion.Count} eligible images for conversion (no destination specified) from {consolidatedCardsFromDestinationAndSource.Count} cards");
+        Log.Debug(
+            $"{set.Id}:\tFound {eligibleFilePathsForConversion.Count} eligible images for conversion (no destination specified) from {consolidatedCardsFromDestinationAndSource.Count} cards");
 
-        var maximumNumberOfCards = ImageProcessingCoordinator.GetMaximumNumberOfCardsToInclude(set.Tier, consolidatedCardsFromDestinationAndSource.Count, _config);
+        var maximumNumberOfCards =
+            ImageProcessingCoordinator.GetMaximumNumberOfCardsToInclude(set.Tier, consolidatedCardsFromDestinationAndSource.Count, _config);
 
         var needMoreRandomCards = cardsAtDestination.Count < maximumNumberOfCards;
-        Log.Debug($"{set.Id}:\tMaximum Number of Cards: {maximumNumberOfCards} while there are {cardsAtDestination.Count} cards at destination. Need more random cards? {needMoreRandomCards}");
+        Log.Debug(
+            $"{set.Id}:\tMaximum Number of Cards: {maximumNumberOfCards} while there are {cardsAtDestination.Count} cards at destination. Need more random cards? {needMoreRandomCards}");
 
         var randomCards = needMoreRandomCards
             ? ImageFilePathUtility.SelectRandomImageFilePaths(maximumNumberOfCards - cardsAtDestination.Count,
@@ -111,35 +131,51 @@ public class CardSetImageConversionHandler : ICardSetHandler
         await ProcessAllCards(set, consolidatedCardsFromDestinationAndSource, randomCards, cancellationToken);
     }
 
-    private async Task ProcessAllCards(CardSet set, List<Card> finalCards, HashSet<string> randomCards,
+    private async Task ProcessAllCards(CardSet set,
+        List<Card> finalCards,
+        HashSet<string> randomCards,
         CancellationToken cancellationToken)
     {
         foreach (var info in finalCards.OrderBy(card => card.Id).Select((card, index) => (card, index)))
         {
-            if (!string.IsNullOrWhiteSpace(info.card.SourceAbsoluteFilePath) &&
-                randomCards.Contains(info.card.SourceAbsoluteFilePath))
+            if (!string.IsNullOrWhiteSpace(info.card.SourceAbsoluteFilePath) && randomCards.Contains(info.card.SourceAbsoluteFilePath))
             {
                 Log.Information($"{set.Id}:\tProcessing Card {Path.GetFileName(info.card.SourceAbsoluteFilePath)} for conversion");
-                await CardSetImageConversionHelper.ProcessAndUpdateCardForConversion(_config, set, info.card, info.index,
-                    finalCards.Count, cancellationToken);
+                await CardSetImageConversionHelper.ProcessAndUpdateCardForConversion(_config,
+                    set,
+                    info.card,
+                    info.index,
+                    finalCards.Count,
+                    cancellationToken);
             }
             else
             {
-                if (string.IsNullOrEmpty(info.card.DestinationAbsoluteFilePath))
-                {
-                    Log.Verbose($"{set.Id}:\tCard {info.card.Id} was not converted and will be skipped");
-                    CardSetImageConversionHelper.UpdateUnconvertedCard(_config, info.card, (uint)info.index,
-                        (uint)finalCards.Count);
-                }
-                else
-                {
-                    Log.Verbose($"{set.Id}:\tCard {info.card.Id} was possibly already converted and will be used as-is");
-                    info.card.DestinationRelativeFilePath =
-                        FilePathHelper.GetRelativePath(info.card.DestinationAbsoluteFilePath, set.Tier);
-                }
+                HandleUnconvertedCard(set, info, finalCards.Count);
             }
 
             EventBroker.PublishSetHandlingProgress(this, new ProgressTrackingEventArgs(info.card));
         }
+    }
+
+    private void HandleUnconvertedCard(CardSet set, (Card card, int index) info, int totalCards)
+    {
+        if (string.IsNullOrEmpty(info.card.DestinationAbsoluteFilePath))
+        {
+            Log.Verbose($"{set.Id}:\tCard {info.card.Id} was not converted and will be skipped");
+            CardSetImageConversionHelper.UpdateUnconvertedCard(_config, info.card, (uint)info.index, (uint)totalCards);
+        }
+        else
+        {
+            Log.Verbose($"{set.Id}:\tCard {info.card.Id} was possibly already converted and will be used as-is");
+            info.card.DestinationRelativeFilePath = FilePathHelper.GetRelativePath(info.card.DestinationAbsoluteFilePath, set.Tier);
+        }
+    }
+
+    private static async Task SaveCardSetDataAsync(CardSet set, CardSetImageConversionData data, string savedJsonFilePath, CancellationToken cancellationToken)
+    {
+        await JsonFileWriter.WriteToJsonLineFileAsync(data.ConsolidatedCardsFromDestinationAndSource, savedJsonFilePath, cancellationToken);
+        set.Cards = [.. data.ConsolidatedCardsFromDestinationAndSource];
+        await JsonFileWriter.WriteToJsonAsync(set, Path.Combine(set.DestinationAbsoluteFolderPath, PathSettings.DefaultFilenameForSetMetadataJson),
+            cancellationToken);
     }
 }

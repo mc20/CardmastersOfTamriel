@@ -10,21 +10,21 @@ namespace CardmastersOfTamriel.ImageProcessor.CardSets.Handlers.Helpers;
 public class CardMetadataUpdater
 {
     private readonly Config _config;
-    private readonly CardSet _set;
     private readonly RebuildMasterMetadataData _data;
     private readonly object? _publisher;
     private readonly uint _totalCardCountToDisplayOnCard;
 
-    public CardMetadataUpdater(object? publisher, CardSet set, RebuildMasterMetadataData data, Config config, uint totalCardCountToDisplayOnCard)
+    public CardMetadataUpdater(object? publisher, RebuildMasterMetadataData data, Config config,
+        uint totalCardCountToDisplayOnCard)
     {
         _publisher = publisher;
-        _set = set;
         _data = data;
         _config = config;
         _totalCardCountToDisplayOnCard = totalCardCountToDisplayOnCard;
     }
 
-    public void UpdateCardMetadataAndPublishHandlingProgress(Card card, ref int displayedIndex, ref int maxDisplayNameLength, CancellationToken cancellationToken, bool assignRelativePath = true)
+    public void UpdateCardMetadataAndPublishHandlingProgress(Card card, ref int displayedIndex, ref int maxDisplayNameLength,
+        CancellationToken cancellationToken, bool assignRelativePath = true)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -33,9 +33,6 @@ public class CardMetadataUpdater
             card.Shape ??= CardShapeHelper.DetermineOptimalShape(_config, card.SourceAbsoluteFilePath);
         }
 
-        card.Keywords ??= _config.General.DefaultMiscItemKeywords;
-        if (_set.DefaultKeywords != null) card.Keywords.UnionWith(_set.DefaultKeywords);
-        
         card.TrueTotalCount = (uint)_data.ValidUniqueIdentifiersDeterminedFromSource.Count;
 
         if (_data.ValidIdentifiersAtDestination.Contains(card.Id))

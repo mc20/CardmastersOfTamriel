@@ -15,7 +15,7 @@ public class ChangeNumberOfCardsInSetHandler : ICardSetHandler
         _config = config;
     }
 
-    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken, CardSetBasicMetadata? setOverride = null)
+    public async Task ProcessCardSetAsync(CardSet set, CancellationToken cancellationToken, CardOverrideData? overrideData = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -30,18 +30,12 @@ public class ChangeNumberOfCardsInSetHandler : ICardSetHandler
             {
                 try
                 {
-                    if (setOverride is not null)
-                    {
-                        Log.Information($"{set.Id}\t'{set.DisplayName}':\tRefreshing data from set override file");
-                        cardsetMetadata.OverrideWith(setOverride);
-                    }
-
-                    var data = RebuildMasterMetadataData.Load(set, cancellationToken);
+                    var data = RebuildMasterMetadataData.Load(_config, set, cancellationToken);
 
                     var cards = await JsonFileReader.LoadAllFromJsonLineFileAsync<Card>(cardsJsonlFilePath, cancellationToken);
                     var totalCardCountToDisplayOnCard = PruneCardsIfMaximumSampleSizeIsExceeded(_config, set, cards);
 
-                    var formatter = new CardMetadataUpdater(this, set, data, _config, totalCardCountToDisplayOnCard);
+                    var formatter = new CardMetadataUpdater(this, data, _config, totalCardCountToDisplayOnCard);
 
                     var displayedIndex = 1;
                     var maxDisplayNameLength = 0;
@@ -49,6 +43,11 @@ public class ChangeNumberOfCardsInSetHandler : ICardSetHandler
                     foreach (var card in cards)
                     {
                         formatter.UpdateCardMetadataAndPublishHandlingProgress(card, ref displayedIndex, ref maxDisplayNameLength, cancellationToken, assignRelativePath: false);
+                        if (overrideData is not null)
+                        {
+                            var isOverwritten = card.OverwriteWith(overrideData);
+                            if (isOverwritten) Log.Information("Overwrote card {CardId} with override data", card.Id);
+                        }
                         cardsetMetadata.Cards.Add(card);
                     }
 
