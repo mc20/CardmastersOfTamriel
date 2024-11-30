@@ -1,18 +1,23 @@
+using CardmastersOfTamriel.ImageProcessor.Configuration;
+using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.Utilities;
 
 namespace CardmastersOfTamriel.ImageProcessor.Factories;
 
-public class CardFactory(Config config)
+public class CardFactory(DefaultValuesForCards defaults)
 {
-    public HashSet<Card> CreateCardsFromImagesAtFolderPath(CardSet set, HashSet<string> imageFilePaths)
+    public HashSet<Card> CreateInitialCardsFromSource(CardSet set)
     {
         var cards = new HashSet<Card>();
+
+        var imageFilePaths = ImageFilePathUtility.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath).ToHashSet();
+
         foreach (var imageInfo in imageFilePaths.Select((path, index) => new { filePath = path, index }))
         {
             var imageIndex = imageInfo.index + 1;
 
-            var newCardId = Path.GetFileNameWithoutExtension(NamingHelper.CreateImageFileName(set, (uint)imageIndex));
+            var newCardId = Path.GetFileNameWithoutExtension(NamingHelper.CreateCardId(set, (uint)imageIndex));
             var newCard = new Card(newCardId, set.Id)
             {
                 SetDisplayName = set.DisplayName,
@@ -24,14 +29,14 @@ public class CardFactory(Config config)
                 DisplayedTotalCount = 0,
                 Description = null,
                 Tier = set.Tier,
-                Value = config.Defaults.DefaultCardValues.TryGetValue(set.Tier, out var value) ? value ?? 0 : 0,
-                Weight = config.Defaults.DefaultCardWeights.GetValueOrDefault(set.Tier) ?? 0,
-                Keywords = config.Defaults.DefaultMiscItemKeywords.ToHashSet(),
+                Value = defaults.DefaultValues.TryGetValue(set.Tier, out var value) ? value ?? 0 : 0,
+                Weight = defaults.DefaultWeights.GetValueOrDefault(set.Tier) ?? 0,
+                Keywords = defaults.DefaultMiscItemKeywords.ToHashSet(),
                 SourceAbsoluteFilePath = imageInfo.filePath,
                 DestinationAbsoluteFilePath = null,
-                DestinationRelativeFilePath = null,
+                DestinationRelativeFilePath = null
             };
-            
+
             if (!string.IsNullOrEmpty(set.SeriesKeyword)) newCard.Keywords.Add(set.SeriesKeyword);
 
             cards.Add(newCard);

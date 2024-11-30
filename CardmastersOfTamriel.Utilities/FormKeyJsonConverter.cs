@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Mutagen.Bethesda.Plugins;
 
@@ -18,7 +19,7 @@ public class FormKeyJsonConverter : JsonConverter<FormKey>
         var modKey = ModKey.FromFileName(parts[0]);
 
         return !uint.TryParse(parts[1].Replace("0x", ""),
-            System.Globalization.NumberStyles.HexNumber,
+            NumberStyles.HexNumber,
             null, out var id)
             ? FormKey.Null
             : new FormKey(modKey, id);

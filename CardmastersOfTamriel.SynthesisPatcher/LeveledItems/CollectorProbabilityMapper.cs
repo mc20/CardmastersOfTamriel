@@ -9,8 +9,8 @@ namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 
 public class CollectorProbabilityMappingService
 {
-    private readonly ISkyrimMod _skyrimMod;
     private readonly Dictionary<CardTier, LeveledItem> _cardTierToLeveledItemMapping;
+    private readonly ISkyrimMod _skyrimMod;
 
     public CollectorProbabilityMappingService(ISkyrimMod skyrimMod,
         Dictionary<CardTier, LeveledItem> cardTierToLeveledItemMapping)
@@ -50,14 +50,14 @@ public class CollectorProbabilityMappingService
                 LeveledItemEntryBuilder.AddEntries(
                     probabilityLeveledItem,
                     cardTierLeveledItem,
-                    count: 1,
-                    numberOfTimes: probability.NumberOfTimes);
+                    1,
+                    probability.NumberOfTimes);
 
                 LeveledItemEntryBuilder.AddEntries(
                     collectorLeveledItem,
                     probabilityLeveledItem,
-                    count: 1,
-                    numberOfTimes: 1);
+                    1,
+                    1);
             }
 
             items.Add(collectorType.Type, collectorLeveledItem);

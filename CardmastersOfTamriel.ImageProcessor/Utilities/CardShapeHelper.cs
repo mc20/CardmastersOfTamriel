@@ -1,11 +1,13 @@
-﻿using CardmastersOfTamriel.Models;
+﻿using CardmastersOfTamriel.ImageProcessor.Configuration;
+using CardmastersOfTamriel.Models;
 using SixLabors.ImageSharp;
+using Size = CardmastersOfTamriel.ImageProcessor.Configuration.Size;
 
 namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
 public static class CardShapeHelper
 {
-    public static CardShape DetermineOptimalShape(Config config, string imagePath)
+    public static CardShape DetermineOptimalShape(ImageConversionSettings settings, string imagePath)
     {
         using var image = Image.Load(imagePath);
         var width = image.Width;
@@ -14,9 +16,9 @@ public static class CardShapeHelper
         // Calculate the retained areas for each shape
         var shapeAreas = new Dictionary<CardShape, double>
         {
-            { CardShape.Portrait, CalculateRetainedArea(width, height, config.ImageProperties.TargetSizes.Portrait) },
-            { CardShape.Landscape, CalculateRetainedArea(width, height, config.ImageProperties.TargetSizes.Landscape) },
-            { CardShape.Square, CalculateRetainedArea(width, height, config.ImageProperties.TargetSizes.Square) }
+            { CardShape.Portrait, CalculateRetainedArea(width, height, settings.TargetSizes.Portrait) },
+            { CardShape.Landscape, CalculateRetainedArea(width, height, settings.TargetSizes.Landscape) },
+            { CardShape.Square, CalculateRetainedArea(width, height, settings.TargetSizes.Square) }
         };
 
         // Return the shape with the maximum retained area

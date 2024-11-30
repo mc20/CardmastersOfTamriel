@@ -1,20 +1,20 @@
 {
-    "Tier1": [
-        "EE_Alchemist",
-        "EE_Beggar",
-        "EE_EscapedPrisoner",
-        "EE_Headsman",
-        "EE_Miner",
-        "EE_TravelingHealer"
-    ],
-    "Tier2": [
-        "EE_AdventurerMage",
-        "EE_Bride",
-        "EE_MerchantPeddler",
-        "EE_Scavenger",
-        "EE_TransformingWerewolf",
-        "EE_VaerminaDevotee"
-    ],
-    "Tier3": [],
-    "Tier4": []
+  "Tier1": [
+    "EE_Alchemist",
+    "EE_Beggar",
+    "EE_EscapedPrisoner",
+    "EE_Headsman",
+    "EE_Miner",
+    "EE_TravelingHealer"
+  ],
+  "Tier2": [
+    "EE_AdventurerMage",
+    "EE_Bride",
+    "EE_MerchantPeddler",
+    "EE_Scavenger",
+    "EE_TransformingWerewolf",
+    "EE_VaerminaDevotee"
+  ],
+  "Tier3": [],
+  "Tier4": []
 }

@@ -1,17 +1,17 @@
-using CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
-using CardmastersOfTamriel.SynthesisPatcher.MiscItems.Services;
-using Mutagen.Bethesda;
-using Mutagen.Bethesda.Synthesis;
-using Mutagen.Bethesda.Skyrim;
-using Microsoft.Extensions.Configuration;
-using Mutagen.Bethesda.Plugins;
-using Serilog;
-using CardmastersOfTamriel.SynthesisPatcher.Utilities;
-using Mutagen.Bethesda.Environments;
-using Mutagen.Bethesda.Plugins.Binary.Parameters;
-using CardmastersOfTamriel.SynthesisPatcher.Distribution;
 using System.Text.Json;
 using CardmastersOfTamriel.SynthesisPatcher.Common.Configuration;
+using CardmastersOfTamriel.SynthesisPatcher.Distribution;
+using CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
+using CardmastersOfTamriel.SynthesisPatcher.MiscItems.Services;
+using CardmastersOfTamriel.SynthesisPatcher.Utilities;
+using Microsoft.Extensions.Configuration;
+using Mutagen.Bethesda;
+using Mutagen.Bethesda.Environments;
+using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Plugins.Binary.Parameters;
+using Mutagen.Bethesda.Skyrim;
+using Mutagen.Bethesda.Synthesis;
+using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher;
 
@@ -28,8 +28,8 @@ public class Program
     private static IConfigurationRoot SetupConfiguration(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
     {
         return new ConfigurationBuilder()
-            .AddJsonFile(state.RetrieveInternalFile("appsettings.json"), optional: false, reloadOnChange: true)
-            .AddJsonFile(state.RetrieveInternalFile("localsettings.json"), optional: true, reloadOnChange: true)
+            .AddJsonFile(state.RetrieveInternalFile("appsettings.json"), false, true)
+            .AddJsonFile(state.RetrieveInternalFile("localsettings.json"), true, true)
             .AddEnvironmentVariables()
             .Build();
     }
@@ -71,7 +71,7 @@ public class Program
             Log.Debug($"MasterMetadataFilePath: {patcherConfig.MasterMetadataFilePath}");
             Log.Debug($"LogOutputFilePath: {patcherConfig.LogOutputFilePath}");
             Log.Debug($"DistributionConfigurations Count: {patcherConfig.DistributionConfigurations?.Count ?? 0}");
-            Log.Debug(JsonSerializer.Serialize(patcherConfig, new JsonSerializerOptions() { WriteIndented = true }));
+            Log.Debug(JsonSerializer.Serialize(patcherConfig, new JsonSerializerOptions { WriteIndented = true }));
 
             return;
         }
@@ -103,7 +103,7 @@ public class Program
 
         customMod.WriteToBinary(
             desiredFilePath,
-            new BinaryWriteParameters() { MastersListOrdering = new MastersListOrderingByLoadOrder(state.LoadOrder) });
+            new BinaryWriteParameters { MastersListOrdering = new MastersListOrderingByLoadOrder(state.LoadOrder) });
 
         Log.Information("Mod successfully created and written to disk.");
 
@@ -136,20 +136,13 @@ public class Program
 
         // Check all record groups
         foreach (var record in mod.EnumerateMajorRecords())
-        {
             if (!formKeys.Add(record.FormKey))
-            {
                 duplicates.Add((record.GetType().Name, $"{record.FormKey}|{record.EditorID}"));
-            }
-        }
 
         if (duplicates.Count == 0) return;
 
         Log.Error("Duplicate FormKeys found:");
-        foreach (var dup in duplicates)
-        {
-            Log.Error($"Group: {dup.GroupName}, FormKey: {dup.FormKey}");
-        }
+        foreach (var dup in duplicates) Log.Error($"Group: {dup.GroupName}, FormKey: {dup.FormKey}");
 
         throw new Exception($"Found {duplicates.Count} duplicate FormKeys");
     }

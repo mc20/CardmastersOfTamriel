@@ -1,13 +1,14 @@
 using CardmastersOfTamriel.Models;
+using SixLabors.ImageSharp;
 
-namespace CardmastersOfTamriel.ImageProcessor;
+namespace CardmastersOfTamriel.ImageProcessor.Configuration;
 
 public class Config
 {
     public required GeneralSettings General { get; init; }
-    public required DefaultValues Defaults { get; init; }
+    public required DefaultValuesForCards DefaultCardValues { get; init; }
     public required PathSettings Paths { get; init; }
-    public required ImageProperties ImageProperties { get; init; }
+    public required ImageConversionSettings ImageSettings { get; init; }
 }
 
 public class GeneralSettings
@@ -16,26 +17,31 @@ public class GeneralSettings
     public required int MinimumImageSelectionCountForSet { get; set; }
 }
 
-public class DefaultValues
+public class DefaultValuesForCards
 {
     public bool AlwaysIncludeSeriesKeyword { get; set; }
     public required HashSet<string> DefaultMiscItemKeywords { get; set; }
-    public required Dictionary<CardTier, uint?> DefaultCardValues { get; set; }
-    public required Dictionary<CardTier, float?> DefaultCardWeights { get; set; }
+    public required Dictionary<CardTier, uint?> DefaultValues { get; set; }
+    public required Dictionary<CardTier, float?> DefaultWeights { get; set; }
 }
 
 public class PathSettings
 {
     public const string DefaultFilenameForSeriesMetadataJson = "series_metadata.json";
     public const string DefaultFilenameForSetMetadataJson = "set_metadata.json";
-    public const string DefaultFilenameForCardsJsonl = "cards.jsonl";
-    public const string DefaultFilenameForCardsJsonlBackup = "cards.jsonl.backup";
+    public const string DefaultFilenameForSetMetadataJsonBackup = "set_metadata.json";
 
     public required string SourceImagesFolderPath { get; set; }
     public required string OutputFolderPath { get; set; }
     public required string MasterMetadataFilePath { get; set; }
     public required string SetMetadataOverrideFilePath { get; set; }
-    public required string RebuildListFilePath { get; set; }
+}
+
+public class ImageConversionSettings
+{
+    public required int MaximumTextureHeight { get; set; }
+    public required TargetSizes TargetSizes { get; set; }
+    public required Offset Offset { get; set; }
     public required CardTierFilePaths TemplateFiles { get; set; }
 }
 
@@ -52,13 +58,6 @@ public class CardShapeFilePaths
     public required string Portrait { get; set; }
     public required string Landscape { get; set; }
     public required string Square { get; set; }
-}
-
-public class ImageProperties
-{
-    public required int MaximumTextureHeight { get; set; }
-    public required TargetSizes TargetSizes { get; set; }
-    public required Offset Offset { get; set; }
 }
 
 public class TargetSizes
@@ -84,8 +83,8 @@ public class Offset
     public required int X { get; set; }
     public required int Y { get; set; }
 
-    public SixLabors.ImageSharp.Point ToImageSharpPoint()
+    public Point ToImageSharpPoint()
     {
-        return new SixLabors.ImageSharp.Point(X, Y);
+        return new Point(X, Y);
     }
 }

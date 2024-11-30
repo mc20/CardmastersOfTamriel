@@ -1,21 +1,21 @@
-using Serilog;
 using System.Runtime.CompilerServices;
+using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 
 public static class ModificationTracker
 {
-    private static int MiscItemInsertCount { get; set; } = 0;
-    private static List<string> MiscItemInsertLocations { get; set; } = [];
+    private static int MiscItemInsertCount { get; set; }
+    private static List<string> MiscItemInsertLocations { get; } = [];
 
-    private static int TextureSetInsertCount { get; set; } = 0;
-    private static List<string> TextureSetInsertLocations { get; set; } = [];
+    private static int TextureSetInsertCount { get; set; }
+    private static List<string> TextureSetInsertLocations { get; } = [];
 
     private static int LeveledItemInsertCount { get; set; }
-    private static List<string> LeveledItemInsertLocations { get; set; } = [];
+    private static List<string> LeveledItemInsertLocations { get; } = [];
 
     private static int LeveledItemEntryInsertCount { get; set; }
-    private static List<string> LeveledItemEntryInsertLocations { get; set; } = [];
+    private static List<string> LeveledItemEntryInsertLocations { get; } = [];
 
     public static void IncrementMiscItemCount(string context, [CallerMemberName] string callerName = "",
         [CallerFilePath] string callerFilePath = "",

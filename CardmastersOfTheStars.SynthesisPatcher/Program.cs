@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 using CardmastersOfTamriel.SynthesisPatcher.Common.Configuration;
+using Microsoft.Extensions.Configuration;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Starfield;
 using Mutagen.Bethesda.Synthesis;
@@ -35,19 +35,14 @@ public class Program
 
         patcherConfig.ApplyInternalFilePaths(state);
 
-        if (string.IsNullOrEmpty(patcherConfig.LogOutputFilePath))
-        {
-            Console.WriteLine("Log output file path is missing");
-            return;
-        }
-
+        if (string.IsNullOrEmpty(patcherConfig.LogOutputFilePath)) Console.WriteLine("Log output file path is missing");
     }
 
     private static IConfigurationRoot SetupConfiguration(IPatcherState<IStarfieldMod, IStarfieldModGetter> state)
     {
         return new ConfigurationBuilder()
-            .AddJsonFile(state.RetrieveInternalFile("appsettings.json"), optional: false, reloadOnChange: true)
-            .AddJsonFile(state.RetrieveInternalFile("localsettings.json"), optional: true, reloadOnChange: true)
+            .AddJsonFile(state.RetrieveInternalFile("appsettings.json"), false, true)
+            .AddJsonFile(state.RetrieveInternalFile("localsettings.json"), true, true)
             .AddEnvironmentVariables()
             .Build();
     }
@@ -66,5 +61,4 @@ public class Program
             .WriteTo.Debug()
             .CreateLogger();
     }
-
 }

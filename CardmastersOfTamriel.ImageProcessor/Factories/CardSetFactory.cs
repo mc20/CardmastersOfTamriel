@@ -16,7 +16,7 @@ public static class CardSetFactory
             Cards = [],
             SourceAbsoluteFolderPath = "",
             DestinationAbsoluteFolderPath = "",
-            DestinationRelativeFolderPath = string.Empty,
+            DestinationRelativeFolderPath = string.Empty
         };
     }
 }

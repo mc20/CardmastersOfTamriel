@@ -7,9 +7,6 @@ public class CardSeries : IEquatable<CardSeries>, IIdentifiable
         Id = id;
     }
 
-    // Immutable identity property
-    public string Id { get; init; }
-
     // Mutable properties
     public string? DisplayName { get; set; }
     public CardTier Tier { get; set; }
@@ -17,12 +14,6 @@ public class CardSeries : IEquatable<CardSeries>, IIdentifiable
     public HashSet<CardSet>? Sets { get; set; }
     public required string SourceFolderPath { get; set; }
     public required string DestinationFolderPath { get; set; }
-    
-    public override int GetHashCode()
-    {
-        // Only use immutable identity property
-        return Id.GetHashCode();
-    }
 
     public bool Equals(CardSeries? other)
     {
@@ -31,6 +22,15 @@ public class CardSeries : IEquatable<CardSeries>, IIdentifiable
 
         // For series equality, we only care about the identity
         return Id == other.Id;
+    }
+
+    // Immutable identity property
+    public string Id { get; init; }
+
+    public override int GetHashCode()
+    {
+        // Only use immutable identity property
+        return Id.GetHashCode();
     }
 
     public static bool operator ==(CardSeries? left, CardSeries? right)

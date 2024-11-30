@@ -4,7 +4,6 @@ using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
 
-
 public static class LeveledItemEntryBuilder
 {
     public static void AddEntries(LeveledItem entry, ILeveledItemGetter reference, short count, int numberOfTimes)
@@ -13,17 +12,15 @@ public static class LeveledItemEntryBuilder
 
         entry.Entries ??= [];
         for (var i = 0; i < numberOfTimes; i++)
-        {
-            entry.Entries.Add(new LeveledItemEntry()
+            entry.Entries.Add(new LeveledItemEntry
             {
-                Data = new LeveledItemEntryData()
+                Data = new LeveledItemEntryData
                 {
                     Reference = reference.ToLink(),
                     Count = count,
                     Level = 1
                 }
             });
-        }
     }
 }
 
@@ -35,16 +32,14 @@ public static class ContainerItemsBuilder
 
         entry.Items ??= [];
         for (var i = 0; i < numberOfTimes; i++)
-        {
-            entry.Items.Add(new ContainerEntry()
+            entry.Items.Add(new ContainerEntry
             {
-                Item = new ContainerItem()
+                Item = new ContainerItem
                 {
                     Item = reference.ToLink(),
                     Count = count
                 }
             });
-        }
     }
 }
 
@@ -56,15 +51,13 @@ public static class NpcInventoryBuilder
 
         npc.Items ??= [];
         for (var i = 0; i < numberOfTimes; i++)
-        {
-            npc.Items.Add(new ContainerEntry()
+            npc.Items.Add(new ContainerEntry
             {
-                Item = new ContainerItem()
+                Item = new ContainerItem
                 {
                     Item = reference.ToLink(),
                     Count = count
                 }
             });
-        }
     }
 }

@@ -14,14 +14,11 @@ public static class ConfigurationLoader
         {
             var jsonString = File.ReadAllText(configPath);
             var config = JsonSerializer.Deserialize<PatcherConfiguration>(jsonString)
-                ?? throw new InvalidOperationException("Failed to deserialize configuration");
+                         ?? throw new InvalidOperationException("Failed to deserialize configuration");
 
             config.Validate();
 
-            if (!config.ValidateFilePaths())
-            {
-                throw new InvalidOperationException("One or more required files are missing");
-            }
+            if (!config.ValidateFilePaths()) throw new InvalidOperationException("One or more required files are missing");
 
             return config;
         }

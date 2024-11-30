@@ -1,74 +1,51 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Security.Cryptography;
-using System.Text.Json;
+using CardmastersOfTamriel.ImageProcessor.Configuration;
 using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.Utilities;
 using Serilog;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using QRCoder;
 
 namespace CardmastersOfTamriel.ImageProcessor.Utilities;
 
-public class SourceImageData
-{
-    public required CardShape Shape { get; set; }
-    public required string SourceRelativeFilePath { get; set; }
-}
-
 public class ImageConverter
 {
-    private readonly Config _config;
+    private static readonly ConcurrentBag<string> TempFiles = [];
+    private readonly ImageConversionSettings _imageSettings;
 
-    public ImageConverter(Config config)
+    public ImageConverter(ImageConversionSettings imageSettings)
     {
         RegisterCleanupHandlers();
-        _config = config;
+        _imageSettings = imageSettings;
     }
 
-    private static readonly ConcurrentBag<string> TempFiles = [];
-    
-    // private static string ComputeImageHash(string filePath)
-    // {
-    //     using var sha256 = SHA256.Create();
-    //     using var fileStream = File.OpenRead(filePath);
-    //     var hashBytes = sha256.ComputeHash(fileStream);
-    //     return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-    // }
-    
-    public async Task<CardShape> ConvertImageAndSaveToDestinationAsync(CardTier cardTier,
+    public async Task ConvertImageAndSaveToDestinationAsync(CardTier cardTier,
         string srcImagePath,
         string destImagePath,
+        CardShape cardShape,
         CancellationToken cancellationToken)
 
     {
-        Log.Verbose($"Converting image from '{srcImagePath}' to DDS format at '{destImagePath}'");
-        var imageShape = CardShapeHelper.DetermineOptimalShape(_config, srcImagePath);
-        
-        // var imageHash = ComputeImageHash(srcImagePath);
-        // Log.Verbose($"Image hash: {imageHash}");
-        
-        using var image = await Task.Run(() => Image.Load<Rgba32>(srcImagePath), cancellationToken);
-        TransformImage(image, imageShape);
+        if (!File.Exists(srcImagePath))
+        {
+            Log.Error($"Source image file does not exist at '{srcImagePath}'");
+            return;
+        }
 
-        using var template = await LoadTemplateAsync(imageShape, cardTier, cancellationToken);
+        Log.Verbose($"Converting image from '{srcImagePath}' to DDS format at '{destImagePath}'");
+
+        using var image = await Task.Run(() => Image.Load<Rgba32>(srcImagePath), cancellationToken);
+        TransformImage(image, cardShape);
+
+        using var template = await LoadTemplateAsync(cardShape, cardTier, cancellationToken);
         using var templateCopy = template.Clone();
 
         SuperimposeImageOntoTemplate(image, templateCopy);
-        
-        ImageResizer.ResizeImageToHeight(templateCopy, _config.ImageProperties.MaximumTextureHeight);
-        
-        // var data = new SourceImageData
-        // {
-        //     Shape = imageShape,
-        //     SourceRelativeFilePath = FilePathHelper.GetRelativePath(srcImagePath, cardTier)
-        // };
-        //
-        // SuperimposeImageOntoTemplateAfterResize(templateCopy, data);
-        
+
+        ImageResizer.ResizeImageToHeight(templateCopy, _imageSettings.MaximumTextureHeight);
+
         var tempOutputPath = await SaveAsTemporaryPngAsync(templateCopy, cancellationToken);
         TempFiles.Add(tempOutputPath);
 
@@ -80,8 +57,6 @@ public class ImageConverter
         {
             await CleanupTemporaryFileAsync(tempOutputPath);
         }
-
-        return imageShape;
     }
 
     private void TransformImage(Image<Rgba32> image, CardShape imageShape)
@@ -91,14 +66,14 @@ public class ImageConverter
             case CardShape.Landscape:
                 image.Mutate(x => x.Resize(new ResizeOptions
                 {
-                    Size = _config.ImageProperties.TargetSizes.Landscape.ToImageSharpSize(),
+                    Size = _imageSettings.TargetSizes.Landscape.ToImageSharpSize(),
                     Mode = ResizeMode.Crop
                 }).Rotate(-90));
                 break;
             case CardShape.Portrait:
                 image.Mutate(x => x.Resize(new ResizeOptions
                 {
-                    Size = _config.ImageProperties.TargetSizes.Portrait.ToImageSharpSize(),
+                    Size = _imageSettings.TargetSizes.Portrait.ToImageSharpSize(),
                     Mode = ResizeMode.Crop
                 }));
                 break;
@@ -106,7 +81,7 @@ public class ImageConverter
             default:
                 image.Mutate(x => x.Resize(new ResizeOptions
                 {
-                    Size = _config.ImageProperties.TargetSizes.Square.ToImageSharpSize(),
+                    Size = _imageSettings.TargetSizes.Square.ToImageSharpSize(),
                     Mode = ResizeMode.Crop
                 }));
                 break;
@@ -117,10 +92,10 @@ public class ImageConverter
     {
         var templateFileTier = cardTier switch
         {
-            CardTier.Tier1 => _config.Paths.TemplateFiles.Tier1,
-            CardTier.Tier2 => _config.Paths.TemplateFiles.Tier2,
-            CardTier.Tier3 => _config.Paths.TemplateFiles.Tier3,
-            CardTier.Tier4 => _config.Paths.TemplateFiles.Tier4,
+            CardTier.Tier1 => _imageSettings.TemplateFiles.Tier1,
+            CardTier.Tier2 => _imageSettings.TemplateFiles.Tier2,
+            CardTier.Tier3 => _imageSettings.TemplateFiles.Tier3,
+            CardTier.Tier4 => _imageSettings.TemplateFiles.Tier4,
             _ => throw new ArgumentException($"Unsupported card tier: {cardTier}")
         };
 
@@ -134,36 +109,12 @@ public class ImageConverter
 
         return await Task.Run(() => Image.Load<Rgba32>(templateImagePath), cancellationToken);
     }
-    
+
     private void SuperimposeImageOntoTemplate(Image<Rgba32> image, Image<Rgba32> templateCopy)
     {
-        templateCopy.Mutate(x => x.DrawImage(image, _config.ImageProperties.Offset.ToImageSharpPoint(), 1f));
+        templateCopy.Mutate(x => x.DrawImage(image, _imageSettings.Offset.ToImageSharpPoint(), 1f));
     }
 
-    private static void SuperimposeImageOntoTemplateAfterResize(Image<Rgba32> resizedImage, SourceImageData data)
-    {
-        resizedImage.Mutate(x =>
-        {
-            var qrImage = GenerateQrCodeImage(data);
-            const int padding = 20;
-            var qrPosition = new Point(resizedImage.Width - qrImage.Width - padding, resizedImage.Height - qrImage.Height - padding);
-            x.DrawImage(qrImage, qrPosition, 1f);
-        });
-    }
-    
-    private static Image<Rgba32> GenerateQrCodeImage(SourceImageData data)
-    {
-        var payload = JsonSerializer.Serialize(data);
-        using var qrGenerator = new QRCodeGenerator();
-        using var qrCodeData = qrGenerator.CreateQrCode(payload, QRCodeGenerator.ECCLevel.Q);
-        using var qrCode = new PngByteQRCode(qrCodeData);
-
-        var qrPngBytes = qrCode.GetGraphic(3);
-            
-        using var qrBitmapStream = new MemoryStream(qrPngBytes);
-        return Image.Load<Rgba32>(qrBitmapStream);
-    }
-    
     private static async Task<string> SaveAsTemporaryPngAsync(Image<Rgba32> templateCopy, CancellationToken cancellationToken)
     {
         var tempOutputPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".png");
@@ -179,7 +130,7 @@ public class ImageConverter
         var generatedDdsPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(tempOutputPath) + ".dds");
         if (!File.Exists(generatedDdsPath)) return;
 
-        await Task.Run(() => File.Move(generatedDdsPath, destImagePath, overwrite: true), cancellationToken);
+        await Task.Run(() => File.Move(generatedDdsPath, destImagePath, true), cancellationToken);
         Log.Verbose($"Moved generated DDS file to '{destImagePath}'");
     }
 
@@ -250,7 +201,6 @@ public class ImageConverter
     private static void CleanupTempFiles()
     {
         foreach (var tempFile in TempFiles.Where(File.Exists))
-        {
             try
             {
                 File.Delete(tempFile);
@@ -260,7 +210,6 @@ public class ImageConverter
             {
                 Log.Error($"Failed to delete temporary image file at '{tempFile}': {e.Message}");
             }
-        }
 
         TempFiles.Clear();
     }

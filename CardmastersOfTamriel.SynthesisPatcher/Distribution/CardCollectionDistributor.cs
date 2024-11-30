@@ -12,29 +12,28 @@ using Serilog;
 namespace CardmastersOfTamriel.SynthesisPatcher.Distribution;
 
 /// <summary>
-/// Handles the distribution of card collections throughout the game world by managing different distribution strategies
-/// for various game object types (LeveledItems, Containers, and NPCs).
+///     Handles the distribution of card collections throughout the game world by managing different distribution strategies
+///     for various game object types (LeveledItems, Containers, and NPCs).
 /// </summary>
 /// <remarks>
-/// This distributor uses type-specific strategies to handle card distribution based on collector configurations
-/// and probability mappings. It supports:
-/// - Distribution to LeveledItems
-/// - Distribution to Containers
-/// - Distribution to NPCs
-/// Each strategy is initialized with its own configuration and handles the specifics of distribution for its type.
+///     This distributor uses type-specific strategies to handle card distribution based on collector configurations
+///     and probability mappings. It supports:
+///     - Distribution to LeveledItems
+///     - Distribution to Containers
+///     - Distribution to NPCs
+///     Each strategy is initialized with its own configuration and handles the specifics of distribution for its type.
 /// </remarks>
 public class CardCollectionDistributor
 {
-    private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
+    private readonly CancellationToken _cancellationToken;
+    private readonly PatcherConfiguration _configuration;
     private readonly ISkyrimMod _customMod;
     private readonly CollectorProbabilityMappingService _probabilityLeveledListBuilder;
-    private readonly PatcherConfiguration _configuration;
+    private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly IDictionary<Type, ICardDistributionStrategy> _strategies;
 
-    private readonly CancellationToken _cancellationToken;
-
     public CardCollectionDistributor(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod,
-         CollectorProbabilityMappingService probabilityLeveledListBuilder, PatcherConfiguration config, CancellationToken cancellationToken)
+        CollectorProbabilityMappingService probabilityLeveledListBuilder, PatcherConfiguration config, CancellationToken cancellationToken)
     {
         _state = state;
         _customMod = customMod;
@@ -44,8 +43,10 @@ public class CardCollectionDistributor
         _cancellationToken = cancellationToken;
     }
 
-    private Dictionary<Type, ICardDistributionStrategy> InitializeStrategies() => new()
+    private Dictionary<Type, ICardDistributionStrategy> InitializeStrategies()
     {
+        return new Dictionary<Type, ICardDistributionStrategy>
+        {
             {
                 typeof(LeveledItem),
                 new LeveledItemDistributionStrategy(
@@ -68,6 +69,7 @@ public class CardCollectionDistributor
                     _configuration.GetConfigurationForTarget("npcs"))
             }
         };
+    }
 
     public async Task DistributeToCollectorsInWorldAsync<T>()
     {
@@ -76,10 +78,8 @@ public class CardCollectionDistributor
         DebugExistingLoadOrder();
 
         if (!_strategies.TryGetValue(typeof(T), out var strategy))
-        {
             throw new NotImplementedException(
                 $"Distribution strategy for type {typeof(T).Name} is not implemented");
-        }
 
         await DistributeCardsViaStrategyAsync(strategy);
     }
@@ -88,15 +88,15 @@ public class CardCollectionDistributor
     {
         Log.Debug("Loading LeveledItems..");
         _state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides().OrderBy(x => x.EditorID)
-                                      .ForEach(l => Log.Debug("LoadOrder -> LeveledItem: {0}", l.EditorID));
+            .ForEach(l => Log.Debug("LoadOrder -> LeveledItem: {0}", l.EditorID));
 
         Log.Debug("Loading Containers..");
         _state.LoadOrder.PriorityOrder.Container().WinningOverrides().OrderBy(x => x.EditorID)
-                                      .ForEach(l => Log.Debug("LoadOrder -> Container: {0}", l.EditorID));
+            .ForEach(l => Log.Debug("LoadOrder -> Container: {0}", l.EditorID));
 
         Log.Debug("LoadOrder -> Loading Npcs..");
         _state.LoadOrder.PriorityOrder.Npc().WinningOverrides().OrderBy(x => x.EditorID)
-                                      .ForEach(l => Log.Debug("Npc: {0}", l.EditorID));
+            .ForEach(l => Log.Debug("Npc: {0}", l.EditorID));
     }
 
     private async Task DistributeCardsViaStrategyAsync(ICardDistributionStrategy strategy)

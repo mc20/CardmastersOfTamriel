@@ -7,9 +7,6 @@ namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;
 public class FormKeyGeneratorProvider
 {
     private static readonly Lazy<FormKeyGeneratorProvider> _instance = new(() => new FormKeyGeneratorProvider());
-    public FormKeyGenerator FormKeyGenerator { get; }
-
-    public ISkyrimMod SkyrimMod { get; }
 
     private FormKeyGeneratorProvider()
     {
@@ -18,13 +15,17 @@ public class FormKeyGeneratorProvider
         Log.Information("FormKeyGeneratorProvider initialized");
     }
 
+    public FormKeyGenerator FormKeyGenerator { get; }
+
+    public ISkyrimMod SkyrimMod { get; }
+
     public static FormKeyGeneratorProvider Instance => _instance.Value;
 }
 
 public class FormKeyGenerator
 {
-    private readonly ModKey _modKey;
     private readonly Dictionary<string, uint> _identifierToFormId;
+    private readonly ModKey _modKey;
     private uint _nextFormId;
 
     public FormKeyGenerator(ModKey modKey)
@@ -42,10 +43,8 @@ public class FormKeyGenerator
             return new FormKey(_modKey, existingId);
         }
 
-        if (_nextFormId > 0xFFFFFF)  // Changed from 0xFFF ESL
-        {
+        if (_nextFormId > 0xFFFFFF) // Changed from 0xFFF ESL
             throw new Exception("Exceeded ESP FormID limit");
-        }
 
         var formId = _nextFormId++;
         _identifierToFormId[identifier] = formId;

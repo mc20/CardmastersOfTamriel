@@ -1,18 +1,18 @@
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Common.Configuration;
-using Mutagen.Bethesda.Synthesis;
-using Mutagen.Bethesda.Skyrim;
-using CardmastersOfTamriel.Utilities;
-using Serilog;
 using CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
+using CardmastersOfTamriel.Utilities;
+using Mutagen.Bethesda.Skyrim;
+using Mutagen.Bethesda.Synthesis;
+using Serilog;
 
 namespace CardmastersOfTamriel.SynthesisPatcher.MiscItems.Services;
 
 public class CardLeveledItemService
 {
+    private readonly ISkyrimMod _customMod;
     private readonly PatcherConfiguration _patcherConfig;
     private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
-    private readonly ISkyrimMod _customMod;
 
     public CardLeveledItemService(PatcherConfiguration patcherConfig, IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
     {
@@ -34,7 +34,7 @@ public class CardLeveledItemService
         var cardTierItemCreator = new TieredCardLeveledItemAssembler(_customMod);
         return cardTierItemCreator.CreateCardTierLeveledItems(mappedMiscItems);
     }
-    
+
     private async Task<HashSet<Card>> GetCards(CancellationToken cancellationToken)
     {
         Log.Information("Getting cards from metadata.");

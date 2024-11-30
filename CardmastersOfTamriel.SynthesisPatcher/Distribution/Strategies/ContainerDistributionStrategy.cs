@@ -9,9 +9,8 @@ namespace CardmastersOfTamriel.SynthesisPatcher.Distribution.Strategies;
 
 public class ContainerDistributionStrategy : ICardDistributionStrategy
 {
-    private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _customMod;
-    public DistributionConfiguration Configuration { get; set; }
+    private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
 
     public ContainerDistributionStrategy(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod, DistributionConfiguration configuration)
     {
@@ -19,6 +18,8 @@ public class ContainerDistributionStrategy : ICardDistributionStrategy
         _customMod = customMod;
         Configuration = configuration;
     }
+
+    public DistributionConfiguration Configuration { get; set; }
 
     public void DistributeToTarget(LeveledItem cardTierLeveledItem, string targetEditorId)
     {

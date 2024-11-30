@@ -64,10 +64,7 @@ public static class JsonFileReader
 
                     // If valid, deserialize
                     var item = JsonSerializer.Deserialize<T>(line, JsonSettings.Options);
-                    if (item is not null)
-                    {
-                        result.Add(item);
-                    }
+                    if (item is not null) result.Add(item);
                 }
                 catch (JsonException je)
                 {

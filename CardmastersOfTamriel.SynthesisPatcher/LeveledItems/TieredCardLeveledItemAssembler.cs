@@ -72,10 +72,7 @@ public class TieredCardLeveledItemAssembler
             if (subList == null) continue;
 
             // Add MiscItems to sub-list
-            foreach (var miscItem in itemChunks[i])
-            {
-                AddMiscItemToLeveledItem(subList, miscItem);
-            }
+            foreach (var miscItem in itemChunks[i]) AddMiscItemToLeveledItem(subList, miscItem);
 
             // Add sub-list to tier leveled item
             AddSubListToTierLeveledItem(tierLeveledItem, subList);

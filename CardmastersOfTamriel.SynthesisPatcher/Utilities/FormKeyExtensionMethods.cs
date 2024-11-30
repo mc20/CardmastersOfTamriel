@@ -8,8 +8,10 @@ namespace CardmastersOfTamriel.SynthesisPatcher.Utilities;
 
 public static class FormKeyExtensionMethods
 {
-    public static string AddModNamePrefix(this string str) =>
-        string.IsNullOrWhiteSpace(str) ? str : $"CMT_{str}";
+    public static string AddModNamePrefix(this string str)
+    {
+        return string.IsNullOrWhiteSpace(str) ? str : $"CMT_{str}";
+    }
 
     public static bool CheckIfExists<T>(this IPatcherState<ISkyrimMod, ISkyrimModGetter> state, FormKey formKey)
         where T : class, IMajorRecordGetter

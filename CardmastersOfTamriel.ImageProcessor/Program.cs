@@ -1,6 +1,8 @@
 ﻿using System.Text.Json;
 using CardmastersOfTamriel.ImageProcessor.CardSets;
 using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
+using CardmastersOfTamriel.ImageProcessor.Configuration;
+using CardmastersOfTamriel.ImageProcessor.Setup;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Utilities;
 using Microsoft.Extensions.Configuration;
@@ -15,7 +17,6 @@ public class Program
         try
         {
             var config = GetConfiguration();
-            
 
             if (!Directory.Exists(config.Paths.OutputFolderPath))
             {
@@ -28,8 +29,8 @@ public class Program
 
             // Relies on OutputFolderPath being set
             SetupLogging(config);
-            
-            Log.Information("Loaded configuration:\n\n"+ JsonSerializer.Serialize(config, JsonSettings.Options));
+
+            Log.Information("Loaded configuration:\n\n" + JsonSerializer.Serialize(config, JsonSettings.Options));
 
             Log.Information($"User entered arguments {string.Join(", ", args)}");
 
@@ -47,10 +48,7 @@ public class Program
             if (!JsonFileReader.InvalidJsonFilesDictionary.IsEmpty)
             {
                 Log.Warning("Invalid JSON files:");
-                foreach (var (filePath, message) in JsonFileReader.InvalidJsonFilesDictionary)
-                {
-                    Log.Warning($"{filePath}: {message}");
-                }
+                foreach (var (filePath, message) in JsonFileReader.InvalidJsonFilesDictionary) Log.Warning($"{filePath}: {message}");
             }
         }
         catch (Exception ex)
@@ -67,8 +65,8 @@ public class Program
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile("localsettings.json", optional: true, reloadOnChange: true)
+            .AddJsonFile("appsettings.json", true, true)
+            .AddJsonFile("localsettings.json", true, true)
             .AddEnvironmentVariables()
             .Build();
 
@@ -82,7 +80,6 @@ public class Program
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
-            // .WriteTo.Console()
             .WriteTo.File(logFilePath)
             .WriteTo.Debug()
             .CreateLogger();
@@ -90,44 +87,43 @@ public class Program
 
     private static async Task ExecuteCommand(CommandMode mode, Config config)
     {
-        ICardSetHandler? handler = mode switch
+        try
         {
-            CommandMode.Convert => new CardSetImageConversionHandler(config),
-            CommandMode.Rebuild => new RebuildMasterMetadataHandler(config),
-            CommandMode.OverrideSetData => new OverrideSetMetadataHandler(),
-            CommandMode.RecompileMasterMetadata => new CompileMasterMetadataHandler(),
-            CommandMode.UpdateCardSetCount => new ChangeNumberOfCardsInSetHandler(config),
-            CommandMode.Passthrough => new PassthroughHandler(),
-            _ => null,
-        };
-
-        if (handler is not null)
-        {
-            Log.Information($"User selected command: {mode} - {CommandLineParser.CommandHelp[mode]}");
-            Log.Information($"Date: {DateTime.Now}");
-
-            var cts = new CancellationTokenSource();
-
-            var helper = new CardOverrideDataHelper(config, cts.Token);
-            if (!File.Exists(config.Paths.SetMetadataOverrideFilePath))
+            ICardSetHandler? handler = mode switch
             {
-                await helper.CreateAndWriteNewOverrideFileToDiskAsync();
+                CommandMode.Convert => new CardSetImageConversionHandler(config),
+                CommandMode.RecompileMasterMetadata => new CompileMasterMetadataHandler(),
+                CommandMode.Passthrough => new PassthroughHandler(),
+                CommandMode.Override => new ApplyOverrideDataHandler(),
+                _ => null
+            };
+
+            if (handler is not null)
+            {
+                Log.Information($"User selected command: {mode} - {CommandLineParser.CommandHelp[mode]}");
+                Log.Information($"Date: {DateTime.Now}");
+
+                var cts = new CancellationTokenSource();
+
+                var helper = new CardOverrideDataHelper(config, cts.Token);
+                if (!File.Exists(config.Paths.SetMetadataOverrideFilePath)) await helper.CreateAndWriteNewOverrideFileToDiskAsync();
+
+                var overrides = await helper.LoadOverridesAsync();
+
+                var coordinator = new ImageProcessingCoordinator(config.Paths, cts.Token, overrides);
+                await coordinator.PerformProcessingUsingHandlerAsync(handler);
+                await coordinator.CleanupNonTrackedFilesAtDestination();
+                await coordinator.CompileSeriesMetadataAsync();
             }
-
-            // Override data defined as dictionary of SetId to CardOverrideData
-            var overrides = await helper.LoadOverridesAsync();
-
-            var coordinator = new ImageProcessingCoordinator(config, cts.Token, overrides);
-            await coordinator.PerformProcessingUsingHandlerAsync(handler);
-            await coordinator.CleanupNonTrackedFilesAtDestination();
-            await coordinator.CompileSeriesMetadataAsync();
-
-            await JsonFileWriter.WriteToJsonAsync(overrides, config.Paths.SetMetadataOverrideFilePath, cts.Token);
+            else
+            {
+                Log.Error("Invalid command");
+            }
         }
-        else
+        catch (Exception e)
         {
-            Log.Error("Invalid command");
+            Log.Error(e, "Failed to execute command");
+            throw;
         }
     }
-
 }

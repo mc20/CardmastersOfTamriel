@@ -30,22 +30,6 @@ public class Card : IEquatable<Card>
     public required string SourceAbsoluteFilePath { get; init; }
     public string? DestinationAbsoluteFilePath { get; set; }
     public string? DestinationRelativeFilePath { get; set; }
-    
-    public string? SourceHash { get; set; }
-
-    public void SetGenericDisplayName()
-    {
-        // var indexFormat = new string('0', DisplayedTotalCount.ToString().Length);
-        // DisplayName = $"{SetDisplayName ?? DisplayName ?? Id} - Card #{DisplayedIndex.ToString(indexFormat)} of {DisplayedTotalCount}";
-
-        DisplayName = $"{SetDisplayName ?? DisplayName ?? Id} - Card #{DisplayedIndex}";
-    }
-
-    public override int GetHashCode()
-    {
-        // Only use immutable identity properties
-        return HashCode.Combine(Id, SetId);
-    }
 
     public bool Equals(Card? other)
     {
@@ -54,6 +38,24 @@ public class Card : IEquatable<Card>
 
         // For card equality, we might only care about the identity
         return Id == other.Id && SetId == other.SetId;
+    }
+
+    public void SetGenericDisplayName()
+    {
+        // Style: leading zeroes
+        // var indexFormat = new string('0', DisplayedTotalCount.ToString().Length);
+        // DisplayName = $"{SetDisplayName ?? DisplayName ?? Id} - Card #{DisplayedIndex.ToString(indexFormat)} of {DisplayedTotalCount}";
+        
+        DisplayName = $"{SetDisplayName ?? DisplayName ?? Id} - Card #{DisplayedIndex} of {DisplayedTotalCount}";
+        
+        // Style: no total count
+        // DisplayName = $"{SetDisplayName ?? DisplayName ?? Id} - Card #{DisplayedIndex}";
+    }
+
+    public override int GetHashCode()
+    {
+        // Only use immutable identity properties
+        return HashCode.Combine(Id, SetId);
     }
 
     // Operator overloads for consistency

@@ -8,8 +8,6 @@ public class CardSet : IEquatable<CardSet>, IIdentifiable
         SeriesId = seriesId;
     }
 
-    // Immutable identity properties
-    public string Id { get; init; }
     public string SeriesId { get; init; }
     public required string SeriesKeyword { get; set; }
 
@@ -22,12 +20,6 @@ public class CardSet : IEquatable<CardSet>, IIdentifiable
     public required string DestinationAbsoluteFolderPath { get; set; }
     public required string DestinationRelativeFolderPath { get; set; }
 
-    public override int GetHashCode()
-    {
-        // Only use immutable identity properties
-        return HashCode.Combine(Id, SeriesId);
-    }
-
     public bool Equals(CardSet? other)
     {
         if (other is null) return false;
@@ -35,6 +27,15 @@ public class CardSet : IEquatable<CardSet>, IIdentifiable
 
         // For set equality, we might only care about the identity
         return Id == other.Id && SeriesId == other.SeriesId;
+    }
+
+    // Immutable identity properties
+    public string Id { get; init; }
+
+    public override int GetHashCode()
+    {
+        // Only use immutable identity properties
+        return HashCode.Combine(Id, SeriesId);
     }
 
     public static bool operator ==(CardSet? left, CardSet? right)
@@ -56,7 +57,7 @@ public class CardSet : IEquatable<CardSet>, IIdentifiable
 
 public class CardEqualityComparer : IEqualityComparer<Card>
 {
-    public static CardEqualityComparer Instance { get; } = new CardEqualityComparer();
+    public static CardEqualityComparer Instance { get; } = new();
 
     public bool Equals(Card? x, Card? y)
     {
@@ -74,7 +75,7 @@ public class CardEqualityComparer : IEqualityComparer<Card>
 
 public class CardSetEqualityComparer : IEqualityComparer<CardSet>
 {
-    public static CardSetEqualityComparer Instance { get; } = new CardSetEqualityComparer();
+    public static CardSetEqualityComparer Instance { get; } = new();
 
     public bool Equals(CardSet? x, CardSet? y)
     {

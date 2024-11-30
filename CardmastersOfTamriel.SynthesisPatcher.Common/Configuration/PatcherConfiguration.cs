@@ -15,8 +15,8 @@ public class PatcherConfiguration
 
     [SupportedOSPlatform("windows7.0")]
     public void ApplyInternalFilePaths<TMod, TModGetter>(IPatcherState<TMod, TModGetter> state)
-            where TMod : class, TModGetter, IMod
-            where TModGetter : class, IModGetter
+        where TMod : class, TModGetter, IMod
+        where TModGetter : class, IModGetter
     {
         MasterMetadataFilePath = state.RetrieveInternalFile(MasterMetadataFilePath);
         LogOutputFilePath = state.RetrieveInternalFile(LogOutputFilePath);
@@ -52,10 +52,7 @@ public class PatcherConfiguration
         if (!DistributionConfigurations.Any())
             throw new InvalidOperationException("At least one DistributionConfiguration must be specified");
 
-        foreach (var config in DistributionConfigurations)
-        {
-            config.Validate();
-        }
+        foreach (var config in DistributionConfigurations) config.Validate();
 
         // Check for duplicate target names
         var duplicateTargets = DistributionConfigurations
@@ -65,17 +62,15 @@ public class PatcherConfiguration
             .ToList();
 
         if (duplicateTargets.Count != 0)
-        {
             throw new InvalidOperationException(
                 $"Duplicate TargetNames found: {string.Join(", ", duplicateTargets)}");
-        }
     }
 
     public DistributionConfiguration GetConfigurationForTarget(string targetName)
     {
         return DistributionConfigurations
-            .FirstOrDefault(x => x.TargetName.Equals(targetName, StringComparison.OrdinalIgnoreCase))
-            ?? throw new KeyNotFoundException($"No configuration found for target: {targetName}");
+                   .FirstOrDefault(x => x.TargetName.Equals(targetName, StringComparison.OrdinalIgnoreCase))
+               ?? throw new KeyNotFoundException($"No configuration found for target: {targetName}");
     }
 
     public bool ValidateFilePaths()
@@ -93,13 +88,13 @@ public class PatcherConfiguration
                 Log.Error(ex, $"Failed to create master metadata file at: {MasterMetadataFilePath}");
                 return false;
             }
+
             return false;
         }
 
         // Log output path - ensure directory exists
         var logDirectory = Path.GetDirectoryName(LogOutputFilePath);
         if (!string.IsNullOrEmpty(logDirectory) && !Directory.Exists(logDirectory))
-        {
             try
             {
                 Directory.CreateDirectory(logDirectory);
@@ -109,7 +104,6 @@ public class PatcherConfiguration
                 Log.Error(ex, $"Failed to create log directory: {logDirectory}");
                 return false;
             }
-        }
 
         return DistributionConfigurations.All(config => config.ValidateFilePaths());
     }

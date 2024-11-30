@@ -14,7 +14,7 @@ public static class CardSeriesFactory
             Description = string.Empty,
             Sets = sets ?? [],
             SourceFolderPath = "",
-            DestinationFolderPath = "",
+            DestinationFolderPath = ""
         };
     }
 }

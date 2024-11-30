@@ -4,11 +4,12 @@ namespace CardmastersOfTamriel.Utilities;
 
 public static class TextFormattingHelper
 {
-
-    public static string AddModNamePrefix(this string str) =>
-        string.IsNullOrWhiteSpace(str) ? str : $"CMT_{str}";
-
     public static readonly int MaxCardShapeTextLength = Enum.GetValues<CardShape>().Max(shape => shape.ToString().Length);
+
+    public static string AddModNamePrefix(this string str)
+    {
+        return string.IsNullOrWhiteSpace(str) ? str : $"CMT_{str}";
+    }
 
     public static string PadString(string? value, int maxLength)
     {

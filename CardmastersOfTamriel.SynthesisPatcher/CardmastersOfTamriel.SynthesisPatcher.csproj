@@ -1,59 +1,57 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
-    <ImplicitUsings>true</ImplicitUsings>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+        <ImplicitUsings>true</ImplicitUsings>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
-    <PackageReference Include="Mutagen.Bethesda.Skyrim" Version="0.47.2" />
-    <PackageReference Include="Mutagen.Bethesda.Synthesis" Version="0.30.7" />
-    <PackageReference Include="Nifly" Version="0.1.0" />
-    <PackageReference Include="Serilog" Version="4.1.1-dev-02318" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.1-dev-10398" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0"/>
+        <PackageReference Include="Mutagen.Bethesda.Skyrim" Version="0.47.2"/>
+        <PackageReference Include="Mutagen.Bethesda.Synthesis" Version="0.30.7"/>
+        <PackageReference Include="Serilog" Version="4.1.1-dev-02318"/>
+        <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.1-dev-10398"/>
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
+        <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0"/>
+        <PackageReference Include="Serilog.Sinks.File" Version="6.0.0"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\CardmastersOfTamriel.Models\CardmastersOfTamriel.Models.csproj" />
-    <ProjectReference Include="..\CardmastersOfTamriel.Utilities\CardmastersOfTamriel.Utilities.csproj" />
-    <ProjectReference Include="..\CardmastersOfTamriel.SynthesisPatcher.Common\CardmastersOfTamriel.SynthesisPatcher.Common.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\CardmastersOfTamriel.Models\CardmastersOfTamriel.Models.csproj"/>
+        <ProjectReference Include="..\CardmastersOfTamriel.Utilities\CardmastersOfTamriel.Utilities.csproj"/>
+        <ProjectReference Include="..\CardmastersOfTamriel.SynthesisPatcher.Common\CardmastersOfTamriel.SynthesisPatcher.Common.csproj"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Config\collector_config.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Config\collectors_containers.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Config\collectors_leveleditems.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="InternalData\localsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    <ItemGroup>
+        <None Update="appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Config\collector_config.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Config\collectors_containers.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Config\collectors_leveleditems.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="InternalData\localsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="LeveledItems\CollectorLeveledItemCreator.cs" />
-    <Compile Remove="Utilities\LeveledItemExtensionMethods.cs" />
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Remove="LeveledItems\CollectorLeveledItemCreator.cs"/>
+        <Compile Remove="Utilities\LeveledItemExtensionMethods.cs"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Distribution\Configuration\" />
-    <Folder Include="Metadata\" />
-  </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Metadata\"/>
+    </ItemGroup>
 </Project>

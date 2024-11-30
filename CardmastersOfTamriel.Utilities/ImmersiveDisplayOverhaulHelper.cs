@@ -8,7 +8,7 @@ public static class ImmersiveDisplayOverhaulHelper
     {
         card.Keywords ??= [];
         card.Keywords.Add("IDO_DisplayAsDaggerKeyword");
-        
+
         switch (card.Shape)
         {
             case CardShape.Landscape:

@@ -1,6 +1,5 @@
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.MiscItems.Factory;
-using CardmastersOfTamriel.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
@@ -10,8 +9,8 @@ namespace CardmastersOfTamriel.SynthesisPatcher.MiscItems.Services;
 
 public class CardToMiscItemService
 {
-    private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
     private readonly ISkyrimMod _customMod;
+    private readonly IPatcherState<ISkyrimMod, ISkyrimModGetter> _state;
 
     public CardToMiscItemService(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISkyrimMod customMod)
     {
@@ -33,9 +32,6 @@ public class CardToMiscItemService
         foreach (var card in cards)
         {
             var miscItem = InsertAsMiscItem(card);
-            if (miscItem == null) continue;
-
-
             miscItems.Add(card, miscItem);
             Log.Debug($"Inserted MiscItem: {miscItem.EditorID}");
         }
@@ -43,14 +39,13 @@ public class CardToMiscItemService
         return miscItems;
     }
 
-    private MiscItem? InsertAsMiscItem(Card card)
+    private MiscItem InsertAsMiscItem(Card card)
     {
         var newMiscItem = MiscItemFactory.CreateMiscItem(_customMod, card);
         var textureSetForWorldModel = TextureSetFactory.CreateTextureSet(_customMod, card);
 
         newMiscItem.Model = ModelFactory.CreateModel(card, textureSetForWorldModel);
-        
-        
+
 
         card.Keywords ??= [];
 
@@ -90,13 +85,9 @@ public class CardToMiscItemService
             }
 
             if (keyword != null)
-            {
                 miscItem.Keywords.Add(keyword.ToLink());
-            }
             else
-            {
                 Log.Warning($"Keyword {keywordEditorId} not found in the load order.");
-            }
         }
     }
 }

@@ -4,22 +4,18 @@ public static class CommandLineParser
 {
     private static readonly Dictionary<string, CommandMode> CommandMap = new()
     {
-        ["--rebuild"] = CommandMode.Rebuild,
         ["--convert"] = CommandMode.Convert,
-        ["--overridesets"] = CommandMode.OverrideSetData,
         ["--recompile"] = CommandMode.RecompileMasterMetadata,
-        ["--updatecounts"] = CommandMode.UpdateCardSetCount,
-        ["--passthrough"] = CommandMode.Passthrough
+        ["--passthrough"] = CommandMode.Passthrough,
+        ["--override"] = CommandMode.Override
     };
 
     public static readonly Dictionary<CommandMode, string> CommandHelp = new()
     {
-        [CommandMode.Convert] = "Convert images to DDS format",
-        [CommandMode.Rebuild] = "Rebuild all metadata including seies, sets, and cards",
-        [CommandMode.OverrideSetData] = "Replaces card metadata with specific override data",
-        [CommandMode.RecompileMasterMetadata] = "Read all metadata files and recompile them into the master metadata file",
-        [CommandMode.UpdateCardSetCount] = "Updates metadata to reflect change in card set sample size",
-        [CommandMode.Passthrough] = "Starts the coordination but no processing is done on the sets",
+        [CommandMode.Convert] = "Convert images to DDS format and create metadata files.",
+        [CommandMode.RecompileMasterMetadata] = "Read all metadata files and recompile them into the master metadata file.",
+        [CommandMode.Passthrough] = "Starts the coordination but no processing is done on the sets.",
+        [CommandMode.Override] = "If available, applies overrides to set card data."
     };
 
     public static bool TryParseCommand(string[] args, out CommandMode mode)
@@ -34,9 +30,6 @@ public static class CommandLineParser
     private static void PrintHelp()
     {
         Console.WriteLine("\nAvailable commands:");
-        foreach (var (arg, mode) in CommandMap)
-        {
-            Console.WriteLine($"{arg,-20} {CommandHelp[mode]}");
-        }
+        foreach (var (arg, mode) in CommandMap) Console.WriteLine($"{arg,-20} {CommandHelp[mode]}");
     }
 }
