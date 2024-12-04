@@ -1,5 +1,4 @@
 ﻿using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda.Skyrim;
 using Serilog;
@@ -15,9 +14,7 @@ public static class TextureSetFactory
         textureSet.Diffuse = @$"CardmastersOfTamriel\{card.DestinationRelativeFilePath}";
         textureSet.NormalOrGloss = card.GetNormalOrGloss();
 
-        Log.Verbose($"Added TextureSet {textureSet.EditorID} with Diffuse Path: '{textureSet.Diffuse}'");
-
-        ModificationTracker.IncrementTextureSetCount(textureSet.FormKey.ToString());
+        Log.Debug($"Added TextureSet {textureSet.EditorID} with Diffuse Path: '{textureSet.Diffuse}'");
 
         return textureSet;
     }

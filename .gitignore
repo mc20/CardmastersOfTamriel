@@ -11,6 +11,7 @@
 *.sln.docstates
 localsettings.json
 master_metadata.json
+*.log
 
 # User-specific folders
 Scripts/

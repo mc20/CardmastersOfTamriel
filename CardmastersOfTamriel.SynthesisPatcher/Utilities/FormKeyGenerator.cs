@@ -39,7 +39,7 @@ public class FormKeyGenerator
     {
         if (_identifierToFormId.TryGetValue(identifier, out var existingId))
         {
-            Log.Verbose($"Found existing FormID for {identifier}: {existingId}", identifier, existingId);
+            Log.Debug($"Found existing FormID for {identifier}: {existingId}", identifier, existingId);
             return new FormKey(_modKey, existingId);
         }
 
@@ -48,7 +48,7 @@ public class FormKeyGenerator
 
         var formId = _nextFormId++;
         _identifierToFormId[identifier] = formId;
-        Log.Verbose($"Generated new FormID for {identifier}: {formId}", identifier, formId);
+        Log.Debug($"Generated new FormID for {identifier}: {formId}", identifier, formId);
         return new FormKey(_modKey, formId);
     }
 }

@@ -28,13 +28,15 @@ public class ImageConverter
         CancellationToken cancellationToken)
 
     {
+        Log.Debug("Converting image from '{SrcImagePath}' to DDS format at '{DestImagePath}'", srcImagePath, destImagePath);
+        
         if (!File.Exists(srcImagePath))
         {
             Log.Error($"Source image file does not exist at '{srcImagePath}'");
             return;
         }
 
-        Log.Verbose($"Converting image from '{srcImagePath}' to DDS format at '{destImagePath}'");
+        Log.Debug($"Converting image from '{srcImagePath}' to DDS format at '{destImagePath}'");
 
         using var image = await Task.Run(() => Image.Load<Rgba32>(srcImagePath), cancellationToken);
         TransformImage(image, cardShape);
@@ -131,7 +133,7 @@ public class ImageConverter
         if (!File.Exists(generatedDdsPath)) return;
 
         await Task.Run(() => File.Move(generatedDdsPath, destImagePath, true), cancellationToken);
-        Log.Verbose($"Moved generated DDS file to '{destImagePath}'");
+        Log.Debug($"Moved generated DDS file to '{destImagePath}'");
     }
 
     private static async Task ConvertToDdsAsync(string inputPath, string outputPath, CancellationToken cancellationToken)
@@ -150,12 +152,12 @@ public class ImageConverter
                 }
             };
 
-            Log.Verbose($"Converting '{Path.GetFileName(inputPath)}' to dds file: '{Path.GetFileName(outputPath)}'");
+            Log.Debug($"Converting '{Path.GetFileName(inputPath)}' to dds file: '{Path.GetFileName(outputPath)}'");
 
             process.OutputDataReceived += (sender, args) =>
             {
                 if (!string.IsNullOrEmpty(args.Data))
-                    Log.Verbose(args.Data);
+                    Log.Debug(args.Data);
             };
 
             process.Start();
@@ -183,7 +185,7 @@ public class ImageConverter
         if (!File.Exists(tempOutputPath)) return;
 
         await Task.Run(() => File.Delete(tempOutputPath));
-        Log.Verbose($"Deleted temporary image file at '{tempOutputPath}'");
+        Log.Debug($"Deleted temporary image file at '{tempOutputPath}'");
     }
 
     private static void RegisterCleanupHandlers()
@@ -204,7 +206,7 @@ public class ImageConverter
             try
             {
                 File.Delete(tempFile);
-                Log.Verbose($"Deleted temporary image file at '{tempFile}'");
+                Log.Debug($"Deleted temporary image file at '{tempFile}'");
             }
             catch (Exception e)
             {

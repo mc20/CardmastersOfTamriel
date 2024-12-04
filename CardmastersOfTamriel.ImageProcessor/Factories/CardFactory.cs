@@ -11,13 +11,13 @@ public class CardFactory(DefaultValuesForCards defaults)
     {
         var cards = new HashSet<Card>();
 
-        var imageFilePaths = ImageFilePathUtility.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath).ToHashSet();
+        var imageFilePaths = ImageFilePathUtility.GetImageFilePathsFromFolder(set.SourceAbsoluteFolderPath).Order().ToHashSet();
 
         foreach (var imageInfo in imageFilePaths.Select((path, index) => new { filePath = path, index }))
         {
             var imageIndex = imageInfo.index + 1;
 
-            var newCardId = Path.GetFileNameWithoutExtension(NamingHelper.CreateCardId(set, (uint)imageIndex));
+            var newCardId = Path.GetFileNameWithoutExtension(NamingHelper.CreateFileNameFromCardSetAndIndex(set, (uint)imageIndex, "dds"));
             var newCard = new Card(newCardId, set.Id)
             {
                 SetDisplayName = set.DisplayName,

@@ -1,5 +1,4 @@
 using CardmastersOfTamriel.Models;
-using CardmastersOfTamriel.SynthesisPatcher.Diagnostics;
 using CardmastersOfTamriel.SynthesisPatcher.Utilities;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Skyrim;
@@ -46,7 +45,6 @@ public class TieredCardLeveledItemAssembler
         leveledItem.ChanceNone = Percent.Zero;
         leveledItem.Entries ??= [];
 
-        ModificationTracker.IncrementLeveledItemCount($"Card{tier}\t{leveledItem.EditorID}");
         return leveledItem;
     }
 
@@ -85,7 +83,6 @@ public class TieredCardLeveledItemAssembler
         subList.ChanceNone = Percent.Zero;
         subList.Entries ??= [];
 
-        ModificationTracker.IncrementLeveledItemCount($"Card{tier}_Sub{index}\t{subList.EditorID}");
         return subList;
     }
 
@@ -102,7 +99,6 @@ public class TieredCardLeveledItemAssembler
         };
         leveledItem.Entries ??= [];
         leveledItem.Entries.Add(entry);
-        ModificationTracker.IncrementLeveledItemEntryCount(leveledItem.EditorID ?? "UNKNOWN");
     }
 
     private static void AddSubListToTierLeveledItem(LeveledItem tierLeveledItem, LeveledItem subList)
@@ -118,6 +114,5 @@ public class TieredCardLeveledItemAssembler
         };
         tierLeveledItem.Entries ??= [];
         tierLeveledItem.Entries.Add(entry);
-        ModificationTracker.IncrementLeveledItemEntryCount(tierLeveledItem.EditorID ?? "UNKNOWN");
     }
 }

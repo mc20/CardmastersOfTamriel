@@ -12,12 +12,11 @@ public static class CardSetCleanupHelper
         Log.Information($"[{set.Id}]\tRemoving Cards with no SourceAbsoluteFilePath [total cards: {set.Cards?.Count}]");
 
         if (set.Cards is null) return;
+ 
+        var cardsToDelete = set.Cards
+            .Where(c => string.IsNullOrWhiteSpace(c.SourceAbsoluteFilePath) || !File.Exists(c.SourceAbsoluteFilePath))
+            .ToHashSet();
 
-        // these cards lost their sources or the sources do not exist and can't be relied on
-        // they should be not be considered as existing destination cards 
-        var cardsToDelete = set.Cards.Where(c => string.IsNullOrWhiteSpace(c.SourceAbsoluteFilePath) || !File.Exists(c.SourceAbsoluteFilePath)).ToHashSet();
-
-        // delete DDS images having no absolute source file path in the json file
         foreach (var card in cardsToDelete)
         {
             if (File.Exists(card.DestinationAbsoluteFilePath))

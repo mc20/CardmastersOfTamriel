@@ -18,7 +18,7 @@ public static class KeywordHelper
         foreach (CardTier cardTier in Enum.GetValues(typeof(CardTier)))
         {
             var kw = cardTier.ToString().ToUpper().AddModNamePrefix();
-            Log.Verbose("Adding keyword: {Keyword}", kw);
+            Log.Debug("Adding keyword: {Keyword}", kw);
             _ = customMod.Keywords.AddNewWithId(kw);
         }
     }
@@ -31,9 +31,10 @@ public static class KeywordHelper
 
         var metadataFilePath = patcherConfig.MasterMetadataFilePath =
             state.RetrieveInternalFile(patcherConfig.MasterMetadataFilePath);
-        var data = await JsonFileReader.ReadFromJsonAsync<Dictionary<CardTier, HashSet<CardSeries>>>(metadataFilePath,
+        var data = await JsonFileReader.ReadFromJsonAsync<MasterMetadata>(metadataFilePath,
             cancellationToken);
-        var cardSeries = data.Values.SelectMany(series => series).ToHashSet();
+        
+        var cardSeries = data.Metadata.Values.SelectMany(metadata => metadata).ToHashSet();
 
         Log.Debug($"Found {cardSeries.Count} card series and adding eligible keywords");
 

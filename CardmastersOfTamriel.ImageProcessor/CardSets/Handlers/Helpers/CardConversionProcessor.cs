@@ -24,6 +24,8 @@ public class CardConversionProcessor
 
     public async Task ProcessAndUpdateCardForConversionAsync(CardSet set, CancellationToken cancellationToken)
     {
+        Log.Debug($"[{set.Id}]:\tProcessing card {_card.Id}");
+
         try
         {
             if (!File.Exists(_card.SourceAbsoluteFilePath))
@@ -35,7 +37,7 @@ public class CardConversionProcessor
             var result = await ConvertAndSaveImageAsync(_settings,
                 set,
                 _card.SourceAbsoluteFilePath,
-                NamingHelper.CreateCardId(set, _index),
+                NamingHelper.CreateFileNameFromCardSetAndIndex(set, _index + 1, "dds"),
                 cancellationToken);
 
             _card.ConversionDate = DateTime.Now;
@@ -60,12 +62,12 @@ public class CardConversionProcessor
     {
         if (string.IsNullOrEmpty(_card.DestinationAbsoluteFilePath))
         {
-            Log.Verbose($"[{set.Id}]\tCard {_card.Id} was not converted and will be skipped");
+            Log.Debug($"[{set.Id}]\tCard {_card.Id} was not converted and will be skipped");
             UpdateUnconvertedCard();
         }
         else
         {
-            Log.Verbose($"[{set.Id}]\tCard {_card.Id} was possibly already converted and will be used as-is");
+            Log.Debug($"[{set.Id}]\tCard {_card.Id} was possibly already converted and will be used as-is");
             _card.DestinationRelativeFilePath = FilePathHelper.GetRelativePath(_card.DestinationAbsoluteFilePath, set.Tier);
         }
     }
@@ -78,7 +80,7 @@ public class CardConversionProcessor
             return;
         }
 
-        Log.Verbose($"Card {_card.Id} was not converted and will be skipped");
+        Log.Debug($"Card {_card.Id} was not converted and will be skipped");
         _card.Shape = CardShapeHelper.DetermineOptimalShape(_settings, _card.SourceAbsoluteFilePath); // Keep track of the shape for future reference
         _card.DisplayName = null;
         _card.DestinationAbsoluteFilePath = null;
@@ -95,22 +97,32 @@ public class CardConversionProcessor
         string imageFileName,
         CancellationToken cancellationToken)
     {
-        if (!File.Exists(sourceImageFilePath))
+        Log.Debug("[{SetId}]\tConverting image file {ImageFileName}...", set.Id, imageFileName);
+        
+        try
         {
-            Log.Error($"[{set.Id}]\tSource image file does not exist at path '{sourceImageFilePath}'");
-            throw new FileNotFoundException("Source image file does not exist", sourceImageFilePath);
+            if (!File.Exists(sourceImageFilePath))
+            {
+                Log.Error($"[{set.Id}]\tSource image file does not exist at path '{sourceImageFilePath}'");
+                throw new FileNotFoundException("Source image file does not exist", sourceImageFilePath);
+            }
+
+            var helper = new ImageConverter(settings);
+            var imageDestinationFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, imageFileName);
+            var cardShape = CardShapeHelper.DetermineOptimalShape(settings, sourceImageFilePath);
+
+            await helper.ConvertImageAndSaveToDestinationAsync(set.Tier, sourceImageFilePath, imageDestinationFilePath, cardShape, cancellationToken);
+
+            return new ConversionResult
+            {
+                Shape = cardShape,
+                DestinationAbsoluteFilePath = imageDestinationFilePath
+            };
         }
-
-        var helper = new ImageConverter(settings);
-        var imageDestinationFilePath = Path.Combine(set.DestinationAbsoluteFolderPath, imageFileName);
-        var cardShape = CardShapeHelper.DetermineOptimalShape(settings, sourceImageFilePath);
-
-        await helper.ConvertImageAndSaveToDestinationAsync(set.Tier, sourceImageFilePath, imageDestinationFilePath, cardShape, cancellationToken);
-
-        return new ConversionResult
+        catch (Exception e)
         {
-            Shape = cardShape,
-            DestinationAbsoluteFilePath = imageDestinationFilePath
-        };
+            Log.Error(e, $"[{set.Id}]\tError converting image file");
+            throw;
+        }
     }
 }

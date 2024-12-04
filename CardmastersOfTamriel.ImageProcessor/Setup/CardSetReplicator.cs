@@ -20,12 +20,12 @@ public class CardSetReplicator(CardSeries series)
 
             if (sourceSetPaths.Count > 1)
             {
-                Log.Verbose($"Creating multiple set folders for {setFolderName}");
+                Log.Debug($"Creating multiple set folders for {setFolderName}");
                 await CreateMultipleFoldersAsync(setFolderName, sourceSetPaths, cancellationToken);
             }
             else
             {
-                Log.Verbose($"Creating single set folder for {setFolderName}");
+                Log.Debug($"Creating single set folder for {setFolderName}");
                 var destinationSetFolderPath = Path.Combine(series.DestinationFolderPath, setFolderName);
                 await SaveNewSetAndCreateAtDestinationAsync(setFolderName, destinationSetFolderPath, sourceSetPaths[0],
                     cancellationToken);
@@ -53,19 +53,19 @@ public class CardSetReplicator(CardSeries series)
         string sourceSetPath, CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(destinationSetFolderPath);
-        Log.Verbose("Created destination Set folder: " + destinationSetFolderPath);
+        Log.Debug("Created destination Set folder: " + destinationSetFolderPath);
 
         CardSet? newCardSetMetadata = null;
 
         var destinationSetMetadataFilePath = Path.Combine(destinationSetFolderPath, PathSettings.DefaultFilenameForSetMetadataJson);
 
         if (!File.Exists(destinationSetMetadataFilePath))
-            Log.Verbose($"No existing Series Metadata file found at Destination Path: {destinationSetMetadataFilePath}");
+            Log.Debug($"No existing Series Metadata file found at Destination Path: {destinationSetMetadataFilePath}");
         else
             try
             {
                 newCardSetMetadata = await JsonFileReader.ReadFromJsonAsync<CardSet>(destinationSetMetadataFilePath, cancellationToken);
-                Log.Verbose($"Found existing Series Metadata file at Destination Path: '{destinationSetMetadataFilePath}'");
+                Log.Debug($"Found existing Series Metadata file at Destination Path: '{destinationSetMetadataFilePath}'");
             }
             catch (Exception e)
             {
@@ -94,7 +94,7 @@ public class CardSetReplicator(CardSeries series)
 
         EventBroker.PublishFolderPreparationProgress(this, new ProgressTrackingEventArgs(newCardSetMetadata));
 
-        Log.Verbose($"New serialized Card Set metadata written to {destinationSetMetadataFilePath}");
-        Log.Verbose($"New Set: '{newCardSetMetadata.Id}' saved to path: '{newCardSetMetadata.DestinationAbsoluteFolderPath}'");
+        Log.Debug($"New serialized Card Set metadata written to {destinationSetMetadataFilePath}");
+        Log.Debug($"New Set: '{newCardSetMetadata.Id}' saved to path: '{newCardSetMetadata.DestinationAbsoluteFolderPath}'");
     }
 }

@@ -47,12 +47,10 @@ public static partial class NamingHelper
 
     public static string NormalizeName(string name)
     {
-        // Convert to lowercase
         name = name.ToLower();
 
-        // Replace spaces with underscores
         name = name.Replace(" ", "_");
-
+        name = name.Replace("-", "_");
         name = name.Replace("&", "and");
 
         // Remove any non-alphanumeric characters except underscores
@@ -66,12 +64,22 @@ public static partial class NamingHelper
         return (cardSeries.DisplayName is null ? cardSeries.Id : NormalizeName(cardSeries.DisplayName)).AddModNamePrefix();
     }
 
-    public static string CreateCardId(CardSet set, uint imageIndex)
+    public static string CreateFileNameFromCardSetAndIndex(CardSet set, uint imageIndex, string extension)
     {
-        return $"{set.Id}_{imageIndex:D3}.dds";
+        return $"{CreateCardId(set.Id, imageIndex)}.{extension}";
+    }
+    
+    public static string CreateFileNameFromCardSetIdAndIndex(string setId, uint imageIndex, string extension)
+    {
+        return $"{CreateCardId(setId, imageIndex)}.{extension}";
+    }
+    
+    public static string CreateCardId(string cardSetId, uint imageIndex)
+    {
+        return $"{cardSetId}_{imageIndex:D3}";
     }
 
-    [GeneratedRegex(@"[^a-z0-9_]", RegexOptions.Compiled)]
+    [GeneratedRegex(@"[^a-zA-Z0-9_]", RegexOptions.Compiled)]
     private static partial Regex MyRegex();
 
     [GeneratedRegex(@"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]

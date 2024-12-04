@@ -87,7 +87,15 @@ public class Program
         var cardService = new CardLeveledItemService(patcherConfig, state, customMod);
         var cardTierToLeveledItemMapping =
             await cardService.CreateCardTierToLeveledItemMappingAsync(cancellationSource.Token);
+        
+        if (cardTierToLeveledItemMapping.Count == 0)
+        {
+            Log.Error("No card to leveled item mapping created");
+            return;
+        }
 
+        
+        
         var mappingService = new CollectorProbabilityMappingService(customMod, cardTierToLeveledItemMapping);
 
         var distributor =
@@ -119,8 +127,6 @@ public class Program
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
-            // .MinimumLevel.Verbose()
-            // .MinimumLevel.Debug()
             .WriteTo.File(appConfig.LogOutputFilePath)
             .WriteTo.Console()
             .WriteTo.Debug()

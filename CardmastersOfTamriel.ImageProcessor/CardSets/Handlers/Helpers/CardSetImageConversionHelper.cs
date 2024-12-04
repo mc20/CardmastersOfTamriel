@@ -30,15 +30,32 @@ public static class CardSetImageConversionHelper
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var existingCardsAtDestination = allCardsBeingTracked
-            .Where(card => !string.IsNullOrWhiteSpace(card.DestinationAbsoluteFilePath)).ToHashSet();
+        var cardSetId = allCardsBeingTracked.FirstOrDefault()?.SetId ?? string.Empty;
 
-        var sampleSize = maximumNumberOfCardsToInclude - existingCardsAtDestination.Count;
+        try
+        {
+            var existingCardsAtDestination = allCardsBeingTracked
+                .Where(card => !string.IsNullOrWhiteSpace(card.DestinationAbsoluteFilePath)).ToHashSet();
 
-        var eligibleFilePathsForConversion = allCardsBeingTracked
-            .Select(card => card.SourceAbsoluteFilePath)
-            .Where(filePath => !string.IsNullOrWhiteSpace(filePath)).ToHashSet();
+            Log.Debug($"[{cardSetId}]:\tExisting cards at destination: {existingCardsAtDestination.Count}");
 
-        return eligibleFilePathsForConversion.SelectRandomImageFilePaths(sampleSize).ToHashSet();
+            var sampleSize = maximumNumberOfCardsToInclude - existingCardsAtDestination.Count;
+
+            Log.Debug($"[{cardSetId}]:\tSample size is: {sampleSize}");
+
+            var eligibleFilePathsForConversion = allCardsBeingTracked
+                .Where(card => string.IsNullOrWhiteSpace(card.DestinationAbsoluteFilePath))
+                .Select(card => card.SourceAbsoluteFilePath)
+                .Where(filePath => !string.IsNullOrWhiteSpace(filePath)).ToHashSet();
+
+            Log.Debug($"[{cardSetId}]:\tEligible file path count is: {eligibleFilePathsForConversion.Count}");
+
+            return eligibleFilePathsForConversion.SelectRandomImageFilePaths(sampleSize).Order().ToHashSet();
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, $"[cardSetId]:\tAn error occurred.");
+            throw;
+        }
     }
 }

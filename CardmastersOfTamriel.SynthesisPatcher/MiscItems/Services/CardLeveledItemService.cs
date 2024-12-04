@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CardmastersOfTamriel.Models;
 using CardmastersOfTamriel.SynthesisPatcher.Common.Configuration;
 using CardmastersOfTamriel.SynthesisPatcher.LeveledItems;
@@ -26,9 +27,16 @@ public class CardLeveledItemService
         Log.Information("Creating CardTier to LeveledItem mapping..");
 
         var cardList = await GetCards(cancellationToken);
+        
+        if (cardList.Count == 0)
+        {
+            Log.Warning("No cards found.");
+            return new Dictionary<CardTier, LeveledItem>();
+        }
 
         var miscService = new CardToMiscItemService(_state, _customMod);
         var mappedMiscItems = miscService.InsertAndMapCardsToMiscItems(cardList);
+        Log.Debug("Mapped {CardCount} cards to misc items.", mappedMiscItems.Count);
 
         // Get all cards grouped by CardTier
         var cardTierItemCreator = new TieredCardLeveledItemAssembler(_customMod);
@@ -38,11 +46,14 @@ public class CardLeveledItemService
     private async Task<HashSet<Card>> GetCards(CancellationToken cancellationToken)
     {
         Log.Information("Getting cards from metadata.");
+        
         var metadataFilePath = _patcherConfig.MasterMetadataFilePath = _state.RetrieveInternalFile(_patcherConfig.MasterMetadataFilePath);
-        var data = await JsonFileReader.ReadFromJsonAsync<Dictionary<CardTier, HashSet<CardSeries>>>(metadataFilePath, cancellationToken);
-        var allSeriesData = data.Values.SelectMany(series => series).ToHashSet();
+        
+        var data = await JsonFileReader.ReadFromJsonAsync<MasterMetadata>(metadataFilePath, cancellationToken);
+        var allSeriesData = data.Metadata.Values.SelectMany(series => series).ToHashSet();
         var allSetsData = allSeriesData.SelectMany(set => set.Sets ?? []).ToHashSet();
         var allCardsData = allSetsData.SelectMany(set => set.Cards ?? []).ToHashSet();
+        
         return allCardsData.Where(card => !string.IsNullOrWhiteSpace(card.DestinationRelativeFilePath)).ToHashSet();
     }
 }

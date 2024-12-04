@@ -15,7 +15,7 @@ public static class MiscItemFactory
         newMiscItem.Value = card.Value;
         newMiscItem.Weight = card.Weight;
 
-        Log.Verbose($"Added MiscItem {newMiscItem.EditorID} with Name: '{newMiscItem.Name}'");
+        Log.Debug($"Added MiscItem {newMiscItem.EditorID} with Name: '{newMiscItem.Name}'");
 
         return newMiscItem;
     }

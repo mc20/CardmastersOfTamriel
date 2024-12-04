@@ -28,7 +28,7 @@ public class CollectorProbabilityMappingService
         {
             var collectorId = $"LeveledItem_{config.Category.ToUpper()}_Collector{collectorType.Type}".AddModNamePrefix();
 
-            Log.Verbose($"Mapping new LeveledItem to {collectorType}: '{collectorId}'");
+            Log.Debug($"Mapping new LeveledItem to {collectorType}: '{collectorId}'");
 
             var collectorLeveledItem = _skyrimMod.LeveledItems.AddNewWithId(collectorId);
             collectorLeveledItem.ChanceNone = new Percent(collectorType.ChanceNone);

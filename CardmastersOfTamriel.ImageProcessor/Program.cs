@@ -3,6 +3,7 @@ using CardmastersOfTamriel.ImageProcessor.CardSets;
 using CardmastersOfTamriel.ImageProcessor.CardSets.Handlers;
 using CardmastersOfTamriel.ImageProcessor.Configuration;
 using CardmastersOfTamriel.ImageProcessor.Setup;
+using CardmastersOfTamriel.ImageProcessor.Tasks;
 using CardmastersOfTamriel.ImageProcessor.Utilities;
 using CardmastersOfTamriel.Utilities;
 using Microsoft.Extensions.Configuration;
@@ -30,7 +31,7 @@ public class Program
             // Relies on OutputFolderPath being set
             SetupLogging(config);
 
-            Log.Information("Loaded configuration:\n\n" + JsonSerializer.Serialize(config, JsonSettings.Options));
+            Log.Debug("Loaded configuration:\n\n" + JsonSerializer.Serialize(config, JsonSettings.Options));
 
             Log.Information($"User entered arguments {string.Join(", ", args)}");
 
@@ -106,14 +107,16 @@ public class Program
                 var cts = new CancellationTokenSource();
 
                 var helper = new CardOverrideDataHelper(config, cts.Token);
-                if (!File.Exists(config.Paths.SetMetadataOverrideFilePath)) await helper.CreateAndWriteNewOverrideFileToDiskAsync();
+                var overrides = await helper.LoadOverridesFromDiskAsync();
+                Log.Verbose("Overrides loaded: {Overrides}", overrides);
 
-                var overrides = await helper.LoadOverridesAsync();
-
-                var coordinator = new ImageProcessingCoordinator(config.Paths, cts.Token, overrides);
+                var coordinator = new ImageProcessingCoordinator(config, cts.Token, overrides);
                 await coordinator.PerformProcessingUsingHandlerAsync(handler);
-                await coordinator.CleanupNonTrackedFilesAtDestination();
-                await coordinator.CompileSeriesMetadataAsync();
+
+                var compileTask = new CompileSeriesMetadataTask();
+                await compileTask.WriteToDiskAsync(config.Paths, cts.Token);
+                
+                await CleanupNonTrackedFilesAtDestinationTask.CleanupNonTrackedFiles(config.Paths, cts.Token);
             }
             else
             {

@@ -55,7 +55,7 @@ public class CardToMiscItemService
             AddKeywordsToMiscItem(newMiscItem, card.Keywords);
         }
 
-        Log.Verbose($"Card: {card.Id} '{card.DisplayName}' inserted as MiscItem: {newMiscItem.EditorID}");
+        Log.Debug($"Card: {card.Id} '{card.DisplayName}' inserted as MiscItem: {newMiscItem.EditorID}");
 
         return newMiscItem;
     }

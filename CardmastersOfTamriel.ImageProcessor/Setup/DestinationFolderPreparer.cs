@@ -7,19 +7,12 @@ using Serilog;
 
 namespace CardmastersOfTamriel.ImageProcessor.Setup;
 
-public class DestinationFolderPreparer
+public class DestinationFolderPreparer(PathSettings settings)
 {
-    private readonly PathSettings _settings;
-
-    public DestinationFolderPreparer(PathSettings settings)
-    {
-        _settings = settings;
-    }
-
     public HashSet<string> GatherAllSourceSetFolders()
     {
         var folders = new HashSet<string>();
-        foreach (var tierSourceFolderPath in Directory.EnumerateDirectories(_settings.SourceImagesFolderPath, "*",
+        foreach (var tierSourceFolderPath in Directory.EnumerateDirectories(settings.SourceImagesFolderPath, "*",
                      SearchOption.TopDirectoryOnly))
         {
             Enum.Parse<CardTier>(Path.GetFileName(tierSourceFolderPath));
@@ -30,19 +23,21 @@ public class DestinationFolderPreparer
         return folders;
     }
 
-    public async Task<HashSet<CardSeries>> SetupDestinationFoldersAsync(CancellationToken cancellationToken)
+    public async Task<MasterMetadata> SetupDestinationFoldersAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var allSeriesMetadata = new HashSet<CardSeries>();
-
-        FileOperations.EnsureDirectoryExists(_settings.OutputFolderPath);
-
-        foreach (var tierSourceFolderPath in Directory.EnumerateDirectories(_settings.SourceImagesFolderPath, "*",
-                     SearchOption.TopDirectoryOnly))
+        var metadata = new MasterMetadata();
+        foreach (var tier in Enum.GetValues<CardTier>())
         {
-            var tierDestinationFolderPath = Path.Combine(_settings.OutputFolderPath ?? string.Empty,
-                Path.GetFileName(tierSourceFolderPath));
+            metadata.Metadata[tier] = [];
+        }
+
+        FileOperations.EnsureDirectoryExists(settings.OutputFolderPath);
+
+        foreach (var tierSourceFolderPath in Directory.EnumerateDirectories(settings.SourceImagesFolderPath, "*", SearchOption.TopDirectoryOnly))
+        {
+            var tierDestinationFolderPath = Path.Combine(settings.OutputFolderPath ?? string.Empty, Path.GetFileName(tierSourceFolderPath));
             FileOperations.EnsureDirectoryExists(tierDestinationFolderPath);
 
             var cardTier = Enum.Parse<CardTier>(Path.GetFileName(tierSourceFolderPath));
@@ -51,56 +46,79 @@ public class DestinationFolderPreparer
             foreach (var seriesSourceFolderPath in seriesSourceFolders)
             {
                 var seriesId = $"{Path.GetFileName(seriesSourceFolderPath)}-{Guid.NewGuid()}";
-                var seriesDestinationFolderPath =
-                    Path.Combine(tierDestinationFolderPath, Path.GetFileName(seriesSourceFolderPath));
-                FileOperations.EnsureDirectoryExists(seriesDestinationFolderPath);
+                var seriesFolder = Path.Combine(tierDestinationFolderPath, Path.GetFileName(seriesSourceFolderPath));
+                FileOperations.EnsureDirectoryExists(seriesFolder);
 
+                var seriesDestinationMetadataFilePath = Path.Combine(seriesFolder, PathSettings.DefaultFilenameForSeriesMetadataJson);
                 var groupedFolders = DetermineFolderGrouping(seriesSourceFolderPath, cancellationToken);
-                if (groupedFolders.Item1.Count == 0) Log.Error($"{seriesId}:\tNo folder groups found in '{seriesSourceFolderPath}'");
+                ProcessAndGetGroupedFolders(groupedFolders, seriesId, seriesSourceFolderPath);
 
-                if (groupedFolders.Item2.Count > 0)
-                {
-                    Log.Error(
-                        $"{seriesId}:\tFound {groupedFolders.Item2.Count} folder name anomalies in '{seriesSourceFolderPath}':");
-                    foreach (var anomaly in groupedFolders.Item2) Log.Error($"{seriesId}:\t{anomaly}");
-                }
-
-                var seriesDestinationMetadataFilePath = Path.Combine(seriesDestinationFolderPath,
-                    PathSettings.DefaultFilenameForSeriesMetadataJson);
-
-                try
-                {
-                    var seriesMetadata = await CreateCardSeriesAndSaveToDisk(seriesId, cardTier,
-                        seriesDestinationMetadataFilePath, seriesSourceFolderPath, seriesDestinationFolderPath,
-                        cancellationToken);
-
-                    // With the series created, let's create the card sets
-                    var replicator = new CardSetReplicator(seriesMetadata);
-                    await replicator.HandleDestinationSetCreationAsync(groupedFolders.Item1, cancellationToken);
-
-                    if (seriesMetadata.Sets is null || seriesMetadata.Sets.Count == 0) Log.Error($"{seriesId}:\tNo CardSets found for Series in Metadata");
-
-                    allSeriesMetadata.Add(seriesMetadata);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex,
-                        $"{seriesId}:\tFailed to create Series Metadata file at Destination Path: {seriesDestinationMetadataFilePath}");
-                }
+                await CreateAndSaveSeriesMetadataAsync(seriesId, cardTier, seriesDestinationMetadataFilePath, seriesSourceFolderPath, seriesFolder,
+                    groupedFolders, metadata, cancellationToken);
             }
         }
 
-        var allSourceSetFolders = GatherAllSourceSetFolders();
-        var processedFolders = allSeriesMetadata
-            .SelectMany(series => series.Sets?.Select(set => set.SourceAbsoluteFolderPath) ?? []).ToHashSet();
-
-        var unprocessedFolders = allSourceSetFolders.Except(processedFolders).ToList();
-        if (unprocessedFolders.Count <= 0) return allSeriesMetadata;
+        var unprocessedFolders = GetUnprocessedFolders(metadata);
+        if (unprocessedFolders.Count > 0) return metadata;
 
         Log.Warning("The following folders were not processed:");
         foreach (var folder in unprocessedFolders) Log.Warning(folder);
 
-        return allSeriesMetadata;
+        return metadata;
+    }
+
+    private List<string> GetUnprocessedFolders(MasterMetadata metadata)
+    {
+        var allSourceSetFolders = GatherAllSourceSetFolders();
+
+        var processedFolders = metadata.Metadata.Values
+            .SelectMany(series => series.SelectMany(s =>
+                s.Sets?.Where(set => !string.IsNullOrWhiteSpace(set.SourceAbsoluteFolderPath)).Select(set => set.SourceAbsoluteFolderPath) ??
+                new List<string>()))
+            .ToHashSet();
+
+        return allSourceSetFolders.Except(processedFolders).ToList();
+    }
+
+    private static async Task CreateAndSaveSeriesMetadataAsync(string seriesId,
+        CardTier cardTier,
+        string seriesDestinationMetadataFilePath,
+        string seriesSourceFolderPath,
+        string seriesDestinationFolderPath,
+        (Dictionary<string, List<string>>, HashSet<string>) groupedFolders,
+        MasterMetadata metadata,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var seriesMetadata = await CreateCardSeriesAndSaveToDisk(seriesId, cardTier,
+                seriesDestinationMetadataFilePath, seriesSourceFolderPath, seriesDestinationFolderPath,
+                cancellationToken);
+
+            // With the series created, let's create the card sets
+            var replicator = new CardSetReplicator(seriesMetadata);
+            await replicator.HandleDestinationSetCreationAsync(groupedFolders.Item1, cancellationToken);
+
+            if (seriesMetadata.Sets is null || seriesMetadata.Sets.Count == 0) 
+                Log.Error($"{seriesId}:\tNo CardSets found for Series in Metadata");
+
+            if (!metadata.Metadata.TryGetValue(cardTier, out var seriesMetadataList))
+                metadata.Metadata[cardTier] = [];
+
+            metadata.Metadata[cardTier].Add(seriesMetadata);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"{seriesId}:\tFailed to create Series Metadata file at Destination Path: {seriesDestinationMetadataFilePath}");
+        }
+    }
+
+    private static void ProcessAndGetGroupedFolders(
+        (Dictionary<string, List<string>>, HashSet<string>) groupedFolders, string seriesId, string seriesSourceFolderPath)
+    {
+        if (groupedFolders.Item1.Count == 0) Log.Error($"{seriesId}:\tNo folder groups found in '{seriesSourceFolderPath}'");
+        Log.Error($"{seriesId}:\tFound {groupedFolders.Item2.Count} folder name anomalies in '{seriesSourceFolderPath}':");
+        foreach (var anomaly in groupedFolders.Item2) Log.Error($"{seriesId}:\t{anomaly}");
     }
 
     private static (Dictionary<string, List<string>>, HashSet<string>) DetermineFolderGrouping(
@@ -124,12 +142,9 @@ public class DestinationFolderPreparer
     {
         CardSeries? seriesMetadata = null;
         if (File.Exists(seriesDestinationMetadataFilePath))
-            seriesMetadata =
-                await JsonFileReader.ReadFromJsonAsync<CardSeries?>(seriesDestinationMetadataFilePath,
-                    cancellationToken);
+            seriesMetadata = await JsonFileReader.ReadFromJsonAsync<CardSeries?>(seriesDestinationMetadataFilePath, cancellationToken);
         else
-            Log.Verbose(
-                $"{seriesId}:\tDid not find an existing Series Metadata file at Destination Path: '{seriesDestinationMetadataFilePath}'");
+            Log.Debug($"{seriesId}:\tDid not find an existing Series Metadata file at Destination Path: '{seriesDestinationMetadataFilePath}'");
 
         seriesMetadata ??= new CardSeries(seriesId)
         {
@@ -146,7 +161,7 @@ public class DestinationFolderPreparer
         seriesMetadata.DestinationFolderPath = seriesDestinationFolderPath;
 
         await JsonFileWriter.WriteToJsonAsync(seriesMetadata, seriesDestinationMetadataFilePath, cancellationToken);
-        Log.Verbose($"{seriesId}:\tSerialized Card Series metadata written to {seriesDestinationMetadataFilePath}");
+        Log.Debug($"{seriesId}:\tSerialized Card Series metadata written to {seriesDestinationMetadataFilePath}");
 
         return seriesMetadata;
     }

@@ -124,13 +124,13 @@ public class CardCollectionDistributor
 
         foreach (var collectorTier in collectorTypeMappings.OrderBy(ct => ct.Key.ToString()))
         {
-            Log.Verbose("Distributing cards for CollectorType '{0}'..", collectorTier.Key);
+            Log.Debug("Distributing cards for CollectorType '{0}'..", collectorTier.Key);
 
             foreach (var targetEditorId in collectorTier.Value)
             {
                 if (!collectorLeveledListMapping.TryGetValue(collectorTier.Key, out var cardTierLeveledItem)) continue;
 
-                Log.Verbose($"Adding LeveledItem '{cardTierLeveledItem.EditorID}' as Entry for LeveledItem '{targetEditorId}'..");
+                Log.Debug($"Adding LeveledItem '{cardTierLeveledItem.EditorID}' as Entry for LeveledItem '{targetEditorId}'..");
                 strategy.DistributeToTarget(cardTierLeveledItem, targetEditorId);
             }
         }
