@@ -9,12 +9,12 @@ public static partial class NamingHelper
     private static readonly Regex NameNormalizerRegex = MyRegex();
 
     /// <summary>
-    ///     Formats a display name from a given folder name by capitalizing words and removing GUIDs.
+    /// Formats a display name from a given folder name by capitalizing words and removing GUIDs.
     /// </summary>
     /// <param name="folderName">The folder name to format.</param>
     /// <returns>
-    ///     A formatted display name. If the last word in the folder name is a number, it is treated as a set number
-    ///     and appended to the display name in the format "(Set {number})".
+    /// A formatted display name. If the last word in the folder name is a number, it is treated as a set number
+    /// and appended to the display name in the format "(Set {number})".
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown when the folder path does not contain a valid name.</exception>
     public static string FormatDisplayNameFromFolderName(string folderName)
@@ -35,30 +35,44 @@ public static partial class NamingHelper
         words = words.Where(word => !GuidRegex().IsMatch(word)).ToList();
 
         var mainText = string.Join(" ", words);
-        var lastWord = words.LastOrDefault();
 
         // Check if the last word is a number
+        var lastWord = words.LastOrDefault();
         if (lastWord == null || !int.TryParse(lastWord, out var numericValue)) return mainText;
-
+        
         words.RemoveAt(words.Count - 1); // Remove the numeric part from the main text
         mainText = string.Join(" ", words);
-        return $"{mainText} (Set {numericValue})";
+        mainText = $"{mainText} (Set {numericValue})";
+
+        return mainText;
     }
 
+    /// <summary>
+    /// Normalizes a given name by converting it to lowercase, replacing certain characters, and removing unwanted patterns.
+    /// </summary>
+    /// <param name="name">The name to normalize.</param>
+    /// <returns>A normalized version of the name.</returns>
     public static string NormalizeName(string name)
     {
         name = name.ToLower();
 
-        name = name.Replace(" ", "_");
         name = name.Replace("-", "_");
         name = name.Replace("&", "and");
+        name = MultiSpaceRegex().Replace(name, "_");
 
+        // Remove " - Copy" or " - Copy (number)" pattern if present
+        var copyPattern = MyRegex1();
+        if (copyPattern.IsMatch(name))
+        {
+            name = copyPattern.Replace(name, string.Empty);
+        }
+        
         // Remove any non-alphanumeric characters except underscores
         name = NameNormalizerRegex.Replace(name, "");
 
         return name;
     }
-
+// 1115
     public static string CreateKeyword(CardSeries cardSeries)
     {
         return (cardSeries.DisplayName is null ? cardSeries.Id : NormalizeName(cardSeries.DisplayName)).AddModNamePrefix();
@@ -68,12 +82,12 @@ public static partial class NamingHelper
     {
         return $"{CreateCardId(set.Id, imageIndex)}.{extension}";
     }
-    
+
     public static string CreateFileNameFromCardSetIdAndIndex(string setId, uint imageIndex, string extension)
     {
         return $"{CreateCardId(setId, imageIndex)}.{extension}";
     }
-    
+
     public static string CreateCardId(string cardSetId, uint imageIndex)
     {
         return $"{cardSetId}_{imageIndex:D3}";
@@ -84,4 +98,10 @@ public static partial class NamingHelper
 
     [GeneratedRegex(@"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex GuidRegex();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex MultiSpaceRegex();
+
+    [GeneratedRegex(@"(?: - Copy(?: \(\d+\))?)+$")]
+    private static partial Regex MyRegex1();
 }

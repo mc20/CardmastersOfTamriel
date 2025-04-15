@@ -15,6 +15,7 @@ public class GeneralSettings
 {
     public required double MaximumImageSelectionPercentageForSet { get; set; }
     public required int MinimumImageSelectionCountForSet { get; set; }
+    public required int MaximumImageSelectionCountForSet { get; set; }
 }
 
 public class DefaultValuesForCards

@@ -40,6 +40,8 @@ public class ImageProcessingCoordinator
 
         try
         {
+            FileOperations.EnsureDirectoryExists(_config.Paths.OutputFolderPath);
+            
             var preparer = new DestinationFolderPreparer(_config.Paths);
 
             _progressTrackerForFolderPreparer.Total = preparer.GatherAllSourceSetFolders().Count;
@@ -143,7 +145,8 @@ public class ImageProcessingCoordinator
 
         if (overrideData?.IgnoreMaximumNumberOfCardsToIncludeLimit == true) return totalNumberOfCards;
 
-        var calculatedMaximumNumberOfCards = (int)Math.Ceiling(totalNumberOfCards * general.MaximumImageSelectionPercentageForSet);
+        var calculatedMaximumNumberOfCards = Math.Min((int)Math.Ceiling(totalNumberOfCards * general.MaximumImageSelectionPercentageForSet), general.MaximumImageSelectionCountForSet);
+        
         return calculatedMaximumNumberOfCards <= general.MinimumImageSelectionCountForSet
             ? general.MinimumImageSelectionCountForSet
             : calculatedMaximumNumberOfCards;

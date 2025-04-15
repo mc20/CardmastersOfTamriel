@@ -1,0 +1,31 @@
+﻿{
+    "Category": "LeveledItems",
+    "CollectorTypes": [
+        {
+            "Type": "Tier1",
+            "ChanceNone": 0.30,
+            "CardTierProbabilities": [
+                {
+                    "Tier": "Tier1",
+                    "NumberOfTimes": 4,
+                    "ChanceNone": 0.05
+                },
+                {
+                    "Tier": "Tier2",
+                    "NumberOfTimes": 3,
+                    "ChanceNone": 0.10
+                },
+                {
+                    "Tier": "Tier3",
+                    "NumberOfTimes": 2,
+                    "ChanceNone": 0.25
+                },
+                {
+                    "Tier": "Tier4",
+                    "NumberOfTimes": 1,
+                    "ChanceNone": 0.50
+                }
+            ]
+        }
+    ]
+}

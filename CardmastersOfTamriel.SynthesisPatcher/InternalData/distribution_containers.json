@@ -113,7 +113,7 @@
         {
           "Tier": "Tier4",
           "NumberOfTimes": 2,
-          "ChanceNone": 0.6
+          "ChanceNone": 0.4
         }
       ]
     },

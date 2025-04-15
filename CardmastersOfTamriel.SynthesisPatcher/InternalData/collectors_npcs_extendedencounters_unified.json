@@ -1,0 +1,16 @@
+﻿{
+    "Tier1": [
+        "EE_Alchemist",
+        "EE_Beggar",
+        "EE_EscapedPrisoner",
+        "EE_Headsman",
+        "EE_Miner",
+        "EE_TravelingHealer",
+        "EE_AdventurerMage",
+        "EE_Bride",
+        "EE_MerchantPeddler",
+        "EE_Scavenger",
+        "EE_TransformingWerewolf",
+        "EE_VaerminaDevotee"
+    ]
+}

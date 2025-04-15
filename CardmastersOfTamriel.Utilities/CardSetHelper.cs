@@ -1,8 +1,7 @@
 using System.Text.RegularExpressions;
-using CardmastersOfTamriel.Utilities;
 using Serilog;
 
-namespace CardmastersOfTamriel.ImageProcessor.Utilities;
+namespace CardmastersOfTamriel.Utilities;
 
 public static partial class CardSetHelper
 {
